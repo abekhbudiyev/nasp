@@ -1,27 +1,37 @@
 const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
-const appShell = document.querySelector(".app-shell");
+const appShell = document.getElementById("appShell");
+const loginView = document.getElementById("loginView");
+const loginForm = document.getElementById("loginForm");
+const loginUsername = document.getElementById("loginUsername");
+const loginPassword = document.getElementById("loginPassword");
+const loginError = document.getElementById("loginError");
+const loginSubmit = document.getElementById("loginSubmit");
+const passwordToggle = document.getElementById("passwordToggle");
+const capsLockHint = document.getElementById("capsLockHint");
+const forgotPasswordButton = document.getElementById("forgotPasswordButton");
+const logoutButton = document.getElementById("logoutButton");
 const sidebarCollapse = document.getElementById("sidebarCollapse");
 const pageBreadcrumb = document.getElementById("pageBreadcrumb");
 const pageTitle = document.getElementById("pageTitle");
 const themeToggle = document.getElementById("themeToggle");
+const themeToggleIcon = themeToggle?.querySelector("svg");
 const menuToggles = document.querySelectorAll("[data-menu-toggle]");
 const navToggles = document.querySelectorAll(".nav-item--toggle");
 const pageLinks = document.querySelectorAll("[data-page-title]");
 const applicationSearch = document.getElementById("applicationSearch");
 const statusFilter = document.getElementById("statusFilter");
 const regionFilter = document.getElementById("regionFilter");
+const dateFromFilter = document.getElementById("dateFromFilter");
+const dateToFilter = document.getElementById("dateToFilter");
 const resetFilters = document.getElementById("resetFilters");
 const rowsPerPage = document.getElementById("rowsPerPage");
-const applicationCount = document.getElementById("applicationCount");
 const paginationInfo = document.getElementById("paginationInfo");
 const totalApplicationsStat = document.getElementById("totalApplicationsStat");
-const newApplicationsStat = document.getElementById("newApplicationsStat");
 const processApplicationsStat = document.getElementById("processApplicationsStat");
 const acceptedApplicationsStat = document.getElementById("acceptedApplicationsStat");
 const rejectedApplicationsStat = document.getElementById("rejectedApplicationsStat");
 const totalApplicationsShare = document.getElementById("totalApplicationsShare");
-const newApplicationsShare = document.getElementById("newApplicationsShare");
 const processApplicationsShare = document.getElementById("processApplicationsShare");
 const acceptedApplicationsShare = document.getElementById("acceptedApplicationsShare");
 const rejectedApplicationsShare = document.getElementById("rejectedApplicationsShare");
@@ -29,6 +39,905 @@ const applicationRows = document.querySelectorAll("#applicationsTable tbody tr")
 const filterToggle = document.getElementById("filterToggle");
 const filterMenu = document.getElementById("filterMenu");
 const rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+const rowsPerPageMenu = document.getElementById("rowsPerPageMenu");
+const rowsPerPageTrigger = document.getElementById("rowsPerPageTrigger");
+const rowsPerPageLabel = document.getElementById("rowsPerPageLabel");
+const rowsPerPageOptions = document.querySelectorAll(".pagination-select__option");
+const paginationPrev = document.getElementById("paginationPrev");
+const paginationNext = document.getElementById("paginationNext");
+const paginationPages = document.getElementById("paginationPages");
+const filterActiveCount = document.getElementById("filterActiveCount");
+const tableEmptyRow = document.getElementById("tableEmptyRow");
+const downloadActions = document.querySelectorAll(".row-menu__item:last-child");
+const customSelects = document.querySelectorAll("[data-custom-select]");
+const exportButton = document.getElementById("exportButton");
+const applicationsListView = document.getElementById("applicationsListView");
+const emptyContentView = document.getElementById("emptyContentView");
+const emptyViewTitle = document.getElementById("emptyViewTitle");
+const emptyViewDescription = document.getElementById("emptyViewDescription");
+const contentLoader = document.getElementById("contentLoader");
+const dateFields = document.querySelectorAll("[data-date-field]");
+const toastStack = document.getElementById("toastStack");
+const confirmModal = document.getElementById("confirmModal");
+const confirmModalDescription = document.getElementById("confirmModalDescription");
+const confirmModalCancel = document.getElementById("confirmModalCancel");
+const confirmModalApprove = document.getElementById("confirmModalApprove");
+const detailModal = document.getElementById("detailModal");
+const detailModalClose = document.getElementById("detailModalClose");
+const detailModalLoading = document.getElementById("detailModalLoading");
+const detailModalBody = document.getElementById("detailModalBody");
+const detailApplicationId = document.getElementById("detailApplicationId");
+const detailApplicationDate = document.getElementById("detailApplicationDate");
+const detailApplicationStatus = document.getElementById("detailApplicationStatus");
+const detailApplicationRegion = document.getElementById("detailApplicationRegion");
+const detailQueueNumber = document.getElementById("detailQueueNumber");
+const detailInstitution = document.getElementById("detailInstitution");
+const detailChannel = document.getElementById("detailChannel");
+const detailOperator = document.getElementById("detailOperator");
+const detailApplicantName = document.getElementById("detailApplicantName");
+const detailApplicantPinfl = document.getElementById("detailApplicantPinfl");
+const detailApplicantPhone = document.getElementById("detailApplicantPhone");
+const detailApplicantAvatar = document.getElementById("detailApplicantAvatar");
+const detailAddressRegion = document.getElementById("detailAddressRegion");
+const detailAddressDistrict = document.getElementById("detailAddressDistrict");
+const detailReason = document.getElementById("detailReason");
+const detailNote = document.getElementById("detailNote");
+const detailTimeline = document.getElementById("detailTimeline");
+const detailDocuments = document.getElementById("detailDocuments");
+const detailActions = document.getElementById("detailActions");
+const detailAcceptButton = document.getElementById("detailAcceptButton");
+const detailRejectButton = document.getElementById("detailRejectButton");
+const systemTheme = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+const themeStorageKey = "muruvvat-theme";
+const calendarMonthNames = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
+const calendarWeekdays = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+const tableState = { currentPage: 1, totalPages: 1, filteredRows: [] };
+const calendarState = { activeField: null, viewDate: null };
+const confirmState = { action: "", applicationId: "" };
+
+const calendarPopover = document.createElement("div");
+calendarPopover.className = "calendar-popover";
+calendarPopover.id = "calendarPopover";
+calendarPopover.hidden = true;
+calendarPopover.innerHTML = `
+  <div class="calendar-popover__header">
+    <button class="calendar-popover__nav" type="button" data-calendar-nav="-1" aria-label="Oldingi oy">
+      <svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="calendar-popover__title" id="calendarTitle"></div>
+    <button class="calendar-popover__nav" type="button" data-calendar-nav="1" aria-label="Keyingi oy">
+      <svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <div class="calendar-popover__weekdays">${calendarWeekdays.map((day) => `<span class="calendar-popover__weekday">${day}</span>`).join("")}</div>
+  <div class="calendar-popover__grid" id="calendarGrid"></div>
+  <div class="calendar-popover__footer">
+    <button type="button" id="calendarClear">Tozalash</button>
+    <button type="button" id="calendarToday">Bugun</button>
+  </div>
+`;
+document.body.append(calendarPopover);
+const calendarTitle = document.getElementById("calendarTitle");
+const calendarGrid = document.getElementById("calendarGrid");
+const calendarClear = document.getElementById("calendarClear");
+const calendarToday = document.getElementById("calendarToday");
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function showLoginView() {
+  loginView?.removeAttribute("hidden");
+  appShell?.setAttribute("hidden", "");
+  loginError?.setAttribute("hidden", "");
+}
+
+function showAppView() {
+  loginView?.setAttribute("hidden", "");
+  appShell?.removeAttribute("hidden");
+}
+
+function syncPasswordToggleUi() {
+  if (!passwordToggle || !loginPassword) {
+    return;
+  }
+
+  const isVisible = loginPassword.type === "text";
+  passwordToggle.setAttribute("aria-pressed", String(isVisible));
+  passwordToggle.setAttribute("aria-label", isVisible ? "Parolni yashirish" : "Parolni ko'rsatish");
+  passwordToggle.innerHTML = isVisible
+    ? '<svg viewBox="0 0 24 24" fill="none"><path d="M3 3 21 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10.7 6.25A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a17.6 17.6 0 0 1-3.04 3.68M6.2 6.2C3.98 7.73 2.5 10 2.5 10S6 16 12 16a9.9 9.9 0 0 0 3.24-.52M9.88 9.88a3 3 0 1 0 4.24 4.24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>';
+}
+
+function syncCapsLockState(event) {
+  if (!capsLockHint || !event.getModifierState) {
+    return;
+  }
+
+  capsLockHint.hidden = !event.getModifierState("CapsLock");
+}
+
+function formatDateLabel(value) {
+  if (!value) {
+    return "Sanani tanlang";
+  }
+
+  const [year, month, day] = value.split("-");
+  return day && month && year ? `${day}.${month}.${year}` : value;
+}
+
+function formatDateValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function showToast(title, description, variant = "success") {
+  if (!toastStack) {
+    return;
+  }
+
+  const duration = 3000;
+  let remaining = duration;
+  let timerId = null;
+  let rafId = null;
+  let startedAt = 0;
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  if (variant === "error") {
+    toast.classList.add("toast--error");
+  }
+  toast.innerHTML = `
+    <span class="toast__icon" aria-hidden="true">
+      ${variant === "error"
+        ? '<svg viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5 10 16l8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
+    </span>
+    <div class="toast__content">
+      <strong>${title}</strong>
+      <span>${description}</span>
+    </div>
+    <div class="toast__progress" aria-hidden="true"><div class="toast__progress-bar"></div></div>
+  `;
+  toastStack.append(toast);
+
+  const progressBar = toast.querySelector(".toast__progress-bar");
+
+  function renderRemaining() {
+    if (progressBar) {
+      progressBar.style.transform = `scaleX(${Math.max(0, remaining / duration)})`;
+    }
+  }
+
+  function stopTimers() {
+    if (timerId) {
+      window.clearTimeout(timerId);
+      timerId = null;
+    }
+    if (rafId) {
+      window.cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  }
+
+  function removeToast() {
+    stopTimers();
+    toast.remove();
+  }
+
+  function tick() {
+    const elapsed = Date.now() - startedAt;
+    remaining = Math.max(0, duration - elapsed);
+    renderRemaining();
+
+    if (remaining > 0) {
+      rafId = window.requestAnimationFrame(tick);
+    }
+  }
+
+  function startTimers() {
+    startedAt = Date.now() - (duration - remaining);
+    stopTimers();
+    timerId = window.setTimeout(removeToast, remaining);
+    rafId = window.requestAnimationFrame(tick);
+  }
+
+  renderRemaining();
+  startTimers();
+
+  toast.addEventListener("mouseenter", () => {
+    remaining = Math.max(0, duration - (Date.now() - startedAt));
+    renderRemaining();
+    stopTimers();
+  });
+
+  toast.addEventListener("mouseleave", () => {
+    if (remaining > 0) {
+      startTimers();
+    }
+  });
+}
+
+function syncDateFieldUi(field) {
+  const input = field.querySelector(".custom-date__native");
+  const label = field.querySelector(".custom-date__label");
+  const hasValue = Boolean(input?.value);
+
+  if (label) {
+    label.textContent = formatDateLabel(input?.value ?? "");
+  }
+
+  field.classList.toggle("custom-date--filled", hasValue);
+}
+
+function closeCalendar() {
+  calendarPopover.hidden = true;
+  calendarState.activeField = null;
+}
+
+function openCalendar(field) {
+  const input = field.querySelector(".custom-date__native");
+  const currentValue = input instanceof HTMLInputElement ? input.value : "";
+  const baseDate = currentValue ? new Date(`${currentValue}T00:00:00`) : new Date();
+  calendarState.activeField = field;
+  calendarState.viewDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+  field.append(calendarPopover);
+  calendarPopover.hidden = false;
+  renderCalendar();
+}
+
+function renderCalendar() {
+  if (!calendarState.activeField || !calendarState.viewDate || !calendarTitle || !calendarGrid) {
+    return;
+  }
+
+  const input = calendarState.activeField.querySelector(".custom-date__native");
+  const selectedValue = input instanceof HTMLInputElement ? input.value : "";
+  const now = new Date();
+  const year = calendarState.viewDate.getFullYear();
+  const month = calendarState.viewDate.getMonth();
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0);
+  const leadingDays = (monthStart.getDay() + 6) % 7;
+
+  calendarTitle.textContent = `${calendarMonthNames[month]} ${year}`;
+  calendarGrid.innerHTML = "";
+
+  for (let index = 0; index < leadingDays; index += 1) {
+    const ghost = document.createElement("span");
+    ghost.className = "calendar-popover__day--ghost";
+    calendarGrid.append(ghost);
+  }
+
+  for (let day = 1; day <= monthEnd.getDate(); day += 1) {
+    const date = new Date(year, month, day);
+    const value = formatDateValue(date);
+    const isToday = value === formatDateValue(now);
+    const isSelected = value === selectedValue;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "calendar-popover__day";
+    if (isToday) {
+      button.classList.add("calendar-popover__day--today");
+    }
+    if (isSelected) {
+      button.classList.add("calendar-popover__day--selected");
+    }
+    button.dataset.value = value;
+    button.textContent = String(day);
+    calendarGrid.append(button);
+  }
+}
+
+function setDateFieldValue(field, value) {
+  const input = field.querySelector(".custom-date__native");
+  if (!(input instanceof HTMLInputElement)) {
+    return;
+  }
+
+  input.value = value;
+  syncDateFieldUi(field);
+  applyTableFilters();
+}
+
+function openConfirmModal(action, applicationId) {
+  confirmState.action = action;
+  confirmState.applicationId = applicationId;
+  confirmModal?.classList.toggle("confirm-modal--accept", action === "Qabul qilish");
+  if (confirmModalDescription) {
+    confirmModalDescription.textContent = `${applicationId} arizasi uchun "${action}" amalini bajarishni tasdiqlaysizmi?`;
+  }
+  if (confirmModalApprove) {
+    confirmModalApprove.textContent = action;
+  }
+  confirmModal?.removeAttribute("hidden");
+  window.requestAnimationFrame(() => {
+    confirmModalApprove?.focus();
+  });
+}
+
+function closeConfirmModal() {
+  confirmModal?.setAttribute("hidden", "");
+  confirmModal?.classList.remove("confirm-modal--accept");
+  if (confirmModalApprove) {
+    confirmModalApprove.disabled = false;
+    confirmModalApprove.innerHTML = confirmState.action || "Davom etish";
+  }
+  confirmModalCancel?.removeAttribute("disabled");
+  confirmState.action = "";
+  confirmState.applicationId = "";
+}
+
+function getStatusBadgeClass(status) {
+  const normalized = status.toLowerCase();
+  if (normalized === "jarayonda") {
+    return "detail-status-badge--process";
+  }
+  if (normalized === "qabul qilingan") {
+    return "detail-status-badge--accepted";
+  }
+  if (normalized === "rad etilgan") {
+    return "detail-status-badge--rejected";
+  }
+  return "";
+}
+
+function getApplicantAvatar(application) {
+  const initials = application.applicantName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  const palette = [
+    { start: "#7aa86f", end: "#5d8757" },
+    { start: "#8aa9d6", end: "#5f7fb5" },
+    { start: "#d4a66f", end: "#b8854d" },
+    { start: "#9c8ed8", end: "#7365b6" },
+  ];
+  const colors = palette[(Number(application.id.replace(/\D/g, "")) || 0) % palette.length];
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+      <defs>
+        <linearGradient id="avatarGradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${colors.start}"/>
+          <stop offset="100%" stop-color="${colors.end}"/>
+        </linearGradient>
+      </defs>
+      <rect width="96" height="96" rx="24" fill="url(#avatarGradient)"/>
+      <circle cx="48" cy="38" r="16" fill="rgba(255,255,255,0.22)"/>
+      <path d="M24 76c3-12 14-20 24-20s21 8 24 20" fill="rgba(255,255,255,0.18)"/>
+      <text x="48" y="54" text-anchor="middle" font-size="24" font-family="Noto Sans, Arial, sans-serif" font-weight="700" fill="#ffffff">${initials}</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function getStatusBadgeVariant(status) {
+  const normalized = status.toLowerCase();
+  if (normalized === "jarayonda") {
+    return { className: "status-badge--process", label: "Jarayonda" };
+  }
+  if (normalized === "qabul qilingan") {
+    return { className: "status-badge--accepted", label: "Qabul qilingan" };
+  }
+  if (normalized === "rad etilgan") {
+    return { className: "status-badge--rejected", label: "Rad etilgan" };
+  }
+  return { className: "", label: status };
+}
+
+function buildTimeline(status, date, operator) {
+  const steps = [
+    { title: "Ariza yaratildi", meta: `${date} kuni tizimga kiritilgan` },
+    { title: "Birlamchi tekshiruv", meta: `${operator} tomonidan hujjatlar ko'rib chiqilgan` },
+  ];
+
+  if (status === "jarayonda") {
+    steps.push({ title: "Jarayon davom etmoqda", meta: "Qo'shimcha baholash va xulosa tayyorlanmoqda" });
+  }
+  if (status === "qabul qilingan") {
+    steps.push({ title: "Komissiya qarori", meta: "Ariza ijobiy xulosa bilan qabul qilingan" });
+  }
+  if (status === "rad etilgan") {
+    steps.push({ title: "Komissiya qarori", meta: "Ariza bo'yicha rad etish qarori chiqarilgan" });
+  }
+
+  return steps;
+}
+
+function buildDocuments(status) {
+  const common = [
+    { title: "Pasport nusxasi", meta: "PDF, 1.2 MB" },
+    { title: "Tibbiy ma'lumotnoma", meta: "PDF, 860 KB" },
+  ];
+
+  if (status === "jarayonda") {
+    common.push({ title: "Yashash sharoiti dalolatnomasi", meta: "Ko'rib chiqilmoqda" });
+  } else {
+    common.push({ title: "Komissiya xulosasi", meta: "Imzolangan nusxa" });
+  }
+
+  return common;
+}
+
+function renderDetailTimeline(items) {
+  if (!detailTimeline) {
+    return;
+  }
+
+  detailTimeline.innerHTML = items
+    .map((item) => `
+      <article class="detail-timeline__item">
+        <span class="detail-timeline__dot" aria-hidden="true"></span>
+        <div class="detail-timeline__content">
+          <strong>${item.title}</strong>
+          <span>${item.meta}</span>
+        </div>
+      </article>
+    `)
+    .join("");
+}
+
+function renderDetailDocuments(items) {
+  if (!detailDocuments) {
+    return;
+  }
+
+  detailDocuments.innerHTML = items
+    .map((item) => `
+      <article class="detail-document">
+        <span class="detail-document__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M8 3.5h5l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 20V5A1.5 1.5 0 0 1 8.5 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 3.5V8h4.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </span>
+        <div class="detail-document__content">
+          <strong>${item.title}</strong>
+          <span>${item.meta}</span>
+        </div>
+      </article>
+    `)
+    .join("");
+}
+
+function updateApplicationRowStatus(applicationId, nextStatus) {
+  const row = Array.from(applicationRows).find((item) => {
+    const id = item.querySelector(".stacked-cell--application strong")?.textContent?.trim();
+    return id === applicationId;
+  });
+
+  if (!row) {
+    return;
+  }
+
+  row.setAttribute("data-status", nextStatus);
+  const statusBadge = row.querySelector(".status-badge");
+  const variant = getStatusBadgeVariant(nextStatus);
+  if (statusBadge) {
+    statusBadge.className = `status-badge ${variant.className}`.trim();
+    statusBadge.textContent = variant.label;
+  }
+
+  const dropdown = row.querySelector(".row-menu__dropdown");
+  dropdown?.querySelectorAll("[data-process-action]").forEach((button) => {
+    button.remove();
+  });
+
+  applyTableFilters();
+}
+
+function getApplicationById(applicationId) {
+  const row = Array.from(applicationRows).find((item) => {
+    const id = item.querySelector(".stacked-cell--application strong")?.textContent?.trim();
+    return id === applicationId;
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  const applicationCell = row.querySelector(".stacked-cell--application");
+  const applicantCell = row.children[2]?.querySelector(".stacked-cell");
+  const addressCell = row.children[3]?.querySelector(".stacked-cell");
+  const statusLabel = row.querySelector(".status-badge")?.textContent?.trim() ?? "";
+  const numericPart = Number(applicationId.replace(/\D/g, "")) || 0;
+  const institutions = {
+    "toshkent shahri": "Toshkent shahar 1-son Muruvvat internat uyi",
+    "samarqand viloyati": "Samarqand viloyat Muruvvat internat uyi",
+    "farg'ona viloyati": "Farg'ona viloyat Muruvvat internat uyi",
+    "buxoro viloyati": "Buxoro viloyat Muruvvat internat uyi",
+  };
+  const reasons = {
+    jarayonda: "Taqdim etilgan hujjatlar ko'rib chiqilmoqda va ijtimoiy holat bo'yicha yakuniy xulosa tayyorlanmoqda.",
+    "qabul qilingan": "Ariza komissiya xulosasiga asosan ma'qullangan va joylashtirish bosqichiga o'tkazilgan.",
+    "rad etilgan": "Ariza bo'yicha taqdim etilgan ma'lumotlar mezonlarga to'liq mos kelmagani sababli rad etilgan.",
+  };
+  const notes = {
+    jarayonda: "Tibbiy ma'lumotnoma va yashash sharoitini baholash dalolatnomasi qo'shimcha tekshiruvda.",
+    "qabul qilingan": "Qabul sanasi va joylashtirish bo'yicha mas'ul xodim bilan bog'lanish rejalashtirilgan.",
+    "rad etilgan": "Ariza qayta topshirilishi uchun qo'shimcha hujjatlar to'plami tavsiya etiladi.",
+  };
+
+  return {
+    id: applicationCell?.querySelector("strong")?.textContent?.trim() ?? applicationId,
+    date: applicationCell?.querySelector("span")?.textContent?.trim() ?? "-",
+    applicantName: applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-",
+    applicantPinfl: applicantCell?.querySelector("span")?.textContent?.trim() ?? "-",
+    applicantPhone: `+998 90 ${String((numericPart % 9000000) + 1000000).replace(/(\d{3})(\d{2})(\d{2})/, "$1-$2-$3")}`,
+    region: addressCell?.querySelector("strong")?.textContent?.trim() ?? "-",
+    district: addressCell?.querySelector("span")?.textContent?.trim() ?? "-",
+    status: statusLabel || "-",
+    queueNumber: `NAV-${String(200 + (numericPart % 500)).padStart(3, "0")}`,
+    institution: institutions[row.getAttribute("data-region") ?? ""] ?? "Muruvvat internat uyi",
+    channel: numericPart % 2 === 0 ? "Yagona portal" : "Tuman bo'limi orqali",
+    operator: ["D.Sh. Karimova", "A.B. Xasanov", "N.O. Rasulova"][numericPart % 3],
+    reason: reasons[row.getAttribute("data-status") ?? "jarayonda"] ?? "-",
+    note: notes[row.getAttribute("data-status") ?? "jarayonda"] ?? "-",
+    timeline: buildTimeline(row.getAttribute("data-status") ?? "jarayonda", applicationCell?.querySelector("span")?.textContent?.trim() ?? "-", ["D.Sh. Karimova", "A.B. Xasanov", "N.O. Rasulova"][numericPart % 3]),
+    documents: buildDocuments(row.getAttribute("data-status") ?? "jarayonda"),
+  };
+}
+
+function closeDetailModal() {
+  detailModal?.setAttribute("hidden", "");
+  detailModalLoading?.setAttribute("hidden", "");
+  detailModalBody?.setAttribute("hidden", "");
+}
+
+async function openApplicationDetail(applicationId) {
+  const application = getApplicationById(applicationId);
+
+  if (!application) {
+    showToast("Ariza topilmadi", `${applicationId} bo'yicha ma'lumot topilmadi.`, "error");
+    return;
+  }
+
+  detailModal?.removeAttribute("hidden");
+  detailModalLoading?.removeAttribute("hidden");
+  detailModalBody?.setAttribute("hidden", "");
+
+  await sleep(1000);
+
+  if (detailApplicationId) {
+    detailApplicationId.textContent = application.id;
+  }
+  if (detailApplicationDate) {
+    detailApplicationDate.textContent = application.date;
+  }
+  if (detailApplicationStatus) {
+    detailApplicationStatus.textContent = application.status;
+    detailApplicationStatus.className = "detail-status-badge";
+    const statusClass = getStatusBadgeClass(application.status);
+    if (statusClass) {
+      detailApplicationStatus.classList.add(statusClass);
+    }
+  }
+  if (detailApplicationRegion) {
+    detailApplicationRegion.textContent = application.region;
+  }
+  if (detailQueueNumber) {
+    detailQueueNumber.textContent = application.queueNumber;
+  }
+  if (detailInstitution) {
+    detailInstitution.textContent = application.institution;
+  }
+  if (detailChannel) {
+    detailChannel.textContent = application.channel;
+  }
+  if (detailOperator) {
+    detailOperator.textContent = application.operator;
+  }
+  if (detailApplicantName) {
+    detailApplicantName.textContent = application.applicantName;
+  }
+  if (detailApplicantPinfl) {
+    detailApplicantPinfl.textContent = application.applicantPinfl;
+  }
+  if (detailApplicantPhone) {
+    detailApplicantPhone.textContent = application.applicantPhone;
+  }
+  if (detailApplicantAvatar) {
+    detailApplicantAvatar.src = getApplicantAvatar(application);
+    detailApplicantAvatar.alt = `${application.applicantName} rasmi`;
+  }
+  if (detailAddressRegion) {
+    detailAddressRegion.textContent = application.region;
+  }
+  if (detailAddressDistrict) {
+    detailAddressDistrict.textContent = application.district;
+  }
+  if (detailReason) {
+    detailReason.textContent = application.reason;
+  }
+  if (detailNote) {
+    detailNote.textContent = application.note;
+  }
+  renderDetailTimeline(application.timeline);
+  renderDetailDocuments(application.documents);
+  if (detailActions) {
+    detailActions.hidden = application.status.toLowerCase() !== "jarayonda";
+  }
+  if (detailAcceptButton) {
+    detailAcceptButton.dataset.applicationId = application.id;
+  }
+  if (detailRejectButton) {
+    detailRejectButton.dataset.applicationId = application.id;
+  }
+
+  detailModalLoading?.setAttribute("hidden", "");
+  detailModalBody?.removeAttribute("hidden");
+  detailModalClose?.focus();
+}
+
+function enhanceProcessRowActions() {
+  document.querySelectorAll("#applicationsTable tbody tr[data-status='jarayonda']").forEach((row) => {
+    const dropdown = row.querySelector(".row-menu__dropdown");
+    const applicationId = row.querySelector(".stacked-cell--application strong")?.textContent?.trim() ?? "Ariza";
+    if (!dropdown || dropdown.querySelector("[data-process-action]")) {
+      return;
+    }
+
+    const approveButton = document.createElement("button");
+    approveButton.type = "button";
+    approveButton.className = "row-menu__item row-menu__item--accent";
+    approveButton.dataset.processAction = "Qabul qilish";
+    approveButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5l4 4 8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Qabul qilish</span>';
+    approveButton.addEventListener("click", () => {
+      openConfirmModal("Qabul qilish", applicationId);
+    });
+
+    const rejectButton = document.createElement("button");
+    rejectButton.type = "button";
+    rejectButton.className = "row-menu__item row-menu__item--danger";
+    rejectButton.dataset.processAction = "Rad etish";
+    rejectButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Rad etish</span>';
+    rejectButton.addEventListener("click", () => {
+      openConfirmModal("Rad etish", applicationId);
+    });
+
+    const editButton = dropdown.querySelector(".row-menu__item:nth-child(2)");
+    editButton?.insertAdjacentElement("afterend", approveButton);
+    approveButton.insertAdjacentElement("afterend", rejectButton);
+  });
+}
+
+function enhanceApplicationViewActions() {
+  applicationRows.forEach((row) => {
+    const applicationId = row.querySelector(".stacked-cell--application strong")?.textContent?.trim();
+    const viewButton = row.querySelector(".row-menu__dropdown .row-menu__item");
+    const applicationLink = row.querySelector(".stacked-cell--application strong");
+
+    if (!applicationId) {
+      return;
+    }
+
+    if (viewButton && !viewButton.dataset.detailBound) {
+      viewButton.dataset.detailBound = "true";
+      viewButton.addEventListener("click", () => {
+        openApplicationDetail(applicationId);
+      });
+    }
+
+    if (applicationLink && !applicationLink.dataset.detailBound) {
+      applicationLink.dataset.detailBound = "true";
+      applicationLink.tabIndex = 0;
+      applicationLink.setAttribute("role", "button");
+      applicationLink.setAttribute("aria-label", `${applicationId} ariza tafsilotlarini ochish`);
+      applicationLink.style.cursor = "pointer";
+      applicationLink.addEventListener("click", () => {
+        openApplicationDetail(applicationId);
+      });
+      applicationLink.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openApplicationDetail(applicationId);
+        }
+      });
+    }
+  });
+}
+
+function renderPagination(totalPages) {
+  if (!paginationPages || !paginationPrev || !paginationNext) {
+    return;
+  }
+
+  paginationPages.innerHTML = "";
+  tableState.totalPages = Math.max(totalPages, 1);
+  paginationPrev.disabled = tableState.currentPage <= 1;
+  paginationNext.disabled = tableState.currentPage >= tableState.totalPages;
+
+  const pages = [];
+  const { currentPage } = tableState;
+
+  if (tableState.totalPages <= 5) {
+    for (let page = 1; page <= tableState.totalPages; page += 1) {
+      pages.push(page);
+    }
+  } else {
+    pages.push(1);
+    if (currentPage > 3) {
+      pages.push("ellipsis-start");
+    }
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(tableState.totalPages - 1, currentPage + 1);
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+    if (currentPage < tableState.totalPages - 2) {
+      pages.push("ellipsis-end");
+    }
+    pages.push(tableState.totalPages);
+  }
+
+  pages.forEach((item) => {
+    if (typeof item !== "number") {
+      const ellipsis = document.createElement("span");
+      ellipsis.className = "pagination__ellipsis";
+      ellipsis.setAttribute("aria-hidden", "true");
+      ellipsis.textContent = "...";
+      paginationPages.append(ellipsis);
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pagination__button";
+    if (item === currentPage) {
+      button.classList.add("pagination__button--active");
+      button.setAttribute("aria-current", "page");
+    }
+    button.dataset.page = String(item);
+    button.textContent = String(item);
+    paginationPages.append(button);
+  });
+}
+
+function setExportLoadingState(isLoading) {
+  if (!exportButton) {
+    return;
+  }
+
+  const icon = exportButton.querySelector("svg");
+  const label = exportButton.querySelector(".sr-only");
+
+  if (!icon || !label) {
+    return;
+  }
+
+  if (isLoading) {
+    exportButton.classList.add("table-action--loading");
+    icon.innerHTML = '<circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.6" opacity="0.25"/><path d="M19 12a7 7 0 0 0-7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>';
+    label.textContent = "Yuklanmoqda...";
+    return;
+  }
+
+  exportButton.classList.remove("table-action--loading");
+  icon.innerHTML = '<path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
+  label.textContent = "Eksport";
+}
+
+function showApplicationsView() {
+  applicationsListView?.removeAttribute("hidden");
+  emptyContentView?.setAttribute("hidden", "");
+  contentLoader?.setAttribute("hidden", "");
+}
+
+function showEmptyView(title) {
+  applicationsListView?.setAttribute("hidden", "");
+  contentLoader?.setAttribute("hidden", "");
+  emptyContentView?.removeAttribute("hidden");
+  if (emptyViewTitle) {
+    emptyViewTitle.textContent = title;
+  }
+  if (emptyViewDescription) {
+    emptyViewDescription.textContent = `"${title}" bo'limi uchun kontent hali tayyorlanmagan.`;
+  }
+}
+
+async function navigateToView(title) {
+  const isApplicationsList = title === "Arizalar - Arizalar ro'yxati";
+
+  if (!isApplicationsList) {
+    showEmptyView(title.split(" - ").pop() ?? title);
+    return;
+  }
+
+  emptyContentView?.setAttribute("hidden", "");
+  applicationsListView?.setAttribute("hidden", "");
+  contentLoader?.removeAttribute("hidden");
+  await sleep(1000);
+  showApplicationsView();
+  applyTableFilters();
+}
+
+function setThemeIcon(isDark) {
+  if (!themeToggleIcon) {
+    return;
+  }
+
+  themeToggleIcon.innerHTML = isDark
+    ? '<path d="M12 3v2.2M12 18.8V21M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M3 12h2.2M18.8 12H21M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.5"/>'
+    : '<path d="M14.5 4.5a7 7 0 1 0 5 12 7.5 7.5 0 1 1-5-12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>';
+}
+
+function applyTheme(isDark) {
+  document.body.classList.toggle("theme-dark", isDark);
+  themeToggle?.setAttribute("aria-pressed", String(isDark));
+  setThemeIcon(isDark);
+}
+
+function getSavedThemePreference() {
+  return window.localStorage.getItem(themeStorageKey);
+}
+
+function initializeTheme() {
+  const savedTheme = getSavedThemePreference();
+  const isDark = savedTheme ? savedTheme === "dark" : Boolean(systemTheme?.matches);
+  applyTheme(isDark);
+}
+
+if (loginForm && loginUsername && loginPassword && loginSubmit) {
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const username = loginUsername.value.trim();
+    const password = loginPassword.value.trim();
+
+    loginError?.setAttribute("hidden", "");
+    loginSubmit.disabled = true;
+    loginSubmit.innerHTML = '<span class="login-submit__spinner" aria-hidden="true"></span><span>Kirilmoqda...</span>';
+
+    await sleep(1000);
+
+    if (username === "admin" && password === "muruvvat123") {
+      loginSubmit.disabled = false;
+      loginSubmit.textContent = "Kirish";
+      showAppView();
+      showToast("Xush kelibsiz", "Muruvvat moduliga muvaffaqiyatli kirildi.");
+      return;
+    }
+
+    loginSubmit.disabled = false;
+    loginSubmit.textContent = "Kirish";
+    loginError?.removeAttribute("hidden");
+  });
+}
+
+passwordToggle?.addEventListener("click", () => {
+  if (!loginPassword) {
+    return;
+  }
+
+  loginPassword.type = loginPassword.type === "password" ? "text" : "password";
+  syncPasswordToggleUi();
+});
+
+loginPassword?.addEventListener("keydown", syncCapsLockState);
+loginPassword?.addEventListener("keyup", syncCapsLockState);
+loginPassword?.addEventListener("blur", () => {
+  capsLockHint && (capsLockHint.hidden = true);
+});
+
+forgotPasswordButton?.addEventListener("click", () => {
+  showToast(
+    "Parolni tiklash",
+    "Demo rejimda parolni tiklash ulanmagan. Administrator yoki OneID orqali kirishdan foydalaning.",
+  );
+});
+
+logoutButton?.addEventListener("click", () => {
+  showLoginView();
+  loginUsername && (loginUsername.value = "");
+  loginPassword && (loginPassword.value = "");
+  loginSubmit && (loginSubmit.textContent = "Kirish");
+});
 
 if (menuToggle && sidebar) {
   menuToggle.addEventListener("click", () => {
@@ -60,10 +969,19 @@ if (sidebarCollapse && appShell) {
 
 if (themeToggle) {
   themeToggle.addEventListener("click", () => {
-    const isDark = document.body.classList.toggle("theme-dark");
-    themeToggle.setAttribute("aria-pressed", String(isDark));
+    const isDark = !document.body.classList.contains("theme-dark");
+    window.localStorage.setItem(themeStorageKey, isDark ? "dark" : "light");
+    applyTheme(isDark);
   });
 }
+
+systemTheme?.addEventListener("change", (event) => {
+  if (getSavedThemePreference()) {
+    return;
+  }
+
+  applyTheme(event.matches);
+});
 
 menuToggles.forEach((toggle) => {
   toggle.addEventListener("click", (event) => {
@@ -123,6 +1041,30 @@ document.addEventListener("click", (event) => {
       filterToggle.setAttribute("aria-expanded", "false");
     }
   }
+
+  if (rowsPerPageMenu && !rowsPerPageMenu.contains(target)) {
+    rowsPerPageMenu.classList.remove("pagination-select--open");
+    rowsPerPageTrigger?.setAttribute("aria-expanded", "false");
+  }
+
+  customSelects.forEach((select) => {
+    if (!select.contains(target)) {
+      select.classList.remove("custom-select--open");
+      const trigger = select.querySelector(".custom-select__trigger");
+      if (trigger) {
+        trigger.setAttribute("aria-expanded", "false");
+      }
+    }
+  });
+
+  if (
+    calendarState.activeField &&
+    !calendarPopover.hidden &&
+    !calendarPopover.contains(target) &&
+    !calendarState.activeField.contains(target)
+  ) {
+    closeCalendar();
+  }
 });
 
 navToggles.forEach((toggle) => {
@@ -150,7 +1092,7 @@ navToggles.forEach((toggle) => {
 });
 
 pageLinks.forEach((link) => {
-  link.addEventListener("click", (event) => {
+  link.addEventListener("click", async (event) => {
     event.preventDefault();
 
     const title = link.getAttribute("data-page-title");
@@ -197,6 +1139,10 @@ pageLinks.forEach((link) => {
     if (window.innerWidth <= 1180) {
       sidebar?.classList.remove("sidebar--open");
     }
+
+    if (title) {
+      await navigateToView(title);
+    }
   });
 });
 
@@ -204,10 +1150,10 @@ function applyTableFilters() {
   const searchValue = applicationSearch?.value.trim().toUpperCase() ?? "";
   const statusValue = statusFilter?.value ?? "all";
   const regionValue = regionFilter?.value ?? "all";
+  const dateFromValue = dateFromFilter?.value ?? "";
+  const dateToValue = dateToFilter?.value ?? "";
   const limit = Number(rowsPerPage?.value ?? "10");
-  let visibleCount = 0;
-  let renderedCount = 0;
-  let newCount = 0;
+  const matchedRows = [];
   let processCount = 0;
   let acceptedCount = 0;
   let rejectedCount = 0;
@@ -216,17 +1162,18 @@ function applyTableFilters() {
     const rowStatus = row.getAttribute("data-status") ?? "";
     const rowRegion = row.getAttribute("data-region") ?? "";
     const rowSearch = row.getAttribute("data-search") ?? "";
-
+    const rowDateText = row.querySelector(".stacked-cell--application span")?.textContent?.trim() ?? "";
+    const [day, month, year] = rowDateText.split(".");
+    const rowDateValue = day && month && year ? `${year}-${month}-${day}` : "";
     const matchesSearch = !searchValue || rowSearch.includes(searchValue);
     const matchesStatus = statusValue === "all" || rowStatus === statusValue;
     const matchesRegion = regionValue === "all" || rowRegion === regionValue;
-    const matched = matchesSearch && matchesStatus && matchesRegion;
+    const matchesDateFrom = !dateFromValue || (rowDateValue && rowDateValue >= dateFromValue);
+    const matchesDateTo = !dateToValue || (rowDateValue && rowDateValue <= dateToValue);
+    const matched = matchesSearch && matchesStatus && matchesRegion && matchesDateFrom && matchesDateTo;
 
     if (matched) {
-      visibleCount += 1;
-      if (rowStatus === "yangi") {
-        newCount += 1;
-      }
+      matchedRows.push(row);
       if (rowStatus === "jarayonda") {
         processCount += 1;
       }
@@ -238,59 +1185,158 @@ function applyTableFilters() {
       }
     }
 
-    const visible = matched && renderedCount < limit;
-    row.style.display = visible ? "" : "none";
-
-    if (visible) {
-      renderedCount += 1;
-    }
+    row.style.display = "none";
   });
 
-  if (applicationCount) {
-    applicationCount.textContent = String(visibleCount);
+  tableState.filteredRows = matchedRows;
+  tableState.totalPages = Math.max(1, Math.ceil(matchedRows.length / limit));
+  tableState.currentPage = Math.min(tableState.currentPage, tableState.totalPages);
+
+  const startIndex = (tableState.currentPage - 1) * limit;
+  const endIndex = startIndex + limit;
+  matchedRows.slice(startIndex, endIndex).forEach((row) => {
+    row.style.display = "";
+  });
+
+  if (tableEmptyRow) {
+    tableEmptyRow.hidden = matchedRows.length !== 0;
   }
-  const totalBase = visibleCount || 1;
+
+  const totalBase = matchedRows.length || 1;
   const percent = (value) => `${Math.round((value / totalBase) * 100)}%`;
   if (totalApplicationsStat) {
-    totalApplicationsStat.textContent = String(visibleCount);
+    totalApplicationsStat.textContent = String(matchedRows.length);
   }
   if (totalApplicationsShare) {
-    totalApplicationsShare.textContent = visibleCount > 0 ? "100%" : "0%";
-  }
-  if (newApplicationsStat) {
-    newApplicationsStat.textContent = String(newCount);
-  }
-  if (newApplicationsShare) {
-    newApplicationsShare.textContent = visibleCount > 0 ? percent(newCount) : "0%";
+    totalApplicationsShare.textContent = matchedRows.length > 0 ? "100%" : "0%";
   }
   if (processApplicationsStat) {
     processApplicationsStat.textContent = String(processCount);
   }
   if (processApplicationsShare) {
-    processApplicationsShare.textContent = visibleCount > 0 ? percent(processCount) : "0%";
+    processApplicationsShare.textContent = matchedRows.length > 0 ? percent(processCount) : "0%";
   }
   if (acceptedApplicationsStat) {
     acceptedApplicationsStat.textContent = String(acceptedCount);
   }
   if (acceptedApplicationsShare) {
-    acceptedApplicationsShare.textContent = visibleCount > 0 ? percent(acceptedCount) : "0%";
+    acceptedApplicationsShare.textContent = matchedRows.length > 0 ? percent(acceptedCount) : "0%";
   }
   if (rejectedApplicationsStat) {
     rejectedApplicationsStat.textContent = String(rejectedCount);
   }
   if (rejectedApplicationsShare) {
-    rejectedApplicationsShare.textContent = visibleCount > 0 ? percent(rejectedCount) : "0%";
+    rejectedApplicationsShare.textContent = matchedRows.length > 0 ? percent(rejectedCount) : "0%";
   }
 
   if (paginationInfo) {
-    paginationInfo.textContent = visibleCount > 0 ? `1-${Math.min(visibleCount, limit)} / ${visibleCount} ta yozuv` : "0 / 0 ta yozuv";
+    const from = matchedRows.length > 0 ? startIndex + 1 : 0;
+    const to = matchedRows.length > 0 ? Math.min(endIndex, matchedRows.length) : 0;
+    paginationInfo.textContent = matchedRows.length > 0 ? `${from}-${to} / ${matchedRows.length} ta yozuv` : "0 / 0 ta yozuv";
   }
+
+  const activeFilterCount =
+    (searchValue ? 1 : 0) +
+    (statusValue !== "all" ? 1 : 0) +
+    (regionValue !== "all" ? 1 : 0) +
+    (dateFromValue ? 1 : 0) +
+    (dateToValue ? 1 : 0);
+
+  if (filterToggle) {
+    filterToggle.classList.toggle("table-action--active", activeFilterCount > 0);
+  }
+
+  if (filterActiveCount) {
+    filterActiveCount.hidden = activeFilterCount === 0;
+    filterActiveCount.textContent = String(activeFilterCount);
+  }
+
+  renderPagination(tableState.totalPages);
 }
 
-applicationSearch?.addEventListener("input", applyTableFilters);
-statusFilter?.addEventListener("change", applyTableFilters);
-regionFilter?.addEventListener("change", applyTableFilters);
-rowsPerPage?.addEventListener("change", applyTableFilters);
+function resetAndApplyFilters() {
+  tableState.currentPage = 1;
+  applyTableFilters();
+}
+
+applicationSearch?.addEventListener("input", resetAndApplyFilters);
+statusFilter?.addEventListener("change", resetAndApplyFilters);
+regionFilter?.addEventListener("change", resetAndApplyFilters);
+rowsPerPage?.addEventListener("change", resetAndApplyFilters);
+
+downloadActions.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.classList.contains("row-menu__item--loading")) {
+      return;
+    }
+
+    button.classList.add("row-menu__item--loading");
+    const label = button.querySelector("span");
+    const icon = button.querySelector("svg");
+    const originalLabel = label?.textContent ?? "";
+    const originalIcon = icon?.innerHTML ?? "";
+
+    if (label) {
+      label.textContent = "Yuklanmoqda...";
+    }
+    if (icon) {
+      icon.innerHTML = '<circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.6" opacity="0.25"/><path d="M19 12a7 7 0 0 0-7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>';
+    }
+
+    window.setTimeout(() => {
+      button.classList.remove("row-menu__item--loading");
+      if (label) {
+        label.textContent = originalLabel;
+      }
+      if (icon) {
+        icon.innerHTML = originalIcon;
+      }
+      showToast("Yuklab olindi", "Ariza fayli tayyor bo'ldi.");
+    }, 1000);
+  });
+});
+
+exportButton?.addEventListener("click", async () => {
+  if (exportButton.classList.contains("table-action--loading")) {
+    return;
+  }
+
+  setExportLoadingState(true);
+  await sleep(1000);
+  setExportLoadingState(false);
+  showToast("Eksport yakunlandi", "Ro'yxat fayl ko'rinishida tayyorlandi.");
+});
+
+function syncRowsPerPageUi() {
+  const selectedValue = rowsPerPage?.value ?? "10";
+
+  rowsPerPageOptions.forEach((option) => {
+    const isActive = option.getAttribute("data-value") === selectedValue;
+    option.classList.toggle("pagination-select__option--active", isActive);
+    option.setAttribute("aria-selected", String(isActive));
+
+    if (isActive && rowsPerPageLabel) {
+      rowsPerPageLabel.textContent = option.textContent ?? `${selectedValue} ta`;
+    }
+  });
+}
+
+function syncCustomSelectUi(select) {
+  const nativeSelect = select.querySelector(".custom-select__native");
+  const label = select.querySelector(".custom-select__trigger span");
+  const options = select.querySelectorAll(".custom-select__option");
+  const selectedValue = nativeSelect?.value ?? "";
+
+  options.forEach((option) => {
+    const isActive = option.getAttribute("data-value") === selectedValue;
+    option.classList.toggle("custom-select__option--active", isActive);
+    option.setAttribute("aria-selected", String(isActive));
+
+    if (isActive && label) {
+      label.textContent = option.textContent ?? "";
+    }
+  });
+}
 
 if (filterToggle && filterMenu) {
   filterToggle.addEventListener("click", (event) => {
@@ -305,6 +1351,162 @@ if (filterToggle && filterMenu) {
     filterToggle.setAttribute("aria-expanded", String(!isOpen));
   });
 }
+
+if (rowsPerPageMenu && rowsPerPageTrigger && rowsPerPage) {
+  rowsPerPageTrigger.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = rowsPerPageMenu.classList.contains("pagination-select--open");
+    rowsPerPageMenu.classList.toggle("pagination-select--open", !isOpen);
+    rowsPerPageTrigger.setAttribute("aria-expanded", String(!isOpen));
+  });
+
+  rowsPerPageOptions.forEach((option) => {
+    option.addEventListener("click", () => {
+      const value = option.getAttribute("data-value");
+      if (!value) {
+        return;
+      }
+
+      rowsPerPage.value = value;
+      syncRowsPerPageUi();
+      resetAndApplyFilters();
+      rowsPerPageMenu.classList.remove("pagination-select--open");
+      rowsPerPageTrigger.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+
+customSelects.forEach((select) => {
+  const trigger = select.querySelector(".custom-select__trigger");
+  const nativeSelect = select.querySelector(".custom-select__native");
+  const options = select.querySelectorAll(".custom-select__option");
+
+  trigger?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = select.classList.contains("custom-select--open");
+
+    customSelects.forEach((item) => {
+      item.classList.remove("custom-select--open");
+      const itemTrigger = item.querySelector(".custom-select__trigger");
+      if (itemTrigger) {
+        itemTrigger.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    select.classList.toggle("custom-select--open", !isOpen);
+    trigger.setAttribute("aria-expanded", String(!isOpen));
+    if (!isOpen) {
+      select.querySelector(".custom-select__option--active")?.focus();
+    }
+  });
+
+  trigger?.addEventListener("keydown", (event) => {
+    if (!["Enter", " ", "ArrowDown"].includes(event.key)) {
+      return;
+    }
+    event.preventDefault();
+    trigger.click();
+  });
+
+  options.forEach((option) => {
+    option.addEventListener("click", () => {
+      const value = option.getAttribute("data-value");
+      if (!value || !nativeSelect) {
+        return;
+      }
+
+      nativeSelect.value = value;
+      syncCustomSelectUi(select);
+      nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      select.classList.remove("custom-select--open");
+      trigger?.setAttribute("aria-expanded", "false");
+      trigger?.focus();
+    });
+
+    option.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        select.classList.remove("custom-select--open");
+        trigger?.setAttribute("aria-expanded", "false");
+        trigger?.focus();
+        return;
+      }
+
+      const list = Array.from(options);
+      const index = list.indexOf(option);
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        list[(index + 1) % list.length]?.focus();
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        list[(index - 1 + list.length) % list.length]?.focus();
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        option.click();
+      }
+    });
+  });
+});
+
+dateFields.forEach((field) => {
+  const trigger = field.querySelector(".custom-date__trigger");
+  const input = field.querySelector(".custom-date__native");
+
+  trigger?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (calendarState.activeField === field && !calendarPopover.hidden) {
+      closeCalendar();
+      return;
+    }
+    openCalendar(field);
+  });
+
+  input?.addEventListener("change", () => {
+    syncDateFieldUi(field);
+    resetAndApplyFilters();
+  });
+});
+
+calendarPopover.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement) || !calendarState.activeField) {
+    return;
+  }
+
+  const navDelta = target.closest("[data-calendar-nav]")?.getAttribute("data-calendar-nav");
+  if (navDelta) {
+    calendarState.viewDate = new Date(
+      calendarState.viewDate.getFullYear(),
+      calendarState.viewDate.getMonth() + Number(navDelta),
+      1,
+    );
+    renderCalendar();
+    return;
+  }
+
+  const dayButton = target.closest(".calendar-popover__day");
+  if (dayButton instanceof HTMLButtonElement) {
+    setDateFieldValue(calendarState.activeField, dayButton.dataset.value ?? "");
+    closeCalendar();
+  }
+});
+
+calendarClear?.addEventListener("click", () => {
+  if (!calendarState.activeField) {
+    return;
+  }
+  setDateFieldValue(calendarState.activeField, "");
+  closeCalendar();
+});
+
+calendarToday?.addEventListener("click", () => {
+  if (!calendarState.activeField) {
+    return;
+  }
+  setDateFieldValue(calendarState.activeField, formatDateValue(new Date()));
+  closeCalendar();
+});
 
 rowMenuToggles.forEach((toggle) => {
   toggle.addEventListener("click", (event) => {
@@ -325,7 +1527,94 @@ rowMenuToggles.forEach((toggle) => {
 
     menu.classList.toggle("row-menu--open", !isOpen);
     toggle.setAttribute("aria-expanded", String(!isOpen));
+    if (!isOpen) {
+      menu.querySelector(".row-menu__item")?.focus();
+    }
   });
+
+  toggle.addEventListener("keydown", (event) => {
+    if (!["Enter", " ", "ArrowDown"].includes(event.key)) {
+      return;
+    }
+    event.preventDefault();
+    toggle.click();
+  });
+});
+
+confirmModal?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  if (target.hasAttribute("data-confirm-close")) {
+    closeConfirmModal();
+  }
+});
+
+confirmModalCancel?.addEventListener("click", () => {
+  closeConfirmModal();
+});
+
+detailModal?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  if (target.hasAttribute("data-detail-close")) {
+    closeDetailModal();
+  }
+});
+
+detailModalClose?.addEventListener("click", () => {
+  closeDetailModal();
+});
+
+detailAcceptButton?.addEventListener("click", () => {
+  const applicationId = detailAcceptButton.dataset.applicationId;
+  if (!applicationId) {
+    return;
+  }
+  openConfirmModal("Qabul qilish", applicationId);
+});
+
+detailRejectButton?.addEventListener("click", () => {
+  const applicationId = detailRejectButton.dataset.applicationId;
+  if (!applicationId) {
+    return;
+  }
+  openConfirmModal("Rad etish", applicationId);
+});
+
+confirmModalApprove?.addEventListener("click", () => {
+  if (!confirmState.action || !confirmState.applicationId) {
+    return;
+  }
+
+  const { action, applicationId } = confirmState;
+  confirmModalApprove.disabled = true;
+  confirmModalApprove.innerHTML = '<span class="confirm-modal__button-spinner" aria-hidden="true"></span><span>Yuborilmoqda...</span>';
+  confirmModalCancel?.setAttribute("disabled", "true");
+
+  window.setTimeout(() => {
+    closeConfirmModal();
+    closeDetailModal();
+    if (applicationId === "AR-000123") {
+      updateApplicationRowStatus(applicationId, action === "Qabul qilish" ? "qabul qilingan" : "rad etilgan");
+      showToast(
+        `${action} muvaffaqiyatli yakunlandi`,
+        `${applicationId} arizasi bo'yicha amal muvaffaqiyatli bajarildi.`,
+      );
+      return;
+    }
+
+    showToast(
+      `${action} amalga oshmadi`,
+      `${applicationId} arizasini ${action.toLowerCase()}da ERR-409 xatoligi kuzatildi. Batafsil ma'lumot uchun qo'llanma yoki bog'lanish bo'limiga murojaat qiling.`,
+      "error",
+    );
+  }, 1000);
 });
 
 resetFilters?.addEventListener("click", () => {
@@ -338,7 +1627,77 @@ resetFilters?.addEventListener("click", () => {
   if (regionFilter) {
     regionFilter.value = "all";
   }
+  if (dateFromFilter) {
+    dateFromFilter.value = "";
+  }
+  if (dateToFilter) {
+    dateToFilter.value = "";
+  }
+  customSelects.forEach(syncCustomSelectUi);
+  dateFields.forEach(syncDateFieldUi);
+  tableState.currentPage = 1;
+  closeCalendar();
   applyTableFilters();
 });
 
+paginationPrev?.addEventListener("click", () => {
+  tableState.currentPage = Math.max(1, tableState.currentPage - 1);
+  applyTableFilters();
+});
+
+paginationNext?.addEventListener("click", () => {
+  tableState.currentPage = Math.min(tableState.totalPages, tableState.currentPage + 1);
+  applyTableFilters();
+});
+
+paginationPages?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const page = Number(target.dataset.page);
+  if (!page || page === tableState.currentPage) {
+    return;
+  }
+
+  tableState.currentPage = page;
+  applyTableFilters();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    document.querySelectorAll(".header-menu").forEach((menu) => {
+      menu.classList.remove("header-menu--open");
+      const button = menu.querySelector("[data-menu-toggle]");
+      button?.setAttribute("aria-expanded", "false");
+    });
+    document.querySelectorAll(".row-menu").forEach((menu) => {
+      menu.classList.remove("row-menu--open");
+      const button = menu.querySelector(".row-menu__toggle");
+      button?.setAttribute("aria-expanded", "false");
+    });
+    customSelects.forEach((select) => {
+      select.classList.remove("custom-select--open");
+      select.querySelector(".custom-select__trigger")?.setAttribute("aria-expanded", "false");
+    });
+    rowsPerPageMenu?.classList.remove("pagination-select--open");
+    rowsPerPageTrigger?.setAttribute("aria-expanded", "false");
+    filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
+    filterToggle?.setAttribute("aria-expanded", "false");
+    closeCalendar();
+    closeConfirmModal();
+    closeDetailModal();
+  }
+});
+
+initializeTheme();
+showLoginView();
+syncPasswordToggleUi();
 applyTableFilters();
+syncRowsPerPageUi();
+customSelects.forEach(syncCustomSelectUi);
+dateFields.forEach(syncDateFieldUi);
+enhanceProcessRowActions();
+enhanceApplicationViewActions();
+showApplicationsView();
