@@ -94,24 +94,7 @@ const detailModal = document.getElementById("detailModal");
 const detailModalClose = document.getElementById("detailModalClose");
 const detailModalLoading = document.getElementById("detailModalLoading");
 const detailModalBody = document.getElementById("detailModalBody");
-const detailApplicationId = document.getElementById("detailApplicationId");
-const detailApplicationDate = document.getElementById("detailApplicationDate");
-const detailApplicationStatus = document.getElementById("detailApplicationStatus");
-const detailApplicationRegion = document.getElementById("detailApplicationRegion");
-const detailQueueNumber = document.getElementById("detailQueueNumber");
-const detailInstitution = document.getElementById("detailInstitution");
-const detailChannel = document.getElementById("detailChannel");
-const detailOperator = document.getElementById("detailOperator");
-const detailApplicantName = document.getElementById("detailApplicantName");
-const detailApplicantPinfl = document.getElementById("detailApplicantPinfl");
-const detailApplicantPhone = document.getElementById("detailApplicantPhone");
-const detailApplicantAvatar = document.getElementById("detailApplicantAvatar");
-const detailAddressRegion = document.getElementById("detailAddressRegion");
-const detailAddressDistrict = document.getElementById("detailAddressDistrict");
-const detailReason = document.getElementById("detailReason");
-const detailNote = document.getElementById("detailNote");
-const detailTimeline = document.getElementById("detailTimeline");
-const detailDocuments = document.getElementById("detailDocuments");
+const detailContent = document.getElementById("detailContent");
 const detailActions = document.getElementById("detailActions");
 const detailAcceptButton = document.getElementById("detailAcceptButton");
 const detailRejectButton = document.getElementById("detailRejectButton");
@@ -730,78 +713,6 @@ function getStatusBadgeVariant(status) {
   return { className: "", label: status };
 }
 
-function buildTimeline(status, date, operator) {
-  const steps = [
-    { title: "Ariza yaratildi", meta: `${date} kuni tizimga kiritilgan` },
-    { title: "Birlamchi tekshiruv", meta: `${operator} tomonidan hujjatlar ko'rib chiqilgan` },
-  ];
-
-  if (status === "jarayonda") {
-    steps.push({ title: "Jarayon davom etmoqda", meta: "Qo'shimcha baholash va xulosa tayyorlanmoqda" });
-  }
-  if (status === "qabul qilingan") {
-    steps.push({ title: "Komissiya qarori", meta: "Ariza ijobiy xulosa bilan qabul qilingan" });
-  }
-  if (status === "rad etilgan") {
-    steps.push({ title: "Komissiya qarori", meta: "Ariza bo'yicha rad etish qarori chiqarilgan" });
-  }
-
-  return steps;
-}
-
-function buildDocuments(status) {
-  const common = [
-    { title: "Pasport nusxasi", meta: "PDF, 1.2 MB" },
-    { title: "Tibbiy ma'lumotnoma", meta: "PDF, 860 KB" },
-  ];
-
-  if (status === "jarayonda") {
-    common.push({ title: "Yashash sharoiti dalolatnomasi", meta: "Ko'rib chiqilmoqda" });
-  } else {
-    common.push({ title: "Komissiya xulosasi", meta: "Imzolangan nusxa" });
-  }
-
-  return common;
-}
-
-function renderDetailTimeline(items) {
-  if (!detailTimeline) {
-    return;
-  }
-
-  detailTimeline.innerHTML = items
-    .map((item) => `
-      <article class="detail-timeline__item">
-        <span class="detail-timeline__dot" aria-hidden="true"></span>
-        <div class="detail-timeline__content">
-          <strong>${item.title}</strong>
-          <span>${item.meta}</span>
-        </div>
-      </article>
-    `)
-    .join("");
-}
-
-function renderDetailDocuments(items) {
-  if (!detailDocuments) {
-    return;
-  }
-
-  detailDocuments.innerHTML = items
-    .map((item) => `
-      <article class="detail-document">
-        <span class="detail-document__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M8 3.5h5l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 20V5A1.5 1.5 0 0 1 8.5 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 3.5V8h4.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-        </span>
-        <div class="detail-document__content">
-          <strong>${item.title}</strong>
-          <span>${item.meta}</span>
-        </div>
-      </article>
-    `)
-    .join("");
-}
-
 function updateApplicationRowStatus(applicationId, nextStatus) {
   const row = Array.from(applicationRows).find((item) => {
     const id = item.querySelector(".stacked-cell--application strong")?.textContent?.trim();
@@ -828,6 +739,131 @@ function updateApplicationRowStatus(applicationId, nextStatus) {
   applyTableFilters();
 }
 
+function formatReadableDate(value) {
+  if (!value || !/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+    return value || "-";
+  }
+
+  const [day, month, year] = value.split(".");
+  return `${day}.${month}.${year}`;
+}
+
+function formatStatusBadge(status) {
+  const statusClass = getStatusBadgeClass(status);
+  return `<span class="detail-status-badge ${statusClass}">${status}</span>`;
+}
+
+function buildDetailFieldGrid(items) {
+  return `
+    <div class="detail-field-grid">
+      ${items
+        .map(
+          (item) => `
+            <article class="detail-card">
+              <span>${item.label}</span>
+              <strong>${item.value || "-"}</strong>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function buildDetailPersonCard(person, avatarMarkup = "") {
+  const metaItems = Array.isArray(person.meta) ? person.meta : [];
+  return `
+    <div class="detail-person-card">
+      ${avatarMarkup}
+      <div class="detail-person-card__content">
+        <div class="detail-person-card__title-group">
+          <strong>${person.fullName || "-"}</strong>
+          <span>${person.pinfl || "-"}</span>
+        </div>
+        ${metaItems
+          .map(
+            (item) => `
+              <div class="detail-person-card__row">
+                <span>${item.label}</span>
+                <strong>${item.value || "-"}</strong>
+              </div>
+            `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function buildDetailTable(columns, rows) {
+  return `
+    <div class="detail-history-table">
+      <table>
+        <thead>
+          <tr>${columns.map((column) => `<th>${column}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${rows
+            .map(
+              (row) => `
+                <tr>${row.map((cell) => `<td>${cell || "-"}</td>`).join("")}</tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function buildDetailSection(title, content, subtitle = "") {
+  return `
+    <section class="detail-block">
+      <div class="detail-block__header">
+        <strong>${title}</strong>
+        ${subtitle ? `<span>${subtitle}</span>` : ""}
+      </div>
+      ${content}
+    </section>
+  `;
+}
+
+function buildDetailAccordion(title, content, subtitle = "", isOpen = false) {
+  return `
+    <details class="detail-accordion"${isOpen ? " open" : ""}>
+      <summary class="detail-accordion__summary">
+        <span class="detail-accordion__heading">
+          <strong>${title}</strong>
+          ${subtitle ? `<small>${subtitle}</small>` : ""}
+        </span>
+        <span class="detail-accordion__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </summary>
+      <div class="detail-accordion__content">
+        ${content}
+      </div>
+    </details>
+  `;
+}
+
+function buildDetailSummaryStrip(items) {
+  return `
+    <section class="detail-summary-strip">
+      ${items
+        .map(
+          (item) => `
+            <article class="detail-summary-chip">
+              <span>${item.label}</span>
+              <strong>${item.value || "-"}</strong>
+            </article>
+          `,
+        )
+        .join("")}
+    </section>
+  `;
+}
+
 function getApplicationById(applicationId) {
   const row = Array.from(applicationRows).find((item) => {
     const id = item.querySelector(".stacked-cell--application strong")?.textContent?.trim();
@@ -843,40 +879,130 @@ function getApplicationById(applicationId) {
   const addressCell = row.children[3]?.querySelector(".stacked-cell");
   const statusLabel = row.querySelector(".status-badge")?.textContent?.trim() ?? "";
   const numericPart = Number(applicationId.replace(/\D/g, "")) || 0;
+  const operator = ["D.Sh. Karimova", "A.B. Xasanov", "N.O. Rasulova"][numericPart % 3];
+  const diagnosisCatalog = [
+    { code: "F71*", label: "Mo'tadil darajadagi aqliy zaiflik" },
+    { code: "F72*", label: "Og'ir darajadagi aqliy zaiflik" },
+    { code: "F73*", label: "Chuqur darajadagi aqliy zaiflik" },
+    { code: "F00-F03", label: "Demensiya" },
+  ];
+  const groupCatalog = ["1-guruh", "2-guruh", "3-guruh", "NBB"];
+  const diagnosis = diagnosisCatalog[numericPart % diagnosisCatalog.length];
+  const disabilityGroup = groupCatalog[numericPart % groupCatalog.length];
+  const fullAddress = `${addressCell?.querySelector("strong")?.textContent?.trim() ?? "-"}, ${addressCell?.querySelector("span")?.textContent?.trim() ?? "-"}, Mustaqillik ko'chasi ${10 + (numericPart % 70)}-uy`;
+  const birthYear = 1968 + (numericPart % 28);
+  const birthMonth = String((numericPart % 12) + 1).padStart(2, "0");
+  const birthDay = String((numericPart % 27) + 1).padStart(2, "0");
+  const receiver = {
+    fullName: operator,
+    pinfl: `50${String(100000000000 + numericPart).slice(-12)}`,
+    position: ["Yetakchi mutaxassis", "Bosh inspektor", "Mas'ul kotib"][numericPart % 3],
+    address: `${addressCell?.querySelector("strong")?.textContent?.trim() ?? "-"}, ${addressCell?.querySelector("span")?.textContent?.trim() ?? "-"}, IHMA hududiy bo'limi`,
+  };
+  const representative = {
+    fullName: ["Karimov Ulug'bek Islomovich", "Raximova Dilfuza Abduqodirovna", "Toshpulatov Jamshid Sherzod o'g'li"][numericPart % 3],
+    pinfl: `40${String(200000000000 + numericPart).slice(-12)}`,
+    address: fullAddress,
+  };
   const institutions = {
-    "toshkent shahri": "Toshkent shahar 1-son Muruvvat internat uyi",
-    "samarqand viloyati": "Samarqand viloyat Muruvvat internat uyi",
-    "farg'ona viloyati": "Farg'ona viloyat Muruvvat internat uyi",
-    "buxoro viloyati": "Buxoro viloyat Muruvvat internat uyi",
+    "toshkent shahri": {
+      name: "Toshkent sh. Muruvvat 1 (bolalar)",
+      address: "Toshkent shahri, Yunusobod tumani, Bog'ishamol ko'chasi 12-uy",
+    },
+    "samarqand viloyati": {
+      name: "Samarqand viloyat Muruvvat internat uyi",
+      address: "Samarqand viloyati, Samarqand tumani, Registon ko'chasi 24-uy",
+    },
+    "farg'ona viloyati": {
+      name: "Farg'ona viloyat Muruvvat internat uyi",
+      address: "Farg'ona viloyati, Farg'ona shahri, Al-Farg'oniy ko'chasi 18-uy",
+    },
+    "buxoro viloyati": {
+      name: "Buxoro viloyat Muruvvat internat uyi",
+      address: "Buxoro viloyati, Buxoro shahri, Istiqlol ko'chasi 9-uy",
+    },
   };
-  const reasons = {
-    jarayonda: "Taqdim etilgan hujjatlar ko'rib chiqilmoqda va ijtimoiy holat bo'yicha yakuniy xulosa tayyorlanmoqda.",
-    "qabul qilingan": "Ariza komissiya xulosasiga asosan ma'qullangan va joylashtirish bosqichiga o'tkazilgan.",
-    "rad etilgan": "Ariza bo'yicha taqdim etilgan ma'lumotlar mezonlarga to'liq mos kelmagani sababli rad etilgan.",
+  const institution = institutions[row.getAttribute("data-region") ?? ""] ?? {
+    name: "Muruvvat internat uyi",
+    address: fullAddress,
   };
-  const notes = {
-    jarayonda: "Tibbiy ma'lumotnoma va yashash sharoitini baholash dalolatnomasi qo'shimcha tekshiruvda.",
-    "qabul qilingan": "Qabul sanasi va joylashtirish bo'yicha mas'ul xodim bilan bog'lanish rejalashtirilgan.",
-    "rad etilgan": "Ariza qayta topshirilishi uchun qo'shimcha hujjatlar to'plami tavsiya etiladi.",
-  };
+  const actResult = statusLabel.toLowerCase() === "rad etilgan" ? "Salbiy" : "Ijobiy";
+  const decisionResult = statusLabel.toLowerCase() === "rad etilgan" ? "Rad etish" : "Qabul qilish";
+  const actStatus = statusLabel.toLowerCase() === "jarayonda" ? "Jarayonda" : "Yakunlangan";
+  const decisionStatus = statusLabel.toLowerCase() === "jarayonda" ? "Kutilmoqda" : "Imzolangan";
+  const applicationDate = applicationCell?.querySelector("span")?.textContent?.trim() ?? "-";
+  const day = Number(applicationDate.split(".")[0] || 1);
+  const month = Number(applicationDate.split(".")[1] || 1);
+  const year = Number(applicationDate.split(".")[2] || 2026);
+
+  const disabilityHistory = Array.from({ length: 3 }, (_, index) => {
+    const historyDate = `${String(Math.max(1, day - index * 2)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year - index}`;
+    return {
+      id: `NG-${numericPart + index + 10}`,
+      assignedDate: historyDate,
+      validUntil: `${String(Math.max(1, day)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year - index + 1}`,
+      group: groupCatalog[(numericPart + index) % groupCatalog.length],
+      diagnosis: diagnosisCatalog[(numericPart + index) % diagnosisCatalog.length].code,
+      status: index === 0 ? "Faol" : "Arxiv",
+    };
+  });
+
+  const conclusionHistory = Array.from({ length: 3 }, (_, index) => ({
+    id: `XL-${numericPart + index + 30}`,
+    date: `${String(Math.max(1, day - index)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year - index}`,
+    institutionType: ["Maxsus maktab", "Inklyuziv ta'lim", "Uy ta'limi"][index % 3],
+    validUntil: `${String(Math.max(1, day)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year - index + 1}`,
+    status: index === 0 ? "Amalda" : "Yakunlangan",
+  }));
+
+  const applicationHistory = Array.from({ length: 3 }, (_, index) => ({
+    id: `AR-${String(numericPart - index).padStart(6, "0")}`,
+    date: `${String(Math.max(1, day - index * 3)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year - index}`,
+    status: index === 0 ? statusLabel : ["Yangi", "Jarayonda", "Qabul qilingan"][index % 3],
+  }));
+
+  const documentLogs = [
+    { operation: "Ariza yaratildi", date: `${applicationDate} 09:12`, actor: operator },
+    { operation: "Dalolatnoma biriktirildi", date: `${applicationDate} 11:40`, actor: receiver.fullName },
+    { operation: "Qaror loyihasi shakllantirildi", date: `${applicationDate} 16:05`, actor: "Komissiya kotibi" },
+  ];
 
   return {
     id: applicationCell?.querySelector("strong")?.textContent?.trim() ?? applicationId,
-    date: applicationCell?.querySelector("span")?.textContent?.trim() ?? "-",
-    applicantName: applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-",
-    applicantPinfl: applicantCell?.querySelector("span")?.textContent?.trim() ?? "-",
-    applicantPhone: `+998 90 ${String((numericPart % 9000000) + 1000000).replace(/(\d{3})(\d{2})(\d{2})/, "$1-$2-$3")}`,
+    date: applicationDate,
+    status: statusLabel || "-",
     region: addressCell?.querySelector("strong")?.textContent?.trim() ?? "-",
     district: addressCell?.querySelector("span")?.textContent?.trim() ?? "-",
+    receiver,
+    representative,
+    applicant: {
+      fullName: applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-",
+      pinfl: applicantCell?.querySelector("span")?.textContent?.trim() ?? "-",
+      birthDate: `${birthDay}.${birthMonth}.${birthYear}`,
+      disabilityGroup,
+      diagnosis: `${diagnosis.label} (${diagnosis.code})`,
+      address: fullAddress,
+      avatar: getApplicantAvatar({ applicantName: applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-", id: applicationId }),
+      meta: [],
+    },
+    institution,
+    act: {
+      id: `DL-${numericPart + 500}`,
+      date: `${String(Math.max(1, day - 1)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`,
+      result: actResult,
+      status: actStatus,
+    },
+    decision: {
+      id: `QR-${numericPart + 900}`,
+      date: `${String(Math.max(1, day)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`,
+      result: decisionResult,
+      status: decisionStatus,
+    },
+    disabilityHistory,
+    conclusionHistory,
+    applicationHistory,
+    documentLogs,
     status: statusLabel || "-",
-    queueNumber: `NAV-${String(200 + (numericPart % 500)).padStart(3, "0")}`,
-    institution: institutions[row.getAttribute("data-region") ?? ""] ?? "Muruvvat internat uyi",
-    channel: numericPart % 2 === 0 ? "Yagona portal" : "Tuman bo'limi orqali",
-    operator: ["D.Sh. Karimova", "A.B. Xasanov", "N.O. Rasulova"][numericPart % 3],
-    reason: reasons[row.getAttribute("data-status") ?? "jarayonda"] ?? "-",
-    note: notes[row.getAttribute("data-status") ?? "jarayonda"] ?? "-",
-    timeline: buildTimeline(row.getAttribute("data-status") ?? "jarayonda", applicationCell?.querySelector("span")?.textContent?.trim() ?? "-", ["D.Sh. Karimova", "A.B. Xasanov", "N.O. Rasulova"][numericPart % 3]),
-    documents: buildDocuments(row.getAttribute("data-status") ?? "jarayonda"),
   };
 }
 
@@ -884,6 +1010,9 @@ function closeDetailModal() {
   detailModal?.setAttribute("hidden", "");
   detailModalLoading?.setAttribute("hidden", "");
   detailModalBody?.setAttribute("hidden", "");
+  if (detailContent) {
+    detailContent.innerHTML = "";
+  }
 }
 
 async function openApplicationDetail(applicationId) {
@@ -898,64 +1027,119 @@ async function openApplicationDetail(applicationId) {
   detailModalLoading?.removeAttribute("hidden");
   detailModalBody?.setAttribute("hidden", "");
 
-  await sleep(1000);
+  await sleep(200);
 
-  if (detailApplicationId) {
-    detailApplicationId.textContent = application.id;
+  if (detailContent) {
+    detailContent.innerHTML = [
+      buildDetailSummaryStrip([
+        { label: "Ariza ID", value: application.id },
+        { label: "Sana", value: formatReadableDate(application.date) },
+        { label: "Status", value: formatStatusBadge(application.status) },
+        { label: "Ariza beruvchi", value: application.applicant.fullName },
+        { label: "Internat uyi", value: application.institution.name },
+      ]),
+      `<div class="detail-columns">
+        <div class="detail-columns__main">
+          ${buildDetailSection(
+            "Shaxslar ma'lumotlari",
+            buildDetailFieldGrid([
+              { label: "Qabul qiluvchi FIO", value: application.receiver.fullName },
+              { label: "Qabul qiluvchi PINFL", value: application.receiver.pinfl },
+              { label: "Lavozim", value: application.receiver.position },
+              { label: "Qabul qiluvchi manzili", value: application.receiver.address },
+              { label: "Vakil FIO", value: application.representative.fullName },
+              { label: "Vakil PINFL", value: application.representative.pinfl },
+              { label: "Vakil manzili", value: application.representative.address },
+            ]),
+          )}
+          ${buildDetailSection(
+            "Ariza beruvchi",
+            buildDetailPersonCard(application.applicant, `<img class="detail-person-card__avatar" src="${application.applicant.avatar}" alt="${application.applicant.fullName} rasmi" />`) +
+              buildDetailFieldGrid([
+                { label: "Tug'ilgan sanasi", value: application.applicant.birthDate },
+                { label: "Nogironlik guruhi", value: application.applicant.disabilityGroup },
+                { label: "Tashxisi", value: application.applicant.diagnosis },
+                { label: "Manzil", value: application.applicant.address },
+              ]),
+          )}
+        </div>
+        <aside class="detail-columns__side">
+          ${buildDetailSection(
+            "Internat uyi ma'lumoti",
+            buildDetailFieldGrid([
+              { label: "Nomi", value: application.institution.name },
+              { label: "Manzil", value: application.institution.address },
+            ]),
+          )}
+          ${buildDetailSection(
+            "Dalolatnoma ma'lumoti",
+            buildDetailFieldGrid([
+              { label: "ID", value: application.act.id },
+              { label: "Sana", value: application.act.date },
+              { label: "Natija", value: application.act.result },
+              { label: "Status", value: application.act.status },
+            ]),
+          )}
+          ${buildDetailSection(
+            "Qaror ma'lumoti",
+            buildDetailFieldGrid([
+              { label: "ID", value: application.decision.id },
+              { label: "Sana", value: application.decision.date },
+              { label: "Natija", value: application.decision.result },
+              { label: "Status", value: application.decision.status },
+            ]),
+          )}
+        </aside>
+      </div>`,
+      buildDetailAccordion(
+        "Nogironlik tarixi",
+        buildDetailTable(
+          ["ID", "Ta'yinlangan sana", "Amal qilish muddati", "Nogironlik guruhi", "Tashxisi", "Status"],
+          application.disabilityHistory.map((item) => [
+            item.id,
+            item.assignedDate,
+            item.validUntil,
+            item.group,
+            item.diagnosis,
+            item.status,
+          ]),
+        ),
+        `${application.disabilityHistory.length} ta yozuv`,
+        true,
+      ),
+      buildDetailAccordion(
+        "Xulosalar tarixi",
+        buildDetailTable(
+          ["ID", "Sana", "Ta'lim muassasasi turi", "Amal qilish muddati", "Status"],
+          application.conclusionHistory.map((item) => [
+            item.id,
+            item.date,
+            item.institutionType,
+            item.validUntil,
+            item.status,
+          ]),
+        ),
+        `${application.conclusionHistory.length} ta yozuv`,
+      ),
+      buildDetailAccordion(
+        "Arizalar tarixi",
+        buildDetailTable(
+          ["ID", "Sana", "Status"],
+          application.applicationHistory.map((item) => [item.id, item.date, item.status]),
+        ),
+        `${application.applicationHistory.length} ta yozuv`,
+      ),
+      buildDetailAccordion(
+        "Hujjat tarixi (logs)",
+        buildDetailTable(
+          ["Amaliyot", "Sana", "Amaliyotni bajaruvchi"],
+          application.documentLogs.map((item) => [item.operation, item.date, item.actor]),
+        ),
+        `${application.documentLogs.length} ta yozuv`,
+      ),
+    ].join("");
   }
-  if (detailApplicationDate) {
-    detailApplicationDate.textContent = application.date;
-  }
-  if (detailApplicationStatus) {
-    detailApplicationStatus.textContent = application.status;
-    detailApplicationStatus.className = "detail-status-badge";
-    const statusClass = getStatusBadgeClass(application.status);
-    if (statusClass) {
-      detailApplicationStatus.classList.add(statusClass);
-    }
-  }
-  if (detailApplicationRegion) {
-    detailApplicationRegion.textContent = application.region;
-  }
-  if (detailQueueNumber) {
-    detailQueueNumber.textContent = application.queueNumber;
-  }
-  if (detailInstitution) {
-    detailInstitution.textContent = application.institution;
-  }
-  if (detailChannel) {
-    detailChannel.textContent = application.channel;
-  }
-  if (detailOperator) {
-    detailOperator.textContent = application.operator;
-  }
-  if (detailApplicantName) {
-    detailApplicantName.textContent = application.applicantName;
-  }
-  if (detailApplicantPinfl) {
-    detailApplicantPinfl.textContent = application.applicantPinfl;
-  }
-  if (detailApplicantPhone) {
-    detailApplicantPhone.textContent = application.applicantPhone;
-  }
-  if (detailApplicantAvatar) {
-    detailApplicantAvatar.src = getApplicantAvatar(application);
-    detailApplicantAvatar.alt = `${application.applicantName} rasmi`;
-  }
-  if (detailAddressRegion) {
-    detailAddressRegion.textContent = application.region;
-  }
-  if (detailAddressDistrict) {
-    detailAddressDistrict.textContent = application.district;
-  }
-  if (detailReason) {
-    detailReason.textContent = application.reason;
-  }
-  if (detailNote) {
-    detailNote.textContent = application.note;
-  }
-  renderDetailTimeline(application.timeline);
-  renderDetailDocuments(application.documents);
+
   if (detailActions) {
     detailActions.hidden = application.status.toLowerCase() !== "jarayonda";
   }
@@ -1190,6 +1374,46 @@ async function navigateToView(title) {
   showDisabilityReportView();
 }
 
+function getHashForTitle(title) {
+  if (title === "Arizalar - Arizalar ro'yxati") {
+    return "#applications";
+  }
+
+  if (title === "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot") {
+    return "#/reports/disabilityinfo";
+  }
+
+  return "";
+}
+
+function getTitleFromHash(hashValue) {
+  if (hashValue === "#applications") {
+    return "Arizalar - Arizalar ro'yxati";
+  }
+
+  if (hashValue === "#/reports/disabilityinfo") {
+    return "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot";
+  }
+
+  return "";
+}
+
+function syncInitialRouteView() {
+  const routeTitle = getTitleFromHash(window.location.hash);
+
+  if (routeTitle === "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot") {
+    showDisabilityReportView();
+    return;
+  }
+
+  if (routeTitle === "Arizalar - Arizalar ro'yxati") {
+    showApplicationsView();
+    return;
+  }
+
+  showApplicationsView();
+}
+
 function applyReportFilters() {
   const regionValue = reportRegionFilter?.value ?? "all";
   const compatibilityValue = reportCompatibilityFilter?.value ?? "all";
@@ -1267,6 +1491,8 @@ if (loginForm && loginUsername && loginPassword && loginSubmit) {
       loginSubmit.disabled = false;
       loginSubmit.textContent = "Kirish";
       showAppView();
+      syncInitialRouteView();
+      applyRouteFromHash();
       showToast("Xush kelibsiz", "Muruvvat moduliga muvaffaqiyatli kirildi.");
       return;
     }
@@ -1474,56 +1700,73 @@ navToggles.forEach((toggle) => {
   });
 });
 
+function syncPageHeading(title) {
+  if (!pageTitle || !title) {
+    return;
+  }
+
+  const parts = title.split(" - ");
+  pageTitle.textContent = parts[parts.length - 1];
+  if (pageBreadcrumb) {
+    pageBreadcrumb.textContent = parts.length > 1 ? parts.join(" / ") : "Asosiy menyu";
+  }
+}
+
+function syncActiveNavigation(link) {
+  document.querySelectorAll(".nav-item--active").forEach((item) => {
+    item.classList.remove("nav-item--active");
+  });
+
+  document.querySelectorAll(".nav-subitem--active").forEach((item) => {
+    item.classList.remove("nav-subitem--active");
+  });
+
+  if (!link) {
+    return;
+  }
+
+  if (link.classList.contains("nav-subitem")) {
+    link.classList.add("nav-subitem--active");
+    const group = link.closest(".nav-group");
+    if (group) {
+      document.querySelectorAll(".nav-group").forEach((item) => {
+        if (item !== group) {
+          item.classList.remove("nav-group--open");
+          const button = item.querySelector(".nav-item--toggle");
+          if (button) {
+            button.setAttribute("aria-expanded", "false");
+          }
+        }
+      });
+
+      group.classList.add("nav-group--open");
+      const button = group.querySelector(".nav-item--toggle");
+      if (button) {
+        button.setAttribute("aria-expanded", "true");
+      }
+    }
+  } else {
+    link.classList.add("nav-item--active");
+  }
+}
+
 pageLinks.forEach((link) => {
   link.addEventListener("click", async (event) => {
     event.preventDefault();
 
     const title = link.getAttribute("data-page-title");
-    if (pageTitle && title) {
-      const parts = title.split(" - ");
-      pageTitle.textContent = parts[parts.length - 1];
-      if (pageBreadcrumb) {
-        pageBreadcrumb.textContent = parts.length > 1 ? parts.join(" / ") : "Asosiy menyu";
-      }
-    }
-
-    document.querySelectorAll(".nav-item--active").forEach((item) => {
-      item.classList.remove("nav-item--active");
-    });
-
-    document.querySelectorAll(".nav-subitem--active").forEach((item) => {
-      item.classList.remove("nav-subitem--active");
-    });
-
-    if (link.classList.contains("nav-subitem")) {
-      link.classList.add("nav-subitem--active");
-      const group = link.closest(".nav-group");
-      if (group) {
-        document.querySelectorAll(".nav-group").forEach((item) => {
-          if (item !== group) {
-            item.classList.remove("nav-group--open");
-            const button = item.querySelector(".nav-item--toggle");
-            if (button) {
-              button.setAttribute("aria-expanded", "false");
-            }
-          }
-        });
-
-        group.classList.add("nav-group--open");
-        const button = group.querySelector(".nav-item--toggle");
-        if (button) {
-          button.setAttribute("aria-expanded", "true");
-        }
-      }
-    } else {
-      link.classList.add("nav-item--active");
-    }
+    syncPageHeading(title);
+    syncActiveNavigation(link);
 
     if (window.innerWidth <= 1180) {
       sidebar?.classList.remove("sidebar--open");
     }
 
     if (title) {
+      const nextHash = getHashForTitle(title);
+      if (nextHash && window.location.hash !== nextHash) {
+        window.location.hash = nextHash;
+      }
       await navigateToView(title);
     }
   });
@@ -2247,6 +2490,7 @@ document.addEventListener("keydown", (event) => {
 
 initializeTheme();
 showAppView();
+syncInitialRouteView();
 syncPasswordToggleUi();
 applyTableFilters();
 applyReportFilters();
@@ -2256,4 +2500,24 @@ customSelects.forEach(syncCustomSelectUi);
 dateFields.forEach(syncDateFieldUi);
 enhanceProcessRowActions();
 enhanceApplicationViewActions();
-showApplicationsView();
+
+async function applyRouteFromHash() {
+  const routeTitle = getTitleFromHash(window.location.hash);
+  if (!routeTitle) {
+    syncPageHeading("Arizalar - Arizalar ro'yxati");
+    showApplicationsView();
+    return;
+  }
+
+  const targetLink = document.querySelector(`[data-page-title="${routeTitle}"]`);
+  syncPageHeading(routeTitle);
+  syncActiveNavigation(targetLink instanceof HTMLElement ? targetLink : null);
+
+  await navigateToView(routeTitle);
+}
+
+window.addEventListener("hashchange", () => {
+  applyRouteFromHash();
+});
+
+applyRouteFromHash();
