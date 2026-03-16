@@ -51,7 +51,35 @@ const tableEmptyRow = document.getElementById("tableEmptyRow");
 const downloadActions = document.querySelectorAll(".row-menu__item:last-child");
 const customSelects = document.querySelectorAll("[data-custom-select]");
 const exportButton = document.getElementById("exportButton");
+const reportFilterToggle = document.getElementById("reportFilterToggle");
+const reportFilterMenu = document.getElementById("reportFilterMenu");
+const reportFilterActiveCount = document.getElementById("reportFilterActiveCount");
+const reportColumnsToggle = document.getElementById("reportColumnsToggle");
+const reportColumnsMenu = document.getElementById("reportColumnsMenu");
+const reportColumnInputs = document.querySelectorAll("[data-report-column-toggle]");
+const reportRegionFilter = document.getElementById("reportRegionFilter");
+const reportCompatibilityFilter = document.getElementById("reportCompatibilityFilter");
+const reportDiagnosisFilter = document.getElementById("reportDiagnosisFilter");
+const reportDisabilityGroupFilter = document.getElementById("reportDisabilityGroupFilter");
+const reportGenderFilter = document.getElementById("reportGenderFilter");
+const reportAgeFilter = document.getElementById("reportAgeFilter");
+const reportDateFilter = document.getElementById("reportDateFilter");
+const reportDatePicker = document.getElementById("reportDatePicker");
+const reportSnapshotDate = document.getElementById("reportSnapshotDate");
+const reportSnapshotDateTrigger = document.getElementById("reportSnapshotDateTrigger");
+const reportSnapshotDateNative = document.getElementById("reportSnapshotDateNative");
+const reportResetFilters = document.getElementById("reportResetFilters");
+const reportExportButton = document.getElementById("reportExportButton");
 const applicationsListView = document.getElementById("applicationsListView");
+const disabilityReportView = document.getElementById("disabilityReportView");
+const reportTableWrap = document.getElementById("reportTableWrap");
+const reportTableBody = document.getElementById("reportTableBody");
+const reportTable = reportTableBody?.closest(".report-table");
+const reportScope = document.getElementById("reportScope");
+const reportScopeBack = document.getElementById("reportScopeBack");
+const reportScopePath = document.getElementById("reportScopePath");
+const reportSummaryBar = document.getElementById("reportSummaryBar");
+const reportFrozenColumn = document.getElementById("reportFrozenColumn");
 const emptyContentView = document.getElementById("emptyContentView");
 const emptyViewTitle = document.getElementById("emptyViewTitle");
 const emptyViewDescription = document.getElementById("emptyViewDescription");
@@ -174,6 +202,262 @@ function formatDateValue(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function formatTypedDate(rawValue) {
+  const digits = rawValue.replace(/\D/g, "").slice(0, 8);
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+  return [day, month, year].filter(Boolean).join(".");
+}
+
+function parseTypedDate(value) {
+  const [day, month, year] = value.split(".");
+  if (!day || !month || !year || year.length !== 4) {
+    return "";
+  }
+
+  const parsed = new Date(`${year}-${month}-${day}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  if (
+    parsed.getDate() !== Number(day) ||
+    parsed.getMonth() + 1 !== Number(month) ||
+    parsed.getFullYear() !== Number(year)
+  ) {
+    return "";
+  }
+
+  return formatDateValue(parsed);
+}
+
+function parseReportNumber(value) {
+  return Number(String(value).replace(/[^\d]/g, "")) || 0;
+}
+
+function formatReportNumber(value) {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function toRegionKey(name) {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function splitIntegerByRatios(total, ratios) {
+  const rawValues = ratios.map((ratio) => total * ratio);
+  const floored = rawValues.map((value) => Math.floor(value));
+  let remainder = total - floored.reduce((sum, value) => sum + value, 0);
+  const indexes = rawValues
+    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((left, right) => right.fraction - left.fraction);
+
+  for (let index = 0; index < indexes.length && remainder > 0; index += 1) {
+    floored[indexes[index].index] += 1;
+    remainder -= 1;
+  }
+
+  return floored;
+}
+
+function extractReportRowData(row, fallbackKey = "") {
+  const cells = Array.from(row.querySelectorAll("td"));
+  if (!cells.length) {
+    return null;
+  }
+
+  const name = cells[0].textContent.trim();
+
+  return {
+    key: row.getAttribute("data-region") ?? fallbackKey ?? toRegionKey(name),
+    name,
+    totals: cells.slice(1).map((cell) => parseReportNumber(cell.textContent)),
+  };
+}
+
+const reportDistrictTemplates = {
+  qoraqalpogiston: ["Nukus shahri", "Beruniy tumani", "To'rtko'l tumani"],
+  andijon: ["Andijon shahri", "Asaka tumani", "Xo'jaobod tumani"],
+  buxoro: ["Buxoro shahri", "G'ijduvon tumani", "Kogon shahri"],
+  jizzax: ["Jizzax shahri", "Zomin tumani", "G'allaorol tumani"],
+  qashqadaryo: ["Qarshi shahri", "Shahrisabz shahri", "Koson tumani"],
+  navoiy: ["Navoiy shahri", "Karmana tumani", "Zarafshon shahri"],
+  namangan: ["Namangan shahri", "Chortoq tumani", "Pop tumani"],
+  samarqand: ["Samarqand shahri", "Kattaqo'rg'on shahri", "Pastdarg'om tumani"],
+  sirdaryo: ["Guliston shahri", "Yangiyer shahri", "Sardoba tumani"],
+  surxondaryo: ["Termiz shahri", "Denov tumani", "Jarqo'rg'on tumani"],
+  "toshkent-vil": ["Nurafshon shahri", "Chirchiq shahri", "Zangiota tumani"],
+  fargona: ["Farg'ona shahri", "Qo'qon shahri", "Marg'ilon shahri"],
+  xorazm: ["Urganch shahri", "Xiva shahri", "Hazorasp tumani"],
+  "toshkent-sh": ["Yunusobod tumani", "Olmazor tumani", "Chilonzor tumani"],
+};
+
+const reportState = {
+  level: "region",
+  selectedRegionKey: null,
+};
+
+const reportColumnKeys = [
+  "jami",
+  "f00f03",
+  "f71",
+  "f72",
+  "f73",
+  "group1",
+  "group2",
+  "group3",
+  "nbb",
+  "male",
+  "female",
+  "age0_3",
+  "age3_7",
+  "age7_18",
+  "age18_55_60",
+  "age55_60",
+];
+
+const reportColumnGroups = {
+  diagnosis: ["f00f03", "f71", "f72", "f73"],
+  disability: ["group1", "group2", "group3", "nbb"],
+  gender: ["male", "female"],
+  age: ["age0_3", "age3_7", "age7_18", "age18_55_60", "age55_60"],
+};
+
+const reportVisibleColumns = new Set(reportColumnKeys);
+
+const initialReportRows = reportTableBody ? Array.from(reportTableBody.querySelectorAll("tr")) : [];
+const reportSummaryData = initialReportRows.length ? extractReportRowData(initialReportRows[0], "summary") : null;
+const reportRegionData = initialReportRows.slice(1).map((row, index) => extractReportRowData(row, `region-${index + 1}`)).filter(Boolean);
+
+function generateDistrictRows(region) {
+  const names = reportDistrictTemplates[region.key] ?? [
+    `${region.name} - 1-hudud`,
+    `${region.name} - 2-hudud`,
+    `${region.name} - 3-hudud`,
+  ];
+  const ratios = [0.42, 0.33, 0.25];
+
+  return names.map((name, index) => ({
+    key: `${region.key}-${index + 1}`,
+    name,
+    totals: region.totals.map((total) => splitIntegerByRatios(total, ratios)[index]),
+  }));
+}
+
+const reportData = reportRegionData.map((region) => ({
+  ...region,
+  districts: generateDistrictRows(region),
+}));
+
+function getSelectedReportRegion() {
+  return reportData.find((region) => region.key === reportState.selectedRegionKey) ?? null;
+}
+
+function updateReportScope() {
+  if (!reportScope || !reportScopePath) {
+    return;
+  }
+
+  const selectedRegion = getSelectedReportRegion();
+  const isDistrictLevel = reportState.level === "district" && selectedRegion;
+  reportScope.hidden = !isDistrictLevel;
+  reportScopePath.textContent = isDistrictLevel
+    ? `Respublika jami / ${selectedRegion.name}`
+    : "Respublika jami";
+}
+
+function getVisibleReportRows() {
+  if (reportState.level === "district") {
+    const selectedRegion = getSelectedReportRegion();
+    return selectedRegion?.districts ?? [];
+  }
+
+  const regionValue = reportRegionFilter?.value ?? "all";
+  return regionValue === "all" ? reportData : reportData.filter((region) => region.key === regionValue);
+}
+
+function syncReportColumnVisibility() {
+  if (!reportTable) {
+    return;
+  }
+
+  reportTable.querySelectorAll("[data-col]").forEach((cell) => {
+    const columnKey = cell.getAttribute("data-col");
+    const isHidden = columnKey !== "region" && !reportVisibleColumns.has(columnKey);
+    cell.toggleAttribute("data-report-hidden", isHidden);
+  });
+
+  Object.entries(reportColumnGroups).forEach(([groupKey, columns]) => {
+    const groupCell = reportTable.querySelector(`[data-group="${groupKey}"]`);
+    if (!(groupCell instanceof HTMLTableCellElement)) {
+      return;
+    }
+
+    const visibleCount = columns.filter((columnKey) => reportVisibleColumns.has(columnKey)).length;
+    groupCell.toggleAttribute("data-report-hidden", visibleCount === 0);
+    if (visibleCount > 0) {
+      groupCell.colSpan = visibleCount;
+    }
+  });
+}
+
+function renderReportTable() {
+  if (!reportTableBody || !reportSummaryData) {
+    return;
+  }
+
+  const rows = getVisibleReportRows();
+  const selectedRegion = getSelectedReportRegion();
+  const summarySource =
+    reportState.level === "district" && selectedRegion
+      ? selectedRegion
+      : reportSummaryData;
+  const summaryLabel =
+    reportState.level === "district" && selectedRegion
+      ? `${selectedRegion.name} bo'yicha jami`
+      : reportSummaryData.name;
+  const summaryCells = summarySource.totals
+    .map((value, index) => `<td data-col="${reportColumnKeys[index]}">${formatReportNumber(value)}</td>`)
+    .join("");
+  const bodyMarkup = rows
+    .map((row) => {
+      const firstCell =
+        reportState.level === "region"
+          ? `<button class="report-region-button" type="button" data-report-region="${escapeHtml(row.key)}">${escapeHtml(row.name)}</button>`
+          : `<span>${escapeHtml(row.name)}</span>`;
+      const valueCells = row.totals
+        .map((value, index) => `<td data-col="${reportColumnKeys[index]}">${formatReportNumber(value)}</td>`)
+        .join("");
+      return `<tr data-region="${escapeHtml(row.key)}"><td data-col="region">${firstCell}</td>${valueCells}</tr>`;
+    })
+    .join("");
+
+  reportTableBody.innerHTML = `
+    <tr class="report-table__summary">
+      <td data-col="region">${escapeHtml(summaryLabel)}</td>
+      ${summaryCells}
+    </tr>
+    ${bodyMarkup}
+  `;
+
+  updateReportScope();
+  syncReportColumnVisibility();
 }
 
 function showToast(title, description, variant = "success") {
@@ -341,7 +625,18 @@ function setDateFieldValue(field, value) {
   }
 
   input.value = value;
+  if (input.id === "reportSnapshotDateNative") {
+    reportSnapshotDate.value = value ? formatDateLabel(value) : "";
+    return;
+  }
+
   syncDateFieldUi(field);
+
+  if (input.id === "reportDateFilter") {
+    applyReportFilters();
+    return;
+  }
+
   applyTableFilters();
 }
 
@@ -800,38 +1095,67 @@ function renderPagination(totalPages) {
   });
 }
 
-function setExportLoadingState(isLoading) {
-  if (!exportButton) {
+function setIconButtonLoadingState(button, isLoading, defaultIconMarkup, defaultLabel, loadingLabel) {
+  if (!button) {
     return;
   }
 
-  const icon = exportButton.querySelector("svg");
-  const label = exportButton.querySelector(".sr-only");
+  const icon = button.querySelector("svg");
+  const label = button.querySelector(".sr-only");
 
   if (!icon || !label) {
     return;
   }
 
   if (isLoading) {
-    exportButton.classList.add("table-action--loading");
+    button.classList.add("table-action--loading");
     icon.innerHTML = '<circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.6" opacity="0.25"/><path d="M19 12a7 7 0 0 0-7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>';
-    label.textContent = "Yuklanmoqda...";
+    label.textContent = loadingLabel;
     return;
   }
 
-  exportButton.classList.remove("table-action--loading");
-  icon.innerHTML = '<path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
-  label.textContent = "Eksport";
+  button.classList.remove("table-action--loading");
+  icon.innerHTML = defaultIconMarkup;
+  label.textContent = defaultLabel;
+}
+
+function setExportLoadingState(isLoading) {
+  setIconButtonLoadingState(
+    exportButton,
+    isLoading,
+    '<path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    "Eksport",
+    "Yuklanmoqda...",
+  );
+}
+
+function setReportExportLoadingState(isLoading) {
+  setIconButtonLoadingState(
+    reportExportButton,
+    isLoading,
+    '<path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    "Hisobotni yuklab olish",
+    "Yuklanmoqda...",
+  );
 }
 
 function showApplicationsView() {
   applicationsListView?.removeAttribute("hidden");
+  disabilityReportView?.setAttribute("hidden", "");
+  emptyContentView?.setAttribute("hidden", "");
+  contentLoader?.setAttribute("hidden", "");
+}
+
+function showDisabilityReportView() {
+  applicationsListView?.setAttribute("hidden", "");
+  disabilityReportView?.removeAttribute("hidden");
   emptyContentView?.setAttribute("hidden", "");
   contentLoader?.setAttribute("hidden", "");
 }
 
 function showEmptyView(title) {
   applicationsListView?.setAttribute("hidden", "");
+  disabilityReportView?.setAttribute("hidden", "");
   contentLoader?.setAttribute("hidden", "");
   emptyContentView?.removeAttribute("hidden");
   if (emptyViewTitle) {
@@ -844,18 +1168,61 @@ function showEmptyView(title) {
 
 async function navigateToView(title) {
   const isApplicationsList = title === "Arizalar - Arizalar ro'yxati";
+  const isDisabilityReport = title === "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot";
 
-  if (!isApplicationsList) {
+  if (!isApplicationsList && !isDisabilityReport) {
     showEmptyView(title.split(" - ").pop() ?? title);
     return;
   }
 
   emptyContentView?.setAttribute("hidden", "");
   applicationsListView?.setAttribute("hidden", "");
+  disabilityReportView?.setAttribute("hidden", "");
   contentLoader?.removeAttribute("hidden");
-  await sleep(1000);
-  showApplicationsView();
-  applyTableFilters();
+  await sleep(200);
+
+  if (isApplicationsList) {
+    showApplicationsView();
+    applyTableFilters();
+    return;
+  }
+
+  showDisabilityReportView();
+}
+
+function applyReportFilters() {
+  const regionValue = reportRegionFilter?.value ?? "all";
+  const compatibilityValue = reportCompatibilityFilter?.value ?? "all";
+  const diagnosisValue = reportDiagnosisFilter?.value ?? "all";
+  const groupValue = reportDisabilityGroupFilter?.value ?? "all";
+  const genderValue = reportGenderFilter?.value ?? "all";
+  const ageValue = reportAgeFilter?.value ?? "all";
+  const dateValue = reportDateFilter?.value ?? "";
+
+  const activeCount =
+    (regionValue !== "all" ? 1 : 0) +
+    (compatibilityValue !== "all" ? 1 : 0) +
+    (diagnosisValue !== "all" ? 1 : 0) +
+    (groupValue !== "all" ? 1 : 0) +
+    (genderValue !== "all" ? 1 : 0) +
+    (ageValue !== "all" ? 1 : 0) +
+    (dateValue ? 1 : 0);
+
+  if (reportFilterToggle) {
+    reportFilterToggle.classList.toggle("table-action--active", activeCount > 0);
+  }
+
+  if (reportFilterActiveCount) {
+    reportFilterActiveCount.hidden = activeCount === 0;
+    reportFilterActiveCount.textContent = String(activeCount);
+  }
+
+  renderReportTable();
+  syncReportFrozenColumn();
+}
+
+function syncReportFrozenColumn() {
+  return;
 }
 
 function setThemeIcon(isDark) {
@@ -894,7 +1261,7 @@ if (loginForm && loginUsername && loginPassword && loginSubmit) {
     loginSubmit.disabled = true;
     loginSubmit.innerHTML = '<span class="login-submit__spinner" aria-hidden="true"></span><span>Kirilmoqda...</span>';
 
-    await sleep(1000);
+      await sleep(200);
 
     if (username === "admin" && password === "muruvvat123") {
       loginSubmit.disabled = false;
@@ -1039,6 +1406,22 @@ document.addEventListener("click", (event) => {
     if (filterContainer && !filterContainer.contains(target)) {
       filterContainer.classList.remove("table-menu--open");
       filterToggle.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  if (reportFilterToggle && reportFilterMenu) {
+    const reportFilterContainer = reportFilterToggle.closest(".table-menu");
+    if (reportFilterContainer && !reportFilterContainer.contains(target)) {
+      reportFilterContainer.classList.remove("table-menu--open");
+      reportFilterToggle.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  if (reportColumnsToggle && reportColumnsMenu) {
+    const reportColumnsContainer = reportColumnsToggle.closest(".table-menu");
+    if (reportColumnsContainer && !reportColumnsContainer.contains(target)) {
+      reportColumnsContainer.classList.remove("table-menu--open");
+      reportColumnsToggle.setAttribute("aria-expanded", "false");
     }
   }
 
@@ -1307,6 +1690,17 @@ exportButton?.addEventListener("click", async () => {
   showToast("Eksport yakunlandi", "Ro'yxat fayl ko'rinishida tayyorlandi.");
 });
 
+reportExportButton?.addEventListener("click", async () => {
+  if (reportExportButton.classList.contains("table-action--loading")) {
+    return;
+  }
+
+  setReportExportLoadingState(true);
+  await sleep(200);
+  setReportExportLoadingState(false);
+  showToast("Hisobot yuklandi", "Hisobot fayli tayyor bo'ldi.");
+});
+
 function syncRowsPerPageUi() {
   const selectedValue = rowsPerPage?.value ?? "10";
 
@@ -1349,6 +1743,34 @@ if (filterToggle && filterMenu) {
     const isOpen = filterContainer.classList.contains("table-menu--open");
     filterContainer.classList.toggle("table-menu--open", !isOpen);
     filterToggle.setAttribute("aria-expanded", String(!isOpen));
+  });
+}
+
+if (reportFilterToggle && reportFilterMenu) {
+  reportFilterToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const filterContainer = reportFilterToggle.closest(".table-menu");
+    if (!filterContainer) {
+      return;
+    }
+
+    const isOpen = filterContainer.classList.contains("table-menu--open");
+    filterContainer.classList.toggle("table-menu--open", !isOpen);
+    reportFilterToggle.setAttribute("aria-expanded", String(!isOpen));
+  });
+}
+
+if (reportColumnsToggle && reportColumnsMenu) {
+  reportColumnsToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const columnsContainer = reportColumnsToggle.closest(".table-menu");
+    if (!columnsContainer) {
+      return;
+    }
+
+    const isOpen = columnsContainer.classList.contains("table-menu--open");
+    columnsContainer.classList.toggle("table-menu--open", !isOpen);
+    reportColumnsToggle.setAttribute("aria-expanded", String(!isOpen));
   });
 }
 
@@ -1464,8 +1886,138 @@ dateFields.forEach((field) => {
 
   input?.addEventListener("change", () => {
     syncDateFieldUi(field);
+    if (input.id === "reportDateFilter") {
+      applyReportFilters();
+      return;
+    }
     resetAndApplyFilters();
   });
+});
+
+[
+  reportRegionFilter,
+  reportCompatibilityFilter,
+  reportDiagnosisFilter,
+  reportDisabilityGroupFilter,
+  reportGenderFilter,
+  reportAgeFilter,
+].forEach((select) => {
+  select?.addEventListener("change", applyReportFilters);
+});
+
+reportDateFilter?.addEventListener("change", applyReportFilters);
+
+if (reportSnapshotDate && !reportSnapshotDate.value) {
+  reportSnapshotDate.value = formatDateLabel(formatDateValue(new Date()));
+}
+
+if (reportSnapshotDateNative && !reportSnapshotDateNative.value) {
+  reportSnapshotDateNative.value = formatDateValue(new Date());
+}
+
+reportSnapshotDate?.addEventListener("input", () => {
+  reportSnapshotDate.value = formatTypedDate(reportSnapshotDate.value);
+  const parsedValue = parseTypedDate(reportSnapshotDate.value);
+  reportSnapshotDateNative.value = parsedValue;
+});
+
+reportSnapshotDate?.addEventListener("blur", () => {
+  const parsedValue = parseTypedDate(reportSnapshotDate.value);
+  if (parsedValue) {
+    reportSnapshotDate.value = formatDateLabel(parsedValue);
+    reportSnapshotDateNative.value = parsedValue;
+  }
+});
+
+function openReportSnapshotCalendar() {
+  if (!reportDatePicker) {
+    return;
+  }
+
+  const parsedValue = parseTypedDate(reportSnapshotDate?.value ?? "");
+  if (parsedValue) {
+    reportSnapshotDateNative.value = parsedValue;
+  }
+
+  if (calendarState.activeField === reportDatePicker && !calendarPopover.hidden) {
+    closeCalendar();
+    return;
+  }
+
+  openCalendar(reportDatePicker);
+}
+
+reportSnapshotDateTrigger?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  openReportSnapshotCalendar();
+});
+
+reportSnapshotDate?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  openReportSnapshotCalendar();
+});
+
+reportSnapshotDateNative?.addEventListener("change", () => {
+  if (!reportSnapshotDateNative.value) {
+    reportSnapshotDate.value = "";
+    return;
+  }
+
+  reportSnapshotDate.value = formatDateLabel(reportSnapshotDateNative.value);
+});
+
+reportResetFilters?.addEventListener("click", () => {
+  if (reportRegionFilter) reportRegionFilter.value = "all";
+  if (reportCompatibilityFilter) reportCompatibilityFilter.value = "all";
+  if (reportDiagnosisFilter) reportDiagnosisFilter.value = "all";
+  if (reportDisabilityGroupFilter) reportDisabilityGroupFilter.value = "all";
+  if (reportGenderFilter) reportGenderFilter.value = "all";
+  if (reportAgeFilter) reportAgeFilter.value = "all";
+  if (reportDateFilter) reportDateFilter.value = "";
+  reportState.level = "region";
+  reportState.selectedRegionKey = null;
+  customSelects.forEach(syncCustomSelectUi);
+  dateFields.forEach(syncDateFieldUi);
+  applyReportFilters();
+});
+
+reportScopeBack?.addEventListener("click", () => {
+  reportState.level = "region";
+  reportState.selectedRegionKey = null;
+  renderReportTable();
+});
+
+reportColumnInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    const columnKey = input.getAttribute("data-report-column-toggle");
+    if (!columnKey) {
+      return;
+    }
+
+    if (input.checked) {
+      reportVisibleColumns.add(columnKey);
+    } else {
+      reportVisibleColumns.delete(columnKey);
+    }
+
+    renderReportTable();
+  });
+});
+
+reportTableBody?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const regionButton = target.closest("[data-report-region]");
+  if (!(regionButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  reportState.level = "district";
+  reportState.selectedRegionKey = regionButton.dataset.reportRegion ?? null;
+  renderReportTable();
 });
 
 calendarPopover.addEventListener("click", (event) => {
@@ -1685,6 +2237,8 @@ document.addEventListener("keydown", (event) => {
     rowsPerPageTrigger?.setAttribute("aria-expanded", "false");
     filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
     filterToggle?.setAttribute("aria-expanded", "false");
+    reportFilterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
+    reportFilterToggle?.setAttribute("aria-expanded", "false");
     closeCalendar();
     closeConfirmModal();
     closeDetailModal();
@@ -1692,9 +2246,11 @@ document.addEventListener("keydown", (event) => {
 });
 
 initializeTheme();
-showLoginView();
+showAppView();
 syncPasswordToggleUi();
 applyTableFilters();
+applyReportFilters();
+syncReportFrozenColumn();
 syncRowsPerPageUi();
 customSelects.forEach(syncCustomSelectUi);
 dateFields.forEach(syncDateFieldUi);
