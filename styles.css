@@ -1439,6 +1439,14 @@ body.theme-dark .login-hero__card {
   background: var(--brand-soft);
 }
 
+.table-action:disabled {
+  color: var(--muted);
+  background: var(--hover);
+  border-color: var(--line);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
 .filter-panel {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) auto;
@@ -1489,6 +1497,8 @@ body.theme-dark .login-hero__card {
 .filter-actions {
   display: flex;
   align-items: end;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .filter-label {
@@ -1972,6 +1982,18 @@ body.theme-dark .login-hero__card {
   cursor: pointer;
 }
 
+.custom-select--disabled .custom-select__trigger {
+  color: var(--muted);
+  background: var(--hover);
+  cursor: not-allowed;
+  border-color: var(--line);
+  opacity: 0.8;
+}
+
+.custom-select--disabled .custom-select__trigger::after {
+  opacity: 0.45;
+}
+
 .report-region-button:hover,
 .report-region-button:focus-visible {
   color: var(--brand);
@@ -1986,13 +2008,6 @@ body.theme-dark .login-hero__card {
 .report-table td:not(:first-child) {
   position: relative;
   z-index: 1;
-}
-
-.table-dropdown--report {
-  width: min(720px, calc(100vw - 120px));
-  min-width: min(720px, calc(100vw - 120px));
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
 }
 
 .report-table__summary {
@@ -2152,8 +2167,124 @@ body.theme-dark .report-table__summary td:first-child {
   gap: 10px;
 }
 
+.table-dropdown--report {
+  width: 320px;
+  min-width: 320px;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+#reportFilterMenu.table-dropdown--report {
+  width: 320px !important;
+  min-width: 320px !important;
+  display: none;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+}
+
+.table-menu--open #reportFilterMenu.table-dropdown--report {
+  display: flex !important;
+}
+
+#reportFilterMenu.table-dropdown--report > * {
+  width: 100% !important;
+  flex: 0 0 auto !important;
+}
+
+.report-filter-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+
+.report-filter-panel .filter-field,
+.report-filter-panel .report-filter-actions {
+  width: 100%;
+}
+
+.table-dropdown--report .filter-field,
+.table-dropdown--report .filter-actions {
+  width: 100%;
+}
+
+.table-dropdown--report .filter-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.table-dropdown--report .filter-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+
+.report-filter-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
 .table-action--block {
   width: 100%;
+}
+
+#reportApplyFilters.table-action--block,
+#reportResetFilters.table-action--block {
+  min-height: 38px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+#reportApplyFilters.table-action--block {
+  border-color: rgba(103, 154, 98, 0.24);
+  background: linear-gradient(180deg, rgba(103, 154, 98, 0.18), rgba(103, 154, 98, 0.12));
+  color: var(--brand);
+}
+
+#reportApplyFilters.table-action--block:disabled,
+#reportResetFilters.table-action--block:disabled {
+  transform: none;
+  box-shadow: none;
+  color: var(--muted);
+  background: var(--hover);
+  border-color: var(--line);
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+#reportApplyFilters.table-action--block:not(:disabled):hover,
+#reportApplyFilters.table-action--block:not(:disabled):focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(103, 154, 98, 0.14);
+}
+
+#reportResetFilters.table-action--block {
+  background: rgba(103, 154, 98, 0.06);
+  color: var(--brand);
+  border-color: rgba(103, 154, 98, 0.18);
+}
+
+#reportResetFilters.table-action--block:not(:disabled):hover,
+#reportResetFilters.table-action--block:not(:disabled):focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(103, 154, 98, 0.2);
+  box-shadow: 0 6px 14px rgba(103, 154, 98, 0.1);
 }
 
 .row-menu__toggle {

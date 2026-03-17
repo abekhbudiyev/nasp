@@ -580,188 +580,119 @@
                   <span class="table-action__badge" id="reportFilterActiveCount" hidden>0</span>
                 </button>
                 <div class="table-dropdown table-dropdown--filters table-dropdown--report" id="reportFilterMenu">
-                  <div class="filter-field">
-                    <label class="filter-label" for="reportRegionFilter">Hudud</label>
-                    <div class="custom-select" data-custom-select>
-                      <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Hudud">
-                        <span>Barchasi</span>
-                      </button>
-                      <div class="custom-select__dropdown" role="listbox" aria-label="Hudud">
-                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="qoraqalpogiston" aria-selected="false">Qoraqalpog'iston Respublikasi</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="andijon" aria-selected="false">Andijon viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="buxoro" aria-selected="false">Buxoro viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="jizzax" aria-selected="false">Jizzax viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="qashqadaryo" aria-selected="false">Qashqadaryo viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="navoiy" aria-selected="false">Navoiy viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="namangan" aria-selected="false">Namangan viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="samarqand" aria-selected="false">Samarqand viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="sirdaryo" aria-selected="false">Sirdaryo viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="surxondaryo" aria-selected="false">Surxondaryo viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="toshkent-vil" aria-selected="false">Toshkent viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="fargona" aria-selected="false">Farg'ona viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="xorazm" aria-selected="false">Xorazm viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="toshkent-sh" aria-selected="false">Toshkent shahri</button>
+                  <div class="report-filter-panel">
+                    <div class="filter-field">
+                      <label class="filter-label" for="reportDiagnosisFilter">Tashxis</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Tashxis"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Tashxis">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="f00f03" aria-selected="false">F00-F03</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="f71" aria-selected="false">F71*</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="f72" aria-selected="false">F72*</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="f73" aria-selected="false">F73*</button>
+                        </div>
+                        <select class="custom-select__native" id="reportDiagnosisFilter" aria-hidden="true" tabindex="-1">
+                          <option value="all">Barchasi</option>
+                          <option value="f00f03">F00-F03</option>
+                          <option value="f71">F71*</option>
+                          <option value="f72">F72*</option>
+                          <option value="f73">F73*</option>
+                        </select>
                       </div>
-                      <select class="custom-select__native" id="reportRegionFilter" aria-hidden="true" tabindex="-1">
-                        <option value="all">Barchasi</option>
-                        <option value="qoraqalpogiston">Qoraqalpog'iston Respublikasi</option>
-                        <option value="andijon">Andijon viloyati</option>
-                        <option value="buxoro">Buxoro viloyati</option>
-                        <option value="jizzax">Jizzax viloyati</option>
-                        <option value="qashqadaryo">Qashqadaryo viloyati</option>
-                        <option value="navoiy">Navoiy viloyati</option>
-                        <option value="namangan">Namangan viloyati</option>
-                        <option value="samarqand">Samarqand viloyati</option>
-                        <option value="sirdaryo">Sirdaryo viloyati</option>
-                        <option value="surxondaryo">Surxondaryo viloyati</option>
-                        <option value="toshkent-vil">Toshkent viloyati</option>
-                        <option value="fargona">Farg'ona viloyati</option>
-                        <option value="xorazm">Xorazm viloyati</option>
-                        <option value="toshkent-sh">Toshkent shahri</option>
-                      </select>
                     </div>
-                  </div>
-                  <div class="filter-field">
-                    <label class="filter-label" for="reportCompatibilityFilter">Kontingentga moslik turi</label>
-                    <div class="custom-select" data-custom-select>
-                      <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Kontingentga moslik turi"><span>Barchasi</span></button>
-                      <div class="custom-select__dropdown" role="listbox" aria-label="Kontingentga moslik turi">
-                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="mos" aria-selected="false">Kontingentga mos</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="mos-emas" aria-selected="false">Kontingentga mos bo'lmagan</button>
+                    <div class="filter-field">
+                      <label class="filter-label" for="reportDisabilityGroupFilter">Nogironlik guruhi</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Nogironlik guruhi"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Nogironlik guruhi">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="1" aria-selected="false">1</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="2" aria-selected="false">2</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="3" aria-selected="false">3</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="nbb" aria-selected="false">NBB</button>
+                        </div>
+                        <select class="custom-select__native" id="reportDisabilityGroupFilter" aria-hidden="true" tabindex="-1">
+                          <option value="all">Barchasi</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="nbb">NBB</option>
+                        </select>
                       </div>
-                      <select class="custom-select__native" id="reportCompatibilityFilter" aria-hidden="true" tabindex="-1">
-                        <option value="all">Barchasi</option>
-                        <option value="mos">Kontingentga mos</option>
-                        <option value="mos-emas">Kontingentga mos bo'lmagan</option>
-                      </select>
                     </div>
-                  </div>
-                  <div class="filter-field">
-                    <label class="filter-label" for="reportDiagnosisFilter">Tashxis</label>
-                    <div class="custom-select" data-custom-select>
-                      <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Tashxis"><span>Barchasi</span></button>
-                      <div class="custom-select__dropdown" role="listbox" aria-label="Tashxis">
-                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="demensiya" aria-selected="false">Demensiya</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="motadil-daz" aria-selected="false">Mo'tadil DAZ</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="ogir-daz" aria-selected="false">Og'ir DAZ</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="chuqur-daz" aria-selected="false">Chuqur DAZ</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="ruhiy" aria-selected="false">Boshqa turdagi ruhiy kasalliklar</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="noruhiy" aria-selected="false">Ruhiy bo'lmagan kasalliklar</button>
+                    <div class="filter-field">
+                      <label class="filter-label" for="reportGenderFilter">Jinsi</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Jinsi"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Jinsi">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="erkak" aria-selected="false">Erkak</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="ayol" aria-selected="false">Ayol</button>
+                        </div>
+                        <select class="custom-select__native" id="reportGenderFilter" aria-hidden="true" tabindex="-1">
+                          <option value="all">Barchasi</option>
+                          <option value="erkak">Erkak</option>
+                          <option value="ayol">Ayol</option>
+                        </select>
                       </div>
-                      <select class="custom-select__native" id="reportDiagnosisFilter" aria-hidden="true" tabindex="-1">
-                        <option value="all">Barchasi</option>
-                        <option value="demensiya">Demensiya</option>
-                        <option value="motadil-daz">Mo'tadil DAZ</option>
-                        <option value="ogir-daz">Og'ir DAZ</option>
-                        <option value="chuqur-daz">Chuqur DAZ</option>
-                        <option value="ruhiy">Boshqa turdagi ruhiy kasalliklar</option>
-                        <option value="noruhiy">Ruhiy bo'lmagan kasalliklar</option>
-                      </select>
                     </div>
-                  </div>
-                  <div class="filter-field">
-                    <label class="filter-label" for="reportDisabilityGroupFilter">Nogironlik guruhi</label>
-                    <div class="custom-select" data-custom-select>
-                      <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Nogironlik guruhi"><span>Barchasi</span></button>
-                      <div class="custom-select__dropdown" role="listbox" aria-label="Nogironlik guruhi">
-                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="1" aria-selected="false">1-guruh</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="2" aria-selected="false">2-guruh</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="3" aria-selected="false">3-guruh</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="nbb" aria-selected="false">NBB</button>
+                    <div class="filter-field">
+                      <label class="filter-label" for="reportAgeFilter">Yoshi</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Yoshi"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Yoshi">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="0-3" aria-selected="false">0-3</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="3-7" aria-selected="false">3-7</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="7-18" aria-selected="false">7-18</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="18-55-60" aria-selected="false">18-55/60</button>
+                          <button class="custom-select__option" type="button" role="option" data-value="55-60-plus" aria-selected="false">55/60+</button>
+                        </div>
+                        <select class="custom-select__native" id="reportAgeFilter" aria-hidden="true" tabindex="-1">
+                          <option value="all">Barchasi</option>
+                          <option value="0-3">0-3</option>
+                          <option value="3-7">3-7</option>
+                          <option value="7-18">7-18</option>
+                          <option value="18-55-60">18-55/60</option>
+                          <option value="55-60-plus">55/60+</option>
+                        </select>
                       </div>
-                      <select class="custom-select__native" id="reportDisabilityGroupFilter" aria-hidden="true" tabindex="-1">
-                        <option value="all">Barchasi</option>
-                        <option value="1">1-guruh</option>
-                        <option value="2">2-guruh</option>
-                        <option value="3">3-guruh</option>
-                        <option value="nbb">NBB</option>
-                      </select>
                     </div>
-                  </div>
-                  <div class="filter-field">
-                    <label class="filter-label" for="reportGenderFilter">Jinsi</label>
-                    <div class="custom-select" data-custom-select>
-                      <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Jinsi"><span>Barchasi</span></button>
-                      <div class="custom-select__dropdown" role="listbox" aria-label="Jinsi">
-                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="erkak" aria-selected="false">Erkak</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="ayol" aria-selected="false">Ayol</button>
-                      </div>
-                      <select class="custom-select__native" id="reportGenderFilter" aria-hidden="true" tabindex="-1">
-                        <option value="all">Barchasi</option>
-                        <option value="erkak">Erkak</option>
-                        <option value="ayol">Ayol</option>
-                      </select>
+                    <div class="filter-actions report-filter-actions">
+                      <button class="table-action table-action--block" id="reportApplyFilters" type="button">Qo'llash</button>
+                      <button class="table-action table-action--block" id="reportResetFilters" type="button" disabled>Tozalash</button>
                     </div>
-                  </div>
-                  <div class="filter-field">
-                    <label class="filter-label" for="reportAgeFilter">Yoshi</label>
-                    <div class="custom-select" data-custom-select>
-                      <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Yoshi"><span>Barchasi</span></button>
-                      <div class="custom-select__dropdown" role="listbox" aria-label="Yoshi">
-                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="0-3" aria-selected="false">0-3</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="3-7" aria-selected="false">3-7</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="7-18" aria-selected="false">7-18</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="18-55-60" aria-selected="false">18-55/60</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="55-60-plus" aria-selected="false">55/60+</button>
-                      </div>
-                      <select class="custom-select__native" id="reportAgeFilter" aria-hidden="true" tabindex="-1">
-                        <option value="all">Barchasi</option>
-                        <option value="0-3">0-3</option>
-                        <option value="3-7">3-7</option>
-                        <option value="7-18">7-18</option>
-                        <option value="18-55-60">18-55/60</option>
-                        <option value="55-60-plus">55/60+</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="filter-field">
-                    <label class="filter-label" for="reportDateFilter">Hisobot olish sanasi</label>
-                    <div class="custom-date" data-date-field>
-                      <button class="custom-date__trigger" type="button" aria-label="Hisobot olish sanasi">
-                        <span class="custom-date__label">Sanani tanlang</span>
-                        <span class="custom-date__icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        </span>
-                      </button>
-                      <input class="custom-date__native" id="reportDateFilter" type="date" aria-hidden="true" tabindex="-1">
-                    </div>
-                  </div>
-                    <button class="table-action table-action--block" id="reportResetFilters" type="button">Tozalash</button>
                   </div>
                 </div>
-                <div class="table-menu">
-                  <button class="table-action table-action--icon" type="button" aria-expanded="false" id="reportColumnsToggle" aria-label="Ustunlarni boshqarish">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16M9 4v16M15 4v16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                  </button>
-                  <div class="table-dropdown table-dropdown--filters report-columns-menu" id="reportColumnsMenu">
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="jami" checked> <span>Jami NBSHlar soni</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f00f03" checked> <span>F00-F03</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f71" checked> <span>F71*</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f72" checked> <span>F72*</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f73" checked> <span>F73*</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="group1" checked> <span>1-guruh</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="group2" checked> <span>2-guruh</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="group3" checked> <span>3-guruh</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="nbb" checked> <span>NBB</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="male" checked> <span>Erkak</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="female" checked> <span>Ayol</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age0_3" checked> <span>0-3</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age3_7" checked> <span>3-7</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age7_18" checked> <span>7-18</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age18_55_60" checked> <span>18-55/60</span></label>
-                    <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age55_60" checked> <span>55/60+</span></label>
-                  </div>
-                </div>
-                <button class="table-action table-action--icon" type="button" id="reportExportButton" aria-label="Hisobotni yuklab olish">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <span class="sr-only">Hisobotni yuklab olish</span>
+              </div>
+              <div class="table-menu">
+                <button class="table-action table-action--icon" type="button" aria-expanded="false" id="reportColumnsToggle" aria-label="Ustunlarni boshqarish">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16M9 4v16M15 4v16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 </button>
+                <div class="table-dropdown table-dropdown--filters report-columns-menu" id="reportColumnsMenu">
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="jami" checked> <span>Jami NBSHlar soni</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f00f03" checked> <span>F00-F03</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f71" checked> <span>F71*</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f72" checked> <span>F72*</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="f73" checked> <span>F73*</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="group1" checked> <span>1-guruh</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="group2" checked> <span>2-guruh</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="group3" checked> <span>3-guruh</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="nbb" checked> <span>NBB</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="male" checked> <span>Erkak</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="female" checked> <span>Ayol</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age0_3" checked> <span>0-3</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age3_7" checked> <span>3-7</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age7_18" checked> <span>7-18</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age18_55_60" checked> <span>18-55/60</span></label>
+                  <label class="report-columns-menu__item"><input type="checkbox" data-report-column-toggle="age55_60" checked> <span>55/60+</span></label>
+                  </div>
+              </div>
+              <button class="table-action table-action--icon" type="button" id="reportExportButton" aria-label="Hisobotni yuklab olish">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="sr-only">Hisobotni yuklab olish</span>
+              </button>
             </div>
           </div>
           <div class="report-scope" id="reportScope" hidden>

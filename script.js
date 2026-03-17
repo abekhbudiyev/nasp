@@ -57,13 +57,12 @@ const reportFilterActiveCount = document.getElementById("reportFilterActiveCount
 const reportColumnsToggle = document.getElementById("reportColumnsToggle");
 const reportColumnsMenu = document.getElementById("reportColumnsMenu");
 const reportColumnInputs = document.querySelectorAll("[data-report-column-toggle]");
-const reportRegionFilter = document.getElementById("reportRegionFilter");
-const reportCompatibilityFilter = document.getElementById("reportCompatibilityFilter");
 const reportDiagnosisFilter = document.getElementById("reportDiagnosisFilter");
 const reportDisabilityGroupFilter = document.getElementById("reportDisabilityGroupFilter");
 const reportGenderFilter = document.getElementById("reportGenderFilter");
 const reportAgeFilter = document.getElementById("reportAgeFilter");
 const reportDateFilter = document.getElementById("reportDateFilter");
+const reportApplyFilters = document.getElementById("reportApplyFilters");
 const reportDatePicker = document.getElementById("reportDatePicker");
 const reportSnapshotDate = document.getElementById("reportSnapshotDate");
 const reportSnapshotDateTrigger = document.getElementById("reportSnapshotDateTrigger");
@@ -296,6 +295,15 @@ const reportState = {
   selectedRegionKey: null,
 };
 
+const reportDefaultFilters = Object.freeze({
+  diagnosis: "all",
+  group: "all",
+  gender: "all",
+  age: "all",
+});
+
+let reportAppliedFilters = { ...reportDefaultFilters };
+
 const reportColumnKeys = [
   "jami",
   "f00f03",
@@ -366,13 +374,51 @@ function updateReportScope() {
 }
 
 function getVisibleReportRows() {
+  const diagnosisValue = reportDiagnosisFilter?.value ?? "all";
+  const groupValue = reportDisabilityGroupFilter?.value ?? "all";
+  const genderValue = reportGenderFilter?.value ?? "all";
+  const ageValue = reportAgeFilter?.value ?? "all";
+  const columnIndexMap = {
+    f00f03: 1,
+    f71: 2,
+    f72: 3,
+    f73: 4,
+    "1": 5,
+    "2": 6,
+    "3": 7,
+    nbb: 8,
+    erkak: 9,
+    ayol: 10,
+    "0-3": 11,
+    "3-7": 12,
+    "7-18": 13,
+    "18-55-60": 14,
+    "55-60-plus": 15,
+  };
+  const matchesReportRow = (row) => {
+    const diagnosisOk = diagnosisValue === "all" || (row.totals[columnIndexMap[diagnosisValue]] ?? 0) > 0;
+    const groupOk = groupValue === "all" || (row.totals[columnIndexMap[groupValue]] ?? 0) > 0;
+    const genderOk = genderValue === "all" || (row.totals[columnIndexMap[genderValue]] ?? 0) > 0;
+    const ageOk = ageValue === "all" || (row.totals[columnIndexMap[ageValue]] ?? 0) > 0;
+    return diagnosisOk && groupOk && genderOk && ageOk;
+  };
+
   if (reportState.level === "district") {
     const selectedRegion = getSelectedReportRegion();
-    return selectedRegion?.districts ?? [];
+    return (selectedRegion?.districts ?? []).filter(matchesReportRow);
   }
 
-  const regionValue = reportRegionFilter?.value ?? "all";
-  return regionValue === "all" ? reportData : reportData.filter((region) => region.key === regionValue);
+  return reportData.filter(matchesReportRow);
+}
+
+function getReportSummarySource() {
+  const selectedRegion = getSelectedReportRegion();
+
+  if (reportState.level === "district" && selectedRegion) {
+    return { source: selectedRegion, label: `${selectedRegion.name} bo'yicha jami` };
+  }
+
+  return { source: reportSummaryData, label: reportSummaryData?.name ?? "Respublika jami" };
 }
 
 function syncReportColumnVisibility() {
@@ -406,15 +452,7 @@ function renderReportTable() {
   }
 
   const rows = getVisibleReportRows();
-  const selectedRegion = getSelectedReportRegion();
-  const summarySource =
-    reportState.level === "district" && selectedRegion
-      ? selectedRegion
-      : reportSummaryData;
-  const summaryLabel =
-    reportState.level === "district" && selectedRegion
-      ? `${selectedRegion.name} bo'yicha jami`
-      : reportSummaryData.name;
+  const { source: summarySource, label: summaryLabel } = getReportSummarySource();
   const summaryCells = summarySource.totals
     .map((value, index) => `<td data-col="${reportColumnKeys[index]}">${formatReportNumber(value)}</td>`)
     .join("");
@@ -1398,6 +1436,50 @@ function getTitleFromHash(hashValue) {
   return "";
 }
 
+function getReportFilterValues() {
+  return {
+    diagnosis: reportDiagnosisFilter?.value ?? "all",
+    group: reportDisabilityGroupFilter?.value ?? "all",
+    gender: reportGenderFilter?.value ?? "all",
+    age: reportAgeFilter?.value ?? "all",
+  };
+}
+
+function getReportFilterActiveCount() {
+  const values = getReportFilterValues();
+  return Object.entries(values).reduce((count, [key, value]) => {
+    return count + (value !== reportDefaultFilters[key] ? 1 : 0);
+  }, 0);
+}
+
+function updateReportFilterControls() {
+  const activeCount = getReportFilterActiveCount();
+  const currentFilters = getReportFilterValues();
+  const hasPendingChanges = Object.keys(reportDefaultFilters).some(
+    (key) => currentFilters[key] !== reportAppliedFilters[key],
+  );
+  const hasAppliedFilters = Object.keys(reportDefaultFilters).some(
+    (key) => reportAppliedFilters[key] !== reportDefaultFilters[key],
+  );
+
+  if (reportResetFilters) {
+    reportResetFilters.disabled = !hasAppliedFilters;
+  }
+
+  if (reportApplyFilters) {
+    reportApplyFilters.disabled = !hasPendingChanges;
+  }
+
+  if (reportFilterToggle) {
+    reportFilterToggle.classList.toggle("table-action--active", activeCount > 0);
+  }
+
+  if (reportFilterActiveCount) {
+    reportFilterActiveCount.hidden = activeCount === 0;
+    reportFilterActiveCount.textContent = String(activeCount);
+  }
+}
+
 function syncInitialRouteView() {
   const routeTitle = getTitleFromHash(window.location.hash);
 
@@ -1415,32 +1497,8 @@ function syncInitialRouteView() {
 }
 
 function applyReportFilters() {
-  const regionValue = reportRegionFilter?.value ?? "all";
-  const compatibilityValue = reportCompatibilityFilter?.value ?? "all";
-  const diagnosisValue = reportDiagnosisFilter?.value ?? "all";
-  const groupValue = reportDisabilityGroupFilter?.value ?? "all";
-  const genderValue = reportGenderFilter?.value ?? "all";
-  const ageValue = reportAgeFilter?.value ?? "all";
-  const dateValue = reportDateFilter?.value ?? "";
-
-  const activeCount =
-    (regionValue !== "all" ? 1 : 0) +
-    (compatibilityValue !== "all" ? 1 : 0) +
-    (diagnosisValue !== "all" ? 1 : 0) +
-    (groupValue !== "all" ? 1 : 0) +
-    (genderValue !== "all" ? 1 : 0) +
-    (ageValue !== "all" ? 1 : 0) +
-    (dateValue ? 1 : 0);
-
-  if (reportFilterToggle) {
-    reportFilterToggle.classList.toggle("table-action--active", activeCount > 0);
-  }
-
-  if (reportFilterActiveCount) {
-    reportFilterActiveCount.hidden = activeCount === 0;
-    reportFilterActiveCount.textContent = String(activeCount);
-  }
-
+  reportAppliedFilters = { ...getReportFilterValues() };
+  updateReportFilterControls();
   renderReportTable();
   syncReportFrozenColumn();
 }
@@ -1975,6 +2033,60 @@ function syncCustomSelectUi(select) {
   });
 }
 
+function bindCustomSelectOptions(select) {
+  const trigger = select.querySelector(".custom-select__trigger");
+  const nativeSelect = select.querySelector(".custom-select__native");
+  const options = select.querySelectorAll(".custom-select__option");
+
+  options.forEach((option) => {
+    if (option.dataset.bound === "true") {
+      return;
+    }
+
+    option.dataset.bound = "true";
+
+    option.addEventListener("click", () => {
+      const value = option.getAttribute("data-value");
+      if (!value || !nativeSelect) {
+        return;
+      }
+
+      nativeSelect.value = value;
+      syncCustomSelectUi(select);
+      nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      select.classList.remove("custom-select--open");
+      trigger?.setAttribute("aria-expanded", "false");
+      trigger?.focus();
+    });
+
+    option.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        select.classList.remove("custom-select--open");
+        trigger?.setAttribute("aria-expanded", "false");
+        trigger?.focus();
+        return;
+      }
+
+      const list = Array.from(select.querySelectorAll(".custom-select__option")).filter(
+        (item) => !item.hasAttribute("hidden"),
+      );
+      const index = list.indexOf(option);
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        list[(index + 1) % list.length]?.focus();
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        list[(index - 1 + list.length) % list.length]?.focus();
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        option.click();
+      }
+    });
+  });
+}
+
 if (filterToggle && filterMenu) {
   filterToggle.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -2044,10 +2156,13 @@ if (rowsPerPageMenu && rowsPerPageTrigger && rowsPerPage) {
 customSelects.forEach((select) => {
   const trigger = select.querySelector(".custom-select__trigger");
   const nativeSelect = select.querySelector(".custom-select__native");
-  const options = select.querySelectorAll(".custom-select__option");
+  bindCustomSelectOptions(select);
 
   trigger?.addEventListener("click", (event) => {
     event.stopPropagation();
+    if (trigger.hasAttribute("disabled")) {
+      return;
+    }
     const isOpen = select.classList.contains("custom-select--open");
 
     customSelects.forEach((item) => {
@@ -2066,51 +2181,14 @@ customSelects.forEach((select) => {
   });
 
   trigger?.addEventListener("keydown", (event) => {
+    if (trigger.hasAttribute("disabled")) {
+      return;
+    }
     if (!["Enter", " ", "ArrowDown"].includes(event.key)) {
       return;
     }
     event.preventDefault();
     trigger.click();
-  });
-
-  options.forEach((option) => {
-    option.addEventListener("click", () => {
-      const value = option.getAttribute("data-value");
-      if (!value || !nativeSelect) {
-        return;
-      }
-
-      nativeSelect.value = value;
-      syncCustomSelectUi(select);
-      nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      select.classList.remove("custom-select--open");
-      trigger?.setAttribute("aria-expanded", "false");
-      trigger?.focus();
-    });
-
-    option.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        select.classList.remove("custom-select--open");
-        trigger?.setAttribute("aria-expanded", "false");
-        trigger?.focus();
-        return;
-      }
-
-      const list = Array.from(options);
-      const index = list.indexOf(option);
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        list[(index + 1) % list.length]?.focus();
-      }
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        list[(index - 1 + list.length) % list.length]?.focus();
-      }
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        option.click();
-      }
-    });
   });
 });
 
@@ -2138,17 +2216,21 @@ dateFields.forEach((field) => {
 });
 
 [
-  reportRegionFilter,
-  reportCompatibilityFilter,
   reportDiagnosisFilter,
   reportDisabilityGroupFilter,
   reportGenderFilter,
   reportAgeFilter,
 ].forEach((select) => {
-  select?.addEventListener("change", applyReportFilters);
+  select?.addEventListener("change", updateReportFilterControls);
 });
 
 reportDateFilter?.addEventListener("change", applyReportFilters);
+
+reportApplyFilters?.addEventListener("click", () => {
+  applyReportFilters();
+  reportFilterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
+  reportFilterToggle?.setAttribute("aria-expanded", "false");
+});
 
 if (reportSnapshotDate && !reportSnapshotDate.value) {
   reportSnapshotDate.value = formatDateLabel(formatDateValue(new Date()));
@@ -2210,8 +2292,6 @@ reportSnapshotDateNative?.addEventListener("change", () => {
 });
 
 reportResetFilters?.addEventListener("click", () => {
-  if (reportRegionFilter) reportRegionFilter.value = "all";
-  if (reportCompatibilityFilter) reportCompatibilityFilter.value = "all";
   if (reportDiagnosisFilter) reportDiagnosisFilter.value = "all";
   if (reportDisabilityGroupFilter) reportDisabilityGroupFilter.value = "all";
   if (reportGenderFilter) reportGenderFilter.value = "all";
@@ -2221,6 +2301,7 @@ reportResetFilters?.addEventListener("click", () => {
   reportState.selectedRegionKey = null;
   customSelects.forEach(syncCustomSelectUi);
   dateFields.forEach(syncDateFieldUi);
+  updateReportFilterControls();
   applyReportFilters();
 });
 
