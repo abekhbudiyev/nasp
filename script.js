@@ -768,38 +768,12 @@ function getStatusBadgeClass(status) {
 }
 
 function getApplicantAvatar(application) {
-  const initials = application.applicantName
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-
-  const palette = [
-    { start: "#7aa86f", end: "#5d8757" },
-    { start: "#8aa9d6", end: "#5f7fb5" },
-    { start: "#d4a66f", end: "#b8854d" },
-    { start: "#9c8ed8", end: "#7365b6" },
-  ];
-  const colors = palette[(Number(String(application.id).replace(/\D/g, "")) || 0) % palette.length];
-  const gradientId = `avatarGradient${String(application.id).replace(/[^a-zA-Z0-9]/g, "")}`;
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="132" height="184" viewBox="0 0 132 184">
-      <defs>
-        <linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${colors.start}"/>
-          <stop offset="100%" stop-color="${colors.end}"/>
-        </linearGradient>
-      </defs>
-      <rect width="132" height="184" rx="14" fill="url(#${gradientId})"/>
-      <circle cx="66" cy="62" r="24" fill="rgba(255,255,255,0.22)"/>
-      <path d="M28 152c5-24 20-40 38-40s33 16 38 40" fill="rgba(255,255,255,0.18)"/>
-      <text x="66" y="92" text-anchor="middle" font-size="30" font-family="Noto Sans, Arial, sans-serif" font-weight="700" fill="#ffffff">${initials}</text>
-    </svg>
-  `;
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  const femalePool = ["avatar-1.png", "avatar-3.png", "avatar-6.png"];
+  const malePool = ["avatar-2.png", "avatar-4.png", "avatar-5.png"];
+  const gender = String(application.gender || "").toLowerCase();
+  const avatarPool = gender === "ayol" ? femalePool : malePool;
+  const numericSeed = Number(String(application.id).replace(/\D/g, "")) || 0;
+  return avatarPool[numericSeed % avatarPool.length];
 }
 
 function getStatusBadgeVariant(status) {
@@ -1164,18 +1138,22 @@ function getApplicationById(applicationId) {
     pinfl: `50${String(100000000000 + numericPart).slice(-12)}`,
     position: ["Yetakchi mutaxassis", "Bosh inspektor", "Mas'ul kotib"][numericPart % 3],
     address: `${addressCell?.querySelector("strong")?.textContent?.trim() ?? "-"}, ${addressCell?.querySelector("span")?.textContent?.trim() ?? "-"}, IHMA hududiy bo'limi`,
-    avatar: getApplicantAvatar({ applicantName: formatPersonName(operator), id: `receiver-${applicationId}` }),
+    gender: "Erkak",
+    avatar: getApplicantAvatar({ applicantName: formatPersonName(operator), id: `receiver-${applicationId}`, gender: "Erkak" }),
   };
   const representativeName = ["Karimov Ulug'bek Islomovich", "Raximova Dilfuza Abduqodirovna", "Toshpulatov Jamshid Sherzod o'g'li"][numericPart % 3];
+  const representativeGender = representativeName.toLowerCase().includes("dilfuza") ? "Ayol" : "Erkak";
   const representative = {
     fullName: formatPersonName(representativeName),
     pinfl: `40${String(200000000000 + numericPart).slice(-12)}`,
     level: ["Ota-onasi", "Vasiy", "Qonuniy vakil"][numericPart % 3],
     address: fullAddress,
     phone: `+998 ${90 + (numericPart % 3)} ${String(1000000 + numericPart).slice(-7).replace(/(\d{3})(\d{2})(\d{2})/, "$1-$2-$3")}`,
+    gender: representativeGender,
     avatar: getApplicantAvatar({
       applicantName: formatPersonName(representativeName),
       id: `representative-${applicationId}`,
+      gender: representativeGender,
     }),
   };
   const institutions = {
@@ -1273,7 +1251,11 @@ function getApplicationById(applicationId) {
       disabilityGroup,
       diagnosis: `${diagnosis.label} (${diagnosis.code})`,
       address: fullAddress,
-      avatar: getApplicantAvatar({ applicantName: formatPersonName(applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-"), id: applicationId }),
+      avatar: getApplicantAvatar({
+        applicantName: formatPersonName(applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-"),
+        id: applicationId,
+        gender: numericPart % 2 === 0 ? "Erkak" : "Ayol",
+      }),
       meta: [],
     },
     institution,
