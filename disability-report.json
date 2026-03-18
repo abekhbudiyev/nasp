@@ -43,7 +43,7 @@
   "regions": [
     {
       "key": "qoraqalpogiston",
-      "region": "Qoraqalpog'iston Respublikasi",
+      "region": "Qoraqalpog'iston R.",
       "total_nbsh": 9987,
       "f00_f03": 2801,
       "f71": 4040,
@@ -63,7 +63,7 @@
     },
     {
       "key": "andijon",
-      "region": "Andijon viloyati",
+      "region": "Andijon",
       "total_nbsh": 2867,
       "f00_f03": 1560,
       "f71": 603,
@@ -83,7 +83,7 @@
     },
     {
       "key": "buxoro",
-      "region": "Buxoro viloyati",
+      "region": "Buxoro",
       "total_nbsh": 3826,
       "f00_f03": 199,
       "f71": 2051,
@@ -103,7 +103,7 @@
     },
     {
       "key": "jizzax",
-      "region": "Jizzax viloyati",
+      "region": "Jizzax",
       "total_nbsh": 9637,
       "f00_f03": 56,
       "f71": 4080,

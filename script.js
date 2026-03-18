@@ -22,8 +22,13 @@ const pageLinks = document.querySelectorAll("[data-page-title]");
 const applicationSearch = document.getElementById("applicationSearch");
 const statusFilter = document.getElementById("statusFilter");
 const regionFilter = document.getElementById("regionFilter");
+const stepFilter = document.getElementById("stepFilter");
+const districtFilter = document.getElementById("districtFilter");
+const organizationTypeFilter = document.getElementById("organizationTypeFilter");
+const organizationFilter = document.getElementById("organizationFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const dateToFilter = document.getElementById("dateToFilter");
+const applyFilters = document.getElementById("applyFilters");
 const resetFilters = document.getElementById("resetFilters");
 const rowsPerPage = document.getElementById("rowsPerPage");
 const paginationInfo = document.getElementById("paginationInfo");
@@ -38,6 +43,7 @@ const rejectedApplicationsShare = document.getElementById("rejectedApplicationsS
 const applicationRows = document.querySelectorAll("#applicationsTable tbody tr");
 const filterToggle = document.getElementById("filterToggle");
 const filterMenu = document.getElementById("filterMenu");
+const filterMenuClose = document.getElementById("filterMenuClose");
 const rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
 const rowsPerPageMenu = document.getElementById("rowsPerPageMenu");
 const rowsPerPageTrigger = document.getElementById("rowsPerPageTrigger");
@@ -48,6 +54,9 @@ const paginationNext = document.getElementById("paginationNext");
 const paginationPages = document.getElementById("paginationPages");
 const filterActiveCount = document.getElementById("filterActiveCount");
 const tableEmptyRow = document.getElementById("tableEmptyRow");
+const tableEmptyTitle = document.getElementById("tableEmptyTitle");
+const tableEmptyDescription = document.getElementById("tableEmptyDescription");
+const tableEmptyAction = document.getElementById("tableEmptyAction");
 const downloadActions = document.querySelectorAll(".row-menu__item:last-child");
 const customSelects = document.querySelectorAll("[data-custom-select]");
 const exportButton = document.getElementById("exportButton");
@@ -90,6 +99,7 @@ const confirmModalDescription = document.getElementById("confirmModalDescription
 const confirmModalCancel = document.getElementById("confirmModalCancel");
 const confirmModalApprove = document.getElementById("confirmModalApprove");
 const detailModal = document.getElementById("detailModal");
+const detailModalDialog = detailModal?.querySelector(".detail-modal__dialog");
 const detailModalClose = document.getElementById("detailModalClose");
 const detailModalLoading = document.getElementById("detailModalLoading");
 const detailModalBody = document.getElementById("detailModalBody");
@@ -111,13 +121,23 @@ calendarPopover.id = "calendarPopover";
 calendarPopover.hidden = true;
 calendarPopover.innerHTML = `
   <div class="calendar-popover__header">
-    <button class="calendar-popover__nav" type="button" data-calendar-nav="-1" aria-label="Oldingi oy">
-      <svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
+    <div class="calendar-popover__nav-group">
+      <button class="calendar-popover__nav" type="button" data-calendar-nav-year="-1" aria-label="Oldingi yil">
+        <svg viewBox="0 0 24 24" fill="none"><path d="m16.5 6-6 6 6 6M11.5 6l-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="calendar-popover__nav" type="button" data-calendar-nav="-1" aria-label="Oldingi oy">
+        <svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
     <div class="calendar-popover__title" id="calendarTitle"></div>
-    <button class="calendar-popover__nav" type="button" data-calendar-nav="1" aria-label="Keyingi oy">
-      <svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
+    <div class="calendar-popover__nav-group">
+      <button class="calendar-popover__nav" type="button" data-calendar-nav="1" aria-label="Keyingi oy">
+        <svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="calendar-popover__nav" type="button" data-calendar-nav-year="1" aria-label="Keyingi yil">
+        <svg viewBox="0 0 24 24" fill="none"><path d="m7.5 6 6 6-6 6M12.5 6l6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   </div>
   <div class="calendar-popover__weekdays">${calendarWeekdays.map((day) => `<span class="calendar-popover__weekday">${day}</span>`).join("")}</div>
   <div class="calendar-popover__grid" id="calendarGrid"></div>
@@ -172,7 +192,7 @@ function syncCapsLockState(event) {
 
 function formatDateLabel(value) {
   if (!value) {
-    return "Sanani tanlang";
+    return "";
   }
 
   const [year, month, day] = value.split("-");
@@ -302,7 +322,51 @@ const reportDefaultFilters = Object.freeze({
   age: "all",
 });
 
+const applicationDefaultFilters = Object.freeze({
+  status: "all",
+  region: "all",
+  step: "all",
+  district: "all",
+  organizationType: "all",
+  organization: "all",
+  dateFrom: "",
+  dateTo: "",
+});
+
+let applicationAppliedFilters = { ...applicationDefaultFilters };
 let reportAppliedFilters = { ...reportDefaultFilters };
+
+const applicationStepLabels = {
+  yangi: "Yangi",
+  "ishchi-guruhi-korib-chiqmoqda": "Ishchi guruhi tomonidan ko'rib chiqilmoqda",
+  "ishchi-guruhi-qabul-qilgan": "Ishchi guruhi tomonidan qabul qilingan",
+  "komissiya-korib-chiqmoqda": "Komissiya tomonidan ko'rib chiqilmoqda",
+  "ishchi-guruhi-rad-etgan": "Ishchi guruhi tomonidan rad etilgan",
+  "komissiya-rad-etgan": "Komissiya tomonidan rad etilgan",
+  "komissiya-qabul-qilgan": "Qabul qilingan",
+};
+
+const applicationOrganizationTypeLabels = {
+  bolalar: "Bolalar",
+  erkaklar: "Erkaklar",
+  ayollar: "Ayollar",
+};
+
+const applicationRowMetadata = {
+  "AR-000124": { step: "yangi" },
+  "AR-000123": { step: "ishchi-guruhi-korib-chiqmoqda" },
+  "AR-000122": { step: "komissiya-qabul-qilgan" },
+  "AR-000121": { step: "ishchi-guruhi-rad-etgan" },
+  "AR-000120": { step: "komissiya-qabul-qilgan" },
+  "AR-000119": { step: "ishchi-guruhi-qabul-qilgan" },
+  "AR-000118": { step: "komissiya-rad-etgan" },
+  "AR-000117": { step: "komissiya-qabul-qilgan" },
+  "AR-000116": { step: "komissiya-korib-chiqmoqda" },
+  "AR-000115": { step: "ishchi-guruhi-rad-etgan" },
+  "AR-000114": { step: "komissiya-qabul-qilgan" },
+  "AR-000113": { step: "yangi" },
+  "AR-000112": { step: "komissiya-rad-etgan" },
+};
 
 const reportColumnKeys = [
   "jami",
@@ -570,11 +634,11 @@ function showToast(title, description, variant = "success") {
 
 function syncDateFieldUi(field) {
   const input = field.querySelector(".custom-date__native");
-  const label = field.querySelector(".custom-date__label");
+  const textInput = field.querySelector(".custom-date__text-input");
   const hasValue = Boolean(input?.value);
 
-  if (label) {
-    label.textContent = formatDateLabel(input?.value ?? "");
+  if (textInput instanceof HTMLInputElement) {
+    textInput.value = formatDateLabel(input?.value ?? "");
   }
 
   field.classList.toggle("custom-date--filled", hasValue);
@@ -692,13 +756,13 @@ function closeConfirmModal() {
 function getStatusBadgeClass(status) {
   const normalized = status.toLowerCase();
   if (normalized === "jarayonda") {
-    return "detail-status-badge--process";
+    return "status-badge--process";
   }
-  if (normalized === "qabul qilingan") {
-    return "detail-status-badge--accepted";
+  if (normalized === "qabul qilingan" || normalized === "tasdiqlangan") {
+    return "status-badge--accepted";
   }
   if (normalized === "rad etilgan") {
-    return "detail-status-badge--rejected";
+    return "status-badge--rejected";
   }
   return "";
 }
@@ -718,19 +782,20 @@ function getApplicantAvatar(application) {
     { start: "#d4a66f", end: "#b8854d" },
     { start: "#9c8ed8", end: "#7365b6" },
   ];
-  const colors = palette[(Number(application.id.replace(/\D/g, "")) || 0) % palette.length];
+  const colors = palette[(Number(String(application.id).replace(/\D/g, "")) || 0) % palette.length];
+  const gradientId = `avatarGradient${String(application.id).replace(/[^a-zA-Z0-9]/g, "")}`;
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+    <svg xmlns="http://www.w3.org/2000/svg" width="132" height="184" viewBox="0 0 132 184">
       <defs>
-        <linearGradient id="avatarGradient" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="${colors.start}"/>
           <stop offset="100%" stop-color="${colors.end}"/>
         </linearGradient>
       </defs>
-      <rect width="96" height="96" rx="24" fill="url(#avatarGradient)"/>
-      <circle cx="48" cy="38" r="16" fill="rgba(255,255,255,0.22)"/>
-      <path d="M24 76c3-12 14-20 24-20s21 8 24 20" fill="rgba(255,255,255,0.18)"/>
-      <text x="48" y="54" text-anchor="middle" font-size="24" font-family="Noto Sans, Arial, sans-serif" font-weight="700" fill="#ffffff">${initials}</text>
+      <rect width="132" height="184" rx="14" fill="url(#${gradientId})"/>
+      <circle cx="66" cy="62" r="24" fill="rgba(255,255,255,0.22)"/>
+      <path d="M28 152c5-24 20-40 38-40s33 16 38 40" fill="rgba(255,255,255,0.18)"/>
+      <text x="66" y="92" text-anchor="middle" font-size="30" font-family="Noto Sans, Arial, sans-serif" font-weight="700" fill="#ffffff">${initials}</text>
     </svg>
   `;
 
@@ -762,11 +827,12 @@ function updateApplicationRowStatus(applicationId, nextStatus) {
   }
 
   row.setAttribute("data-status", nextStatus);
-  const statusBadge = row.querySelector(".status-badge");
+  const nextStep = getDefaultStepForStatus(nextStatus);
+  row.setAttribute("data-step", nextStep);
   const variant = getStatusBadgeVariant(nextStatus);
-  if (statusBadge) {
-    statusBadge.className = `status-badge ${variant.className}`.trim();
-    statusBadge.textContent = variant.label;
+  const statusCell = row.children[5];
+  if (statusCell) {
+    statusCell.innerHTML = `<span class="status-badge ${variant.className}">${variant.label}</span>`;
   }
 
   const dropdown = row.querySelector(".row-menu__dropdown");
@@ -788,19 +854,25 @@ function formatReadableDate(value) {
 
 function formatStatusBadge(status) {
   const statusClass = getStatusBadgeClass(status);
-  return `<span class="detail-status-badge ${statusClass}">${status}</span>`;
+  return `<span class="status-badge ${statusClass}">${status}</span>`;
+}
+
+function formatResultBadge(result) {
+  const normalized = (result || "").toLowerCase();
+  const className = normalized === "ijobiy" ? "status-badge--accepted" : "status-badge--rejected";
+  return `<span class="status-badge ${className}">${result || "-"}</span>`;
 }
 
 function buildDetailFieldGrid(items) {
   return `
-    <div class="detail-field-grid">
+    <div class="detail-field-list">
       ${items
         .map(
           (item) => `
-            <article class="detail-card">
+            <div class="detail-field-list__item">
               <span>${item.label}</span>
               <strong>${item.value || "-"}</strong>
-            </article>
+            </div>
           `,
         )
         .join("")}
@@ -809,26 +881,9 @@ function buildDetailFieldGrid(items) {
 }
 
 function buildDetailPersonCard(person, avatarMarkup = "") {
-  const metaItems = Array.isArray(person.meta) ? person.meta : [];
   return `
     <div class="detail-person-card">
       ${avatarMarkup}
-      <div class="detail-person-card__content">
-        <div class="detail-person-card__title-group">
-          <strong>${person.fullName || "-"}</strong>
-          <span>${person.pinfl || "-"}</span>
-        </div>
-        ${metaItems
-          .map(
-            (item) => `
-              <div class="detail-person-card__row">
-                <span>${item.label}</span>
-                <strong>${item.value || "-"}</strong>
-              </div>
-            `,
-          )
-          .join("")}
-      </div>
     </div>
   `;
 }
@@ -854,6 +909,37 @@ function buildDetailTable(columns, rows) {
   `;
 }
 
+function buildDetailRecordList(records) {
+  return `
+    <div class="detail-records">
+      ${records
+        .map(
+          (record) => `
+            <article class="detail-record">
+              <div class="detail-record__header">
+                <strong>${record.title}</strong>
+                ${record.meta ? `<span>${record.meta}</span>` : ""}
+              </div>
+              <div class="detail-record__fields">
+                ${record.fields
+                  .map(
+                    (field) => `
+                      <div class="detail-record__field">
+                        <span>${field.label}</span>
+                        <strong>${field.value || "-"}</strong>
+                      </div>
+                    `,
+                  )
+                  .join("")}
+              </div>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function buildDetailSection(title, content, subtitle = "") {
   return `
     <section class="detail-block">
@@ -861,7 +947,9 @@ function buildDetailSection(title, content, subtitle = "") {
         <strong>${title}</strong>
         ${subtitle ? `<span>${subtitle}</span>` : ""}
       </div>
-      ${content}
+      <div class="detail-block__card">
+        ${content}
+      </div>
     </section>
   `;
 }
@@ -885,6 +973,63 @@ function buildDetailAccordion(title, content, subtitle = "", isOpen = false) {
   `;
 }
 
+function buildDetailDocuments(items) {
+  const documentTitles = items.map((item) => item.title).join("|");
+  return `
+    <div class="detail-documents">
+      <div class="detail-documents__toolbar">
+        <button
+          class="detail-document__download detail-document__download--bulk"
+          type="button"
+          data-document-download="tibbiy-hujjatlar-toplami.pdf"
+          data-document-title="Tibbiy hujjatlar to'plami"
+          data-document-bulk="true"
+          data-document-lines="${documentTitles}"
+        >
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Barchasini yuklab olish</span>
+        </button>
+      </div>
+      ${items
+        .map(
+          (item) => `
+            <article class="detail-document">
+              <span class="detail-document__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M8 3.5h5.5L18.5 8v11a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6.5 19v-14A1.5 1.5 0 0 1 8 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.5 3.5V8h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 15.5h7M8.5 12.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span>
+              <div class="detail-document__content">
+                <strong>${item.title}</strong>
+                <span>PDF hujjat</span>
+              </div>
+              <button class="detail-document__download" type="button" data-document-download="${item.fileName}" data-document-title="${item.title}">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Yuklab olish</span>
+              </button>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function buildDetailInlineActions(items) {
+  return `
+    <div class="detail-inline-actions">
+      ${items
+        .map(
+          (item) => `
+            <button class="detail-inline-actions__button" type="button" data-detail-page="${item.pageTitle}">
+              <span>${item.label}</span>
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function buildDetailSummaryStrip(items) {
   return `
     <section class="detail-summary-strip">
@@ -902,6 +1047,88 @@ function buildDetailSummaryStrip(items) {
   `;
 }
 
+function formatPersonName(value) {
+  return (value || "-").toLocaleUpperCase("uz-UZ");
+}
+
+function sanitizePdfText(value) {
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/[()]/g, "")
+    .replace(/\r?\n/g, " ");
+}
+
+function createPdfBlob(title, lines = []) {
+  const pdfLines = [title, ...lines].filter(Boolean);
+  const commands = ["BT", "/F1 16 Tf"];
+  pdfLines.forEach((line, index) => {
+    const y = 780 - index * 22;
+    commands.push(`1 0 0 1 50 ${y} Tm (${sanitizePdfText(line)}) Tj`);
+  });
+  commands.push("ET");
+  const stream = commands.join("\n");
+  const streamLength = new TextEncoder().encode(stream).length;
+  const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length ${streamLength} >>
+stream
+${stream}
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000061 00000 n 
+0000000120 00000 n 
+0000000246 00000 n 
+0000000374 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+444
+%%EOF`;
+  return new Blob([pdfContent], { type: "application/pdf" });
+}
+
+function triggerPdfDownload(fileName, title, lines = []) {
+  const blob = createPdfBlob(title, lines);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function getOrganizationType(name = "") {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("(bolalar)")) {
+    return "Bolalar uchun";
+  }
+  if (normalized.includes("(ayollar)")) {
+    return "Ayollar uchun";
+  }
+  if (normalized.includes("(erkaklar)")) {
+    return "Erkaklar uchun";
+  }
+  return "Muruvvat internat uyi";
+}
+
 function getApplicationById(applicationId) {
   const row = Array.from(applicationRows).find((item) => {
     const id = item.querySelector(".stacked-cell--application strong")?.textContent?.trim();
@@ -914,7 +1141,8 @@ function getApplicationById(applicationId) {
 
   const applicationCell = row.querySelector(".stacked-cell--application");
   const applicantCell = row.children[2]?.querySelector(".stacked-cell");
-  const addressCell = row.children[3]?.querySelector(".stacked-cell");
+  const organizationCell = row.children[3]?.querySelector(".stacked-cell");
+  const addressCell = row.children[4]?.querySelector(".stacked-cell");
   const statusLabel = row.querySelector(".status-badge")?.textContent?.trim() ?? "";
   const numericPart = Number(applicationId.replace(/\D/g, "")) || 0;
   const operator = ["D.Sh. Karimova", "A.B. Xasanov", "N.O. Rasulova"][numericPart % 3];
@@ -932,15 +1160,23 @@ function getApplicationById(applicationId) {
   const birthMonth = String((numericPart % 12) + 1).padStart(2, "0");
   const birthDay = String((numericPart % 27) + 1).padStart(2, "0");
   const receiver = {
-    fullName: operator,
+    fullName: formatPersonName(operator),
     pinfl: `50${String(100000000000 + numericPart).slice(-12)}`,
     position: ["Yetakchi mutaxassis", "Bosh inspektor", "Mas'ul kotib"][numericPart % 3],
     address: `${addressCell?.querySelector("strong")?.textContent?.trim() ?? "-"}, ${addressCell?.querySelector("span")?.textContent?.trim() ?? "-"}, IHMA hududiy bo'limi`,
+    avatar: getApplicantAvatar({ applicantName: formatPersonName(operator), id: `receiver-${applicationId}` }),
   };
+  const representativeName = ["Karimov Ulug'bek Islomovich", "Raximova Dilfuza Abduqodirovna", "Toshpulatov Jamshid Sherzod o'g'li"][numericPart % 3];
   const representative = {
-    fullName: ["Karimov Ulug'bek Islomovich", "Raximova Dilfuza Abduqodirovna", "Toshpulatov Jamshid Sherzod o'g'li"][numericPart % 3],
+    fullName: formatPersonName(representativeName),
     pinfl: `40${String(200000000000 + numericPart).slice(-12)}`,
+    level: ["Ota-onasi", "Vasiy", "Qonuniy vakil"][numericPart % 3],
     address: fullAddress,
+    phone: `+998 ${90 + (numericPart % 3)} ${String(1000000 + numericPart).slice(-7).replace(/(\d{3})(\d{2})(\d{2})/, "$1-$2-$3")}`,
+    avatar: getApplicantAvatar({
+      applicantName: formatPersonName(representativeName),
+      id: `representative-${applicationId}`,
+    }),
   };
   const institutions = {
     "toshkent shahri": {
@@ -949,15 +1185,15 @@ function getApplicationById(applicationId) {
     },
     "samarqand viloyati": {
       name: "Samarqand viloyat Muruvvat internat uyi",
-      address: "Samarqand viloyati, Samarqand tumani, Registon ko'chasi 24-uy",
+      address: "Samarqand, Samarqand tumani, Registon ko'chasi 24-uy",
     },
     "farg'ona viloyati": {
       name: "Farg'ona viloyat Muruvvat internat uyi",
-      address: "Farg'ona viloyati, Farg'ona shahri, Al-Farg'oniy ko'chasi 18-uy",
+      address: "Farg'ona, Farg'ona shahri, Al-Farg'oniy ko'chasi 18-uy",
     },
     "buxoro viloyati": {
       name: "Buxoro viloyat Muruvvat internat uyi",
-      address: "Buxoro viloyati, Buxoro shahri, Istiqlol ko'chasi 9-uy",
+      address: "Buxoro, Buxoro shahri, Istiqlol ko'chasi 9-uy",
     },
   };
   const institution = institutions[row.getAttribute("data-region") ?? ""] ?? {
@@ -966,8 +1202,8 @@ function getApplicationById(applicationId) {
   };
   const actResult = statusLabel.toLowerCase() === "rad etilgan" ? "Salbiy" : "Ijobiy";
   const decisionResult = statusLabel.toLowerCase() === "rad etilgan" ? "Rad etish" : "Qabul qilish";
-  const actStatus = statusLabel.toLowerCase() === "jarayonda" ? "Jarayonda" : "Yakunlangan";
-  const decisionStatus = statusLabel.toLowerCase() === "jarayonda" ? "Kutilmoqda" : "Imzolangan";
+  const actStatus = statusLabel.toLowerCase() === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
+  const decisionStatus = statusLabel.toLowerCase() === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
   const applicationDate = applicationCell?.querySelector("span")?.textContent?.trim() ?? "-";
   const day = Number(applicationDate.split(".")[0] || 1);
   const month = Number(applicationDate.split(".")[1] || 1);
@@ -1005,6 +1241,22 @@ function getApplicationById(applicationId) {
     { operation: "Qaror loyihasi shakllantirildi", date: `${applicationDate} 16:05`, actor: "Komissiya kotibi" },
   ];
 
+  const medicalDocuments = [
+    "Ambulator kartadan yoki kasallik tarixidan ko'chirma",
+    "Nogironligi bo'lgan shaxsni reabilitatsiya qilishning yakka tartibdagi dasturi",
+    "Ruhiy-asab kasalliklari dispanseri tibbiy-maslahat komissiyasi xulosasi",
+    "Onkologik dispanser xulosasi",
+    "OITSga qarshi kurash markazi xulosasi",
+    "Teri-tanosil kasalliklari dispanseri xulosasi",
+    "Silga qarshi kurashish dispanseri xulosasi",
+    "Fuqaroni muomalaga layoqatsiz deb topish to'g'risida sudning hal qiluv qarori",
+    "Muomalaga layoqatsiz deb topilgan fuqaroga vasiy tayinlash to'g'risida tuman (shahar) hokimi qarori",
+    "Psixologik-tibbiy-pedagogik komissiya xulosasi",
+  ].map((title, index) => ({
+    title,
+    fileName: `tibbiy-hujjat-${numericPart}-${index + 1}.pdf`,
+  }));
+
   return {
     id: applicationCell?.querySelector("strong")?.textContent?.trim() ?? applicationId,
     date: applicationDate,
@@ -1014,16 +1266,23 @@ function getApplicationById(applicationId) {
     receiver,
     representative,
     applicant: {
-      fullName: applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-",
+      fullName: formatPersonName(applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-"),
       pinfl: applicantCell?.querySelector("span")?.textContent?.trim() ?? "-",
       birthDate: `${birthDay}.${birthMonth}.${birthYear}`,
+      gender: numericPart % 2 === 0 ? "Erkak" : "Ayol",
       disabilityGroup,
       diagnosis: `${diagnosis.label} (${diagnosis.code})`,
       address: fullAddress,
-      avatar: getApplicantAvatar({ applicantName: applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-", id: applicationId }),
+      avatar: getApplicantAvatar({ applicantName: formatPersonName(applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-"), id: applicationId }),
       meta: [],
     },
     institution,
+    organization: {
+      type: getOrganizationType(organizationCell?.querySelector("strong")?.textContent?.trim() ?? institution.name),
+      name: organizationCell?.querySelector("strong")?.textContent?.trim() ?? institution.name,
+      region: organizationCell?.querySelector("span")?.textContent?.trim() ?? row.getAttribute("data-region") ?? "-",
+      address: institution.address,
+    },
     act: {
       id: `DL-${numericPart + 500}`,
       date: `${String(Math.max(1, day - 1)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`,
@@ -1033,9 +1292,10 @@ function getApplicationById(applicationId) {
     decision: {
       id: `QR-${numericPart + 900}`,
       date: `${String(Math.max(1, day)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`,
-      result: decisionResult,
+      result: statusLabel.toLowerCase() === "rad etilgan" ? "Salbiy" : "Ijobiy",
       status: decisionStatus,
     },
+    medicalDocuments,
     disabilityHistory,
     conclusionHistory,
     applicationHistory,
@@ -1048,6 +1308,14 @@ function closeDetailModal() {
   detailModal?.setAttribute("hidden", "");
   detailModalLoading?.setAttribute("hidden", "");
   detailModalBody?.setAttribute("hidden", "");
+  if (detailModalDialog) {
+    detailModalDialog.scrollTop = 0;
+    detailModalDialog.scrollLeft = 0;
+  }
+  if (detailModalBody) {
+    detailModalBody.scrollTop = 0;
+    detailModalBody.scrollLeft = 0;
+  }
   if (detailContent) {
     detailContent.innerHTML = "";
   }
@@ -1064,114 +1332,168 @@ async function openApplicationDetail(applicationId) {
   detailModal?.removeAttribute("hidden");
   detailModalLoading?.removeAttribute("hidden");
   detailModalBody?.setAttribute("hidden", "");
+  if (detailModalDialog) {
+    detailModalDialog.scrollTop = 0;
+    detailModalDialog.scrollLeft = 0;
+  }
+  if (detailModalBody) {
+    detailModalBody.scrollTop = 0;
+    detailModalBody.scrollLeft = 0;
+  }
 
   await sleep(200);
 
   if (detailContent) {
     detailContent.innerHTML = [
-      buildDetailSummaryStrip([
-        { label: "Ariza ID", value: application.id },
-        { label: "Sana", value: formatReadableDate(application.date) },
-        { label: "Status", value: formatStatusBadge(application.status) },
-        { label: "Ariza beruvchi", value: application.applicant.fullName },
-        { label: "Internat uyi", value: application.institution.name },
-      ]),
-      `<div class="detail-columns">
-        <div class="detail-columns__main">
-          ${buildDetailSection(
-            "Shaxslar ma'lumotlari",
-            buildDetailFieldGrid([
-              { label: "Qabul qiluvchi FIO", value: application.receiver.fullName },
-              { label: "Qabul qiluvchi PINFL", value: application.receiver.pinfl },
+      `<div class="detail-section-grid">
+        ${buildDetailSection(
+          "Ariza ma'lumotlari",
+          buildDetailFieldGrid([
+            { label: "ID", value: application.id },
+            { label: "Sana", value: formatReadableDate(application.date) },
+            { label: "Status", value: formatStatusBadge(application.status) },
+          ]),
+        )}
+        ${buildDetailSection(
+          "Arizani qabul qiluvchi",
+          `<div class="detail-person-layout">
+            ${buildDetailPersonCard(
+              application.receiver,
+              `<img class="detail-person-card__avatar" src="${application.receiver.avatar}" alt="${application.receiver.fullName} rasmi" />`,
+            )}
+            ${buildDetailFieldGrid([
+              { label: "FIO", value: application.receiver.fullName },
+              { label: "JSHSHIR", value: application.receiver.pinfl },
               { label: "Lavozim", value: application.receiver.position },
-              { label: "Qabul qiluvchi manzili", value: application.receiver.address },
-              { label: "Vakil FIO", value: application.representative.fullName },
-              { label: "Vakil PINFL", value: application.representative.pinfl },
-              { label: "Vakil manzili", value: application.representative.address },
-            ]),
-          )}
+              { label: "Manzil", value: application.receiver.address },
+            ])}
+          </div>`,
+        )}
+        ${buildDetailSection(
+          "Qonuniy vakil",
+          `<div class="detail-person-layout">
+            ${buildDetailPersonCard(
+              application.representative,
+              `<img class="detail-person-card__avatar" src="${application.representative.avatar}" alt="${application.representative.fullName} rasmi" />`,
+            )}
+            ${buildDetailFieldGrid([
+              { label: "FIO", value: application.representative.fullName },
+              { label: "JSHSHIR", value: application.representative.pinfl },
+              { label: "Vakillik darajasi", value: application.representative.level },
+              { label: "Manzil", value: application.representative.address },
+              { label: "Telefon raqami", value: application.representative.phone },
+            ])}
+          </div>`,
+        )}
+        ${buildDetailSection(
+          "Arizachi",
+          `<div class="detail-person-layout">
+            ${buildDetailPersonCard(application.applicant, `<img class="detail-person-card__avatar" src="${application.applicant.avatar}" alt="${application.applicant.fullName} rasmi" />`)}
+            ${buildDetailFieldGrid([
+              { label: "FIO", value: application.applicant.fullName },
+              { label: "JSHSHIR", value: application.applicant.pinfl },
+              { label: "Tug'ilgan sanasi", value: application.applicant.birthDate },
+              { label: "Jinsi", value: application.applicant.gender },
+              { label: "Nogironlik guruhi", value: application.applicant.disabilityGroup },
+              { label: "Tashxisi", value: application.applicant.diagnosis },
+              { label: "Manzili", value: application.applicant.address },
+            ])}
+          </div>`,
+        )}
+        ${buildDetailSection(
+          "Tashkilot",
+          buildDetailFieldGrid([
+            { label: "Tashkilot turi", value: application.organization.type },
+            { label: "Tashkilot nomi", value: application.organization.name },
+            { label: "Manzil", value: application.organization.address },
+          ]),
+        )}
+        ${buildDetailSection(
+          "Tibbiy hujjatlar",
+          buildDetailDocuments(application.medicalDocuments),
+        )}
+        <div class="detail-section-grid__double">
           ${buildDetailSection(
-            "Ariza beruvchi",
-            buildDetailPersonCard(application.applicant, `<img class="detail-person-card__avatar" src="${application.applicant.avatar}" alt="${application.applicant.fullName} rasmi" />`) +
-              buildDetailFieldGrid([
-                { label: "Tug'ilgan sanasi", value: application.applicant.birthDate },
-                { label: "Nogironlik guruhi", value: application.applicant.disabilityGroup },
-                { label: "Tashxisi", value: application.applicant.diagnosis },
-                { label: "Manzil", value: application.applicant.address },
-              ]),
-          )}
-        </div>
-        <aside class="detail-columns__side">
-          ${buildDetailSection(
-            "Internat uyi ma'lumoti",
-            buildDetailFieldGrid([
-              { label: "Nomi", value: application.institution.name },
-              { label: "Manzil", value: application.institution.address },
-            ]),
-          )}
-          ${buildDetailSection(
-            "Dalolatnoma ma'lumoti",
+            "Dalolatnoma",
             buildDetailFieldGrid([
               { label: "ID", value: application.act.id },
               { label: "Sana", value: application.act.date },
-              { label: "Natija", value: application.act.result },
-              { label: "Status", value: application.act.status },
-            ]),
+              { label: "Natija", value: formatResultBadge(application.act.result) },
+              { label: "Status", value: formatStatusBadge(application.act.status) },
+            ]) +
+              buildDetailInlineActions([{ label: "Dalolatnomaga o'tish", pageTitle: "Arizalar - Dalolatnomalar" }]),
           )}
           ${buildDetailSection(
-            "Qaror ma'lumoti",
+            "Qaror",
             buildDetailFieldGrid([
               { label: "ID", value: application.decision.id },
               { label: "Sana", value: application.decision.date },
-              { label: "Natija", value: application.decision.result },
-              { label: "Status", value: application.decision.status },
-            ]),
+              { label: "Natija", value: formatResultBadge(application.decision.result) },
+              { label: "Status", value: formatStatusBadge(application.decision.status) },
+            ]) +
+              buildDetailInlineActions([{ label: "Qarorga o'tish", pageTitle: "Arizalar - Qarorlar" }]),
           )}
-        </aside>
+        </div>
       </div>`,
       buildDetailAccordion(
         "Nogironlik tarixi",
-        buildDetailTable(
-          ["ID", "Ta'yinlangan sana", "Amal qilish muddati", "Nogironlik guruhi", "Tashxisi", "Status"],
-          application.disabilityHistory.map((item) => [
-            item.id,
-            item.assignedDate,
-            item.validUntil,
-            item.group,
-            item.diagnosis,
-            item.status,
-          ]),
+        buildDetailRecordList(
+          application.disabilityHistory.map((item) => ({
+            title: item.id,
+            meta: item.assignedDate,
+            fields: [
+              { label: "Ta'yinlangan sana", value: item.assignedDate },
+              { label: "Amal qilish muddati", value: item.validUntil },
+              { label: "Nogironlik guruhi", value: item.group },
+              { label: "Tashxisi", value: item.diagnosis },
+              { label: "Status", value: item.status },
+            ],
+          })),
         ),
         `${application.disabilityHistory.length} ta yozuv`,
         true,
       ),
       buildDetailAccordion(
         "Xulosalar tarixi",
-        buildDetailTable(
-          ["ID", "Sana", "Ta'lim muassasasi turi", "Amal qilish muddati", "Status"],
-          application.conclusionHistory.map((item) => [
-            item.id,
-            item.date,
-            item.institutionType,
-            item.validUntil,
-            item.status,
-          ]),
+        buildDetailRecordList(
+          application.conclusionHistory.map((item) => ({
+            title: item.id,
+            meta: item.date,
+            fields: [
+              { label: "Sana", value: item.date },
+              { label: "Ta'lim muassasasi turi", value: item.institutionType },
+              { label: "Amal qilish muddati", value: item.validUntil },
+              { label: "Status", value: item.status },
+            ],
+          })),
         ),
         `${application.conclusionHistory.length} ta yozuv`,
       ),
       buildDetailAccordion(
         "Arizalar tarixi",
-        buildDetailTable(
-          ["ID", "Sana", "Status"],
-          application.applicationHistory.map((item) => [item.id, item.date, item.status]),
+        buildDetailRecordList(
+          application.applicationHistory.map((item) => ({
+            title: item.id,
+            meta: item.date,
+            fields: [
+              { label: "Sana", value: item.date },
+              { label: "Status", value: item.status },
+            ],
+          })),
         ),
         `${application.applicationHistory.length} ta yozuv`,
       ),
       buildDetailAccordion(
-        "Hujjat tarixi (logs)",
-        buildDetailTable(
-          ["Amaliyot", "Sana", "Amaliyotni bajaruvchi"],
-          application.documentLogs.map((item) => [item.operation, item.date, item.actor]),
+        "Hujjat tarixi",
+        buildDetailRecordList(
+          application.documentLogs.map((item) => ({
+            title: item.operation,
+            meta: item.date,
+            fields: [
+              { label: "Sana", value: item.date },
+              { label: "Amaliyotni bajaruvchi", value: item.actor },
+            ],
+          })),
         ),
         `${application.documentLogs.length} ta yozuv`,
       ),
@@ -1190,6 +1512,10 @@ async function openApplicationDetail(applicationId) {
 
   detailModalLoading?.setAttribute("hidden", "");
   detailModalBody?.removeAttribute("hidden");
+  window.requestAnimationFrame(() => {
+    detailModalDialog?.scrollTo(0, 0);
+    detailModalBody?.scrollTo(0, 0);
+  });
   detailModalClose?.focus();
 }
 
@@ -1445,6 +1771,294 @@ function getReportFilterValues() {
   };
 }
 
+function getApplicationRegionLabel(value) {
+  const row = Array.from(applicationRows).find((item) => (item.getAttribute("data-region") ?? "") === value);
+  return row?.querySelector("td:nth-child(5) strong")?.textContent?.trim() ?? value;
+}
+
+function getApplicationStepLabel(value) {
+  return applicationStepLabels[value] ?? value;
+}
+
+function getDefaultStepForStatus(status) {
+  const normalized = status.toLowerCase();
+  if (normalized === "jarayonda") {
+    return "komissiya-korib-chiqmoqda";
+  }
+  if (normalized === "qabul qilingan") {
+    return "komissiya-qabul-qilgan";
+  }
+  if (normalized === "rad etilgan") {
+    return "komissiya-rad-etgan";
+  }
+  return "";
+}
+
+function getApplicationOrganizationTypeLabel(value) {
+  return applicationOrganizationTypeLabels[value] ?? value;
+}
+
+function getApplicationSelectLabel(select) {
+  if (!select) {
+    return "";
+  }
+
+  const option = select.options[select.selectedIndex];
+  return option?.textContent?.trim() ?? "";
+}
+
+function setCustomSelectOptions(select, values, getLabel) {
+  if (!select) {
+    return;
+  }
+
+  const menu = select.closest("[data-custom-select]");
+  const dropdown = menu?.querySelector(".custom-select__dropdown");
+  if (!dropdown) {
+    return;
+  }
+
+  const previousValue = select.value;
+  const normalizedValues = Array.from(new Set(values.filter(Boolean)));
+  const nextValue = normalizedValues.includes(previousValue) ? previousValue : "all";
+
+  dropdown.innerHTML = "";
+  select.innerHTML = "";
+
+  const allOption = document.createElement("button");
+  allOption.type = "button";
+  allOption.className = "custom-select__option";
+  allOption.setAttribute("role", "option");
+  allOption.setAttribute("data-value", "all");
+  allOption.textContent = "Barchasi";
+  dropdown.append(allOption);
+
+  const allNativeOption = document.createElement("option");
+  allNativeOption.value = "all";
+  allNativeOption.textContent = "Barchasi";
+  select.append(allNativeOption);
+
+  normalizedValues.forEach((value) => {
+    const label = getLabel(value);
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "custom-select__option";
+    option.setAttribute("role", "option");
+    option.setAttribute("data-value", value);
+    option.textContent = label;
+    dropdown.append(option);
+
+    const nativeOption = document.createElement("option");
+    nativeOption.value = value;
+    nativeOption.textContent = label;
+    select.append(nativeOption);
+  });
+
+  select.value = nextValue;
+  bindCustomSelectOptions(menu);
+  syncCustomSelectUi(menu);
+}
+
+function setCustomSelectDisabled(select, disabled) {
+  if (!select) {
+    return;
+  }
+
+  const menu = select.closest("[data-custom-select]");
+  const trigger = menu?.querySelector(".custom-select__trigger");
+
+  if (disabled) {
+    select.value = "all";
+    menu?.classList.remove("custom-select--open");
+    menu?.classList.add("custom-select--disabled");
+    trigger?.setAttribute("disabled", "true");
+    trigger?.setAttribute("aria-expanded", "false");
+  } else {
+    menu?.classList.remove("custom-select--disabled");
+    trigger?.removeAttribute("disabled");
+  }
+
+  if (menu) {
+    syncCustomSelectUi(menu);
+  }
+}
+
+function enrichApplicationRows() {
+  applicationRows.forEach((row) => {
+    const applicationId = row.querySelector(".stacked-cell--application strong")?.textContent?.trim() ?? "";
+    const metadata = applicationRowMetadata[applicationId] ?? {};
+    const organization = row.querySelector("td:nth-child(4) strong")?.textContent?.trim() ?? "";
+    const district = row.querySelector("td:nth-child(5) span")?.textContent?.trim() ?? "";
+    const status = row.getAttribute("data-status") ?? "";
+    const organizationTypeMatch = organization.match(/\(([^)]+)\)\s*$/);
+    const organizationType = organizationTypeMatch?.[1]?.trim().toLowerCase() ?? "";
+    const stepValue = metadata.step || getDefaultStepForStatus(status);
+
+    if (stepValue) {
+      row.setAttribute("data-step", stepValue);
+    }
+    if (district) {
+      row.setAttribute("data-district", district.toLowerCase());
+    }
+    if (organizationType) {
+      row.setAttribute("data-organization-type", organizationType);
+    }
+    if (organization) {
+      row.setAttribute("data-organization", organization.toLowerCase());
+      row.setAttribute(
+        "data-search",
+        `${row.getAttribute("data-search") ?? ""} ${organization.toUpperCase()}`.trim(),
+      );
+    }
+
+    const statusCell = row.children[5];
+    const statusBadge = statusCell?.querySelector(".status-badge");
+    if (statusCell && statusBadge && stepValue) {
+      const variant = getStatusBadgeVariant(status);
+      statusCell.innerHTML = `<span class="status-badge ${variant.className}">${variant.label}</span>`;
+    }
+  });
+}
+
+function updateApplicationFilterOptionSets() {
+  const statusValue = statusFilter?.value ?? "all";
+  const regionValue = regionFilter?.value ?? "all";
+  const stepValue = stepFilter?.value ?? "all";
+  const organizationTypeValue = organizationTypeFilter?.value ?? "all";
+  const rows = Array.from(applicationRows);
+
+  const stepRows = statusValue === "all"
+    ? rows
+    : rows.filter((row) => (row.getAttribute("data-status") ?? "") === statusValue);
+  const regionRows = regionValue === "all"
+    ? rows
+    : rows.filter((row) => (row.getAttribute("data-region") ?? "") === regionValue);
+
+  const districtValues = regionRows.map((row) => row.getAttribute("data-district") ?? "");
+  const organizationTypeValues = regionRows.map((row) => row.getAttribute("data-organization-type") ?? "");
+  const organizationRows = organizationTypeValue === "all"
+    ? regionRows
+    : regionRows.filter((row) => (row.getAttribute("data-organization-type") ?? "") === organizationTypeValue);
+  const organizationValues = organizationRows.map((row) => row.getAttribute("data-organization") ?? "");
+
+  setCustomSelectOptions(
+    stepFilter,
+    stepRows.map((row) => row.getAttribute("data-step") ?? ""),
+    getApplicationStepLabel,
+  );
+  setCustomSelectOptions(districtFilter, districtValues, (value) => {
+    const row = rows.find((item) => (item.getAttribute("data-district") ?? "") === value);
+    return row?.querySelector("td:nth-child(5) span")?.textContent?.trim() ?? value;
+  });
+  setCustomSelectOptions(organizationTypeFilter, organizationTypeValues, getApplicationOrganizationTypeLabel);
+  setCustomSelectOptions(organizationFilter, organizationValues, (value) => {
+    const row = rows.find((item) => (item.getAttribute("data-organization") ?? "") === value);
+    return row?.querySelector("td:nth-child(4) strong")?.textContent?.trim() ?? value;
+  });
+
+  setCustomSelectDisabled(stepFilter, statusValue === "all");
+  setCustomSelectDisabled(districtFilter, regionValue === "all");
+  setCustomSelectDisabled(organizationFilter, organizationTypeValue === "all");
+
+  if (statusValue === "all" && stepFilter) {
+    stepFilter.value = "all";
+  }
+  if (regionValue === "all" && districtFilter) {
+    districtFilter.value = "all";
+  }
+  if (organizationTypeValue === "all" && organizationFilter) {
+    organizationFilter.value = "all";
+  }
+}
+
+function syncTableMenuMaxHeight(toggleButton, menu) {
+  if (!toggleButton || !menu) {
+    return;
+  }
+
+  const rect = toggleButton.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const availableHeight = Math.max(260, Math.floor(viewportHeight - rect.bottom - 24));
+  menu.style.maxHeight = `${availableHeight}px`;
+}
+
+function getApplicationFilterValues() {
+  return {
+    status: statusFilter?.value ?? "all",
+    region: regionFilter?.value ?? "all",
+    step: stepFilter?.value ?? "all",
+    district: districtFilter?.value ?? "all",
+    organizationType: organizationTypeFilter?.value ?? "all",
+    organization: organizationFilter?.value ?? "all",
+    dateFrom: dateFromFilter?.value ?? "",
+    dateTo: dateToFilter?.value ?? "",
+  };
+}
+
+function getApplicationFilterActiveCount() {
+  const values = getApplicationFilterValues();
+  return Object.entries(values).reduce((count, [key, value]) => {
+    return count + (value !== applicationDefaultFilters[key] ? 1 : 0);
+  }, 0);
+}
+
+function updateApplicationFilterControls() {
+  const activeCount = getApplicationFilterActiveCount();
+  const currentFilters = getApplicationFilterValues();
+  const hasPendingChanges = Object.keys(applicationDefaultFilters).some(
+    (key) => currentFilters[key] !== applicationAppliedFilters[key],
+  );
+  const hasAppliedFilters = Object.keys(applicationDefaultFilters).some(
+    (key) => applicationAppliedFilters[key] !== applicationDefaultFilters[key],
+  );
+
+  if (applyFilters) {
+    applyFilters.disabled = !hasPendingChanges;
+  }
+
+  if (resetFilters) {
+    resetFilters.disabled = !hasAppliedFilters;
+  }
+
+  if (filterToggle) {
+    filterToggle.classList.toggle("table-action--active", activeCount > 0);
+  }
+
+  if (filterActiveCount) {
+    filterActiveCount.hidden = activeCount === 0;
+    filterActiveCount.textContent = String(activeCount);
+  }
+}
+
+function updateApplicationsEmptyState(matchedRowsCount) {
+  if (!tableEmptyRow || !tableEmptyTitle || !tableEmptyDescription || !tableEmptyAction) {
+    return;
+  }
+
+  const hasSearch = Boolean(applicationSearch?.value.trim());
+  const hasAppliedFilters = Object.keys(applicationDefaultFilters).some(
+    (key) => applicationAppliedFilters[key] !== applicationDefaultFilters[key],
+  );
+
+  tableEmptyRow.hidden = matchedRowsCount !== 0;
+
+  if (matchedRowsCount !== 0) {
+    tableEmptyAction.hidden = true;
+    return;
+  }
+
+  if (hasSearch || hasAppliedFilters) {
+    tableEmptyTitle.textContent = "Mos ma'lumot topilmadi";
+    tableEmptyDescription.textContent = "Qidiruv yoki tanlangan filterlar bo'yicha hech qanday ariza topilmadi.";
+    tableEmptyAction.hidden = false;
+    return;
+  }
+
+  tableEmptyTitle.textContent = "Hozircha arizalar mavjud emas";
+  tableEmptyDescription.textContent = "Ro'yxatga hali arizalar kelib tushmagan yoki ma'lumotlar yuklanmagan.";
+  tableEmptyAction.hidden = true;
+}
+
 function getReportFilterActiveCount() {
   const values = getReportFilterValues();
   return Object.entries(values).reduce((count, [key, value]) => {
@@ -1688,8 +2302,7 @@ document.addEventListener("click", (event) => {
   if (filterToggle && filterMenu) {
     const filterContainer = filterToggle.closest(".table-menu");
     if (filterContainer && !filterContainer.contains(target)) {
-      filterContainer.classList.remove("table-menu--open");
-      filterToggle.setAttribute("aria-expanded", "false");
+      // Applications filter stays open until user explicitly closes it.
     }
   }
 
@@ -1832,10 +2445,14 @@ pageLinks.forEach((link) => {
 
 function applyTableFilters() {
   const searchValue = applicationSearch?.value.trim().toUpperCase() ?? "";
-  const statusValue = statusFilter?.value ?? "all";
-  const regionValue = regionFilter?.value ?? "all";
-  const dateFromValue = dateFromFilter?.value ?? "";
-  const dateToValue = dateToFilter?.value ?? "";
+  const statusValue = applicationAppliedFilters.status;
+  const regionValue = applicationAppliedFilters.region;
+  const stepValue = applicationAppliedFilters.step;
+  const districtValue = applicationAppliedFilters.district;
+  const organizationTypeValue = applicationAppliedFilters.organizationType;
+  const organizationValue = applicationAppliedFilters.organization;
+  const dateFromValue = applicationAppliedFilters.dateFrom;
+  const dateToValue = applicationAppliedFilters.dateTo;
   const limit = Number(rowsPerPage?.value ?? "10");
   const matchedRows = [];
   let processCount = 0;
@@ -1845,6 +2462,10 @@ function applyTableFilters() {
   applicationRows.forEach((row) => {
     const rowStatus = row.getAttribute("data-status") ?? "";
     const rowRegion = row.getAttribute("data-region") ?? "";
+    const rowStep = row.getAttribute("data-step") ?? "";
+    const rowDistrict = row.getAttribute("data-district") ?? "";
+    const rowOrganizationType = row.getAttribute("data-organization-type") ?? "";
+    const rowOrganization = row.getAttribute("data-organization") ?? "";
     const rowSearch = row.getAttribute("data-search") ?? "";
     const rowDateText = row.querySelector(".stacked-cell--application span")?.textContent?.trim() ?? "";
     const [day, month, year] = rowDateText.split(".");
@@ -1852,9 +2473,21 @@ function applyTableFilters() {
     const matchesSearch = !searchValue || rowSearch.includes(searchValue);
     const matchesStatus = statusValue === "all" || rowStatus === statusValue;
     const matchesRegion = regionValue === "all" || rowRegion === regionValue;
+    const matchesStep = stepValue === "all" || rowStep === stepValue;
+    const matchesDistrict = districtValue === "all" || rowDistrict === districtValue;
+    const matchesOrganizationType = organizationTypeValue === "all" || rowOrganizationType === organizationTypeValue;
+    const matchesOrganization = organizationValue === "all" || rowOrganization === organizationValue;
     const matchesDateFrom = !dateFromValue || (rowDateValue && rowDateValue >= dateFromValue);
     const matchesDateTo = !dateToValue || (rowDateValue && rowDateValue <= dateToValue);
-    const matched = matchesSearch && matchesStatus && matchesRegion && matchesDateFrom && matchesDateTo;
+    const matched = matchesSearch
+      && matchesStatus
+      && matchesRegion
+      && matchesStep
+      && matchesDistrict
+      && matchesOrganizationType
+      && matchesOrganization
+      && matchesDateFrom
+      && matchesDateTo;
 
     if (matched) {
       matchedRows.push(row);
@@ -1882,9 +2515,7 @@ function applyTableFilters() {
     row.style.display = "";
   });
 
-  if (tableEmptyRow) {
-    tableEmptyRow.hidden = matchedRows.length !== 0;
-  }
+  updateApplicationsEmptyState(matchedRows.length);
 
   const totalBase = matchedRows.length || 1;
   const percent = (value) => `${Math.round((value / totalBase) * 100)}%`;
@@ -1919,22 +2550,6 @@ function applyTableFilters() {
     paginationInfo.textContent = matchedRows.length > 0 ? `${from}-${to} / ${matchedRows.length} ta yozuv` : "0 / 0 ta yozuv";
   }
 
-  const activeFilterCount =
-    (searchValue ? 1 : 0) +
-    (statusValue !== "all" ? 1 : 0) +
-    (regionValue !== "all" ? 1 : 0) +
-    (dateFromValue ? 1 : 0) +
-    (dateToValue ? 1 : 0);
-
-  if (filterToggle) {
-    filterToggle.classList.toggle("table-action--active", activeFilterCount > 0);
-  }
-
-  if (filterActiveCount) {
-    filterActiveCount.hidden = activeFilterCount === 0;
-    filterActiveCount.textContent = String(activeFilterCount);
-  }
-
   renderPagination(tableState.totalPages);
 }
 
@@ -1944,8 +2559,6 @@ function resetAndApplyFilters() {
 }
 
 applicationSearch?.addEventListener("input", resetAndApplyFilters);
-statusFilter?.addEventListener("change", resetAndApplyFilters);
-regionFilter?.addEventListener("change", resetAndApplyFilters);
 rowsPerPage?.addEventListener("change", resetAndApplyFilters);
 
 downloadActions.forEach((button) => {
@@ -2098,8 +2711,32 @@ if (filterToggle && filterMenu) {
     const isOpen = filterContainer.classList.contains("table-menu--open");
     filterContainer.classList.toggle("table-menu--open", !isOpen);
     filterToggle.setAttribute("aria-expanded", String(!isOpen));
+    if (!isOpen) {
+      syncTableMenuMaxHeight(filterToggle, filterMenu);
+    }
   });
 }
+
+[statusFilter, regionFilter, stepFilter, districtFilter, organizationTypeFilter, organizationFilter].forEach((select) => {
+  select?.addEventListener("change", () => {
+    updateApplicationFilterOptionSets();
+    updateApplicationFilterControls();
+  });
+});
+
+applyFilters?.addEventListener("click", () => {
+  applicationAppliedFilters = { ...getApplicationFilterValues() };
+  updateApplicationFilterControls();
+  tableState.currentPage = 1;
+  applyTableFilters();
+  filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
+  filterToggle?.setAttribute("aria-expanded", "false");
+});
+
+filterMenuClose?.addEventListener("click", () => {
+  filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
+  filterToggle?.setAttribute("aria-expanded", "false");
+});
 
 if (reportFilterToggle && reportFilterMenu) {
   reportFilterToggle.addEventListener("click", (event) => {
@@ -2112,6 +2749,9 @@ if (reportFilterToggle && reportFilterMenu) {
     const isOpen = filterContainer.classList.contains("table-menu--open");
     filterContainer.classList.toggle("table-menu--open", !isOpen);
     reportFilterToggle.setAttribute("aria-expanded", String(!isOpen));
+    if (!isOpen) {
+      syncTableMenuMaxHeight(reportFilterToggle, reportFilterMenu);
+    }
   });
 }
 
@@ -2193,8 +2833,9 @@ customSelects.forEach((select) => {
 });
 
 dateFields.forEach((field) => {
-  const trigger = field.querySelector(".custom-date__trigger");
+  const trigger = field.querySelector(".custom-date__button, .custom-date__trigger");
   const input = field.querySelector(".custom-date__native");
+  const textInput = field.querySelector(".custom-date__text-input");
 
   trigger?.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -2211,8 +2852,63 @@ dateFields.forEach((field) => {
       applyReportFilters();
       return;
     }
+    if (input.id === "dateFromFilter" || input.id === "dateToFilter") {
+      updateApplicationFilterControls();
+      return;
+    }
     resetAndApplyFilters();
   });
+
+  if (textInput instanceof HTMLInputElement) {
+    const isApplicationDateField = input?.id === "dateFromFilter" || input?.id === "dateToFilter";
+
+    const enterApplicationDateEditMode = () => {
+      if (!isApplicationDateField) {
+        return;
+      }
+
+      textInput.dataset.previousValue = input.value ?? "";
+      if (textInput.value.trim()) {
+        textInput.value = "";
+      }
+    };
+
+    if (input?.id === "dateFromFilter" || input?.id === "dateToFilter") {
+      textInput.addEventListener("focus", enterApplicationDateEditMode);
+      textInput.addEventListener("click", enterApplicationDateEditMode);
+    }
+
+    textInput.addEventListener("input", () => {
+      textInput.value = formatTypedDate(textInput.value);
+    });
+
+    textInput.addEventListener("blur", () => {
+      const parsedValue = parseTypedDate(textInput.value);
+      if (parsedValue) {
+        input instanceof HTMLInputElement && (input.value = parsedValue);
+        syncDateFieldUi(field);
+      } else if (!textInput.value.trim()) {
+        if ((input?.id === "dateFromFilter" || input?.id === "dateToFilter") && textInput.dataset.previousValue) {
+          input instanceof HTMLInputElement && (input.value = textInput.dataset.previousValue);
+          syncDateFieldUi(field);
+        } else {
+          input instanceof HTMLInputElement && (input.value = "");
+          syncDateFieldUi(field);
+        }
+      } else {
+        syncDateFieldUi(field);
+      }
+
+      delete textInput.dataset.previousValue;
+
+      if (input.id === "dateFromFilter" || input.id === "dateToFilter") {
+        updateApplicationFilterControls();
+        return;
+      }
+
+      resetAndApplyFilters();
+    });
+  }
 });
 
 [
@@ -2361,6 +3057,17 @@ calendarPopover.addEventListener("click", (event) => {
     return;
   }
 
+  const yearDelta = target.closest("[data-calendar-nav-year]")?.getAttribute("data-calendar-nav-year");
+  if (yearDelta) {
+    calendarState.viewDate = new Date(
+      calendarState.viewDate.getFullYear() + Number(yearDelta),
+      calendarState.viewDate.getMonth(),
+      1,
+    );
+    renderCalendar();
+    return;
+  }
+
   const dayButton = target.closest(".calendar-popover__day");
   if (dayButton instanceof HTMLButtonElement) {
     setDateFieldValue(calendarState.activeField, dayButton.dataset.value ?? "");
@@ -2447,6 +3154,31 @@ detailModalClose?.addEventListener("click", () => {
   closeDetailModal();
 });
 
+detailContent?.addEventListener("click", (event) => {
+  const downloadButton = event.target.closest("[data-document-download]");
+  if (downloadButton) {
+    const fileName = downloadButton.getAttribute("data-document-download") || "hujjat.pdf";
+    const title = downloadButton.getAttribute("data-document-title") || "Tibbiy hujjat";
+    const documentLines = (downloadButton.getAttribute("data-document-lines") || "")
+      .split("|")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    triggerPdfDownload(fileName, title, documentLines);
+    showToast("PDF yuklab olindi", `${title} fayli tayyorlandi.`);
+    return;
+  }
+
+  const pageButton = event.target.closest("[data-detail-page]");
+  if (!pageButton) {
+    return;
+  }
+
+  const pageTitle = pageButton.getAttribute("data-detail-page");
+  const targetLink = pageTitle ? document.querySelector(`[data-page-title="${pageTitle}"]`) : null;
+  closeDetailModal();
+  targetLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+});
+
 detailAcceptButton?.addEventListener("click", () => {
   const applicationId = detailAcceptButton.dataset.applicationId;
   if (!applicationId) {
@@ -2494,14 +3226,23 @@ confirmModalApprove?.addEventListener("click", () => {
 });
 
 resetFilters?.addEventListener("click", () => {
-  if (applicationSearch) {
-    applicationSearch.value = "";
-  }
   if (statusFilter) {
     statusFilter.value = "all";
   }
   if (regionFilter) {
     regionFilter.value = "all";
+  }
+  if (stepFilter) {
+    stepFilter.value = "all";
+  }
+  if (districtFilter) {
+    districtFilter.value = "all";
+  }
+  if (organizationTypeFilter) {
+    organizationTypeFilter.value = "all";
+  }
+  if (organizationFilter) {
+    organizationFilter.value = "all";
   }
   if (dateFromFilter) {
     dateFromFilter.value = "";
@@ -2509,11 +3250,21 @@ resetFilters?.addEventListener("click", () => {
   if (dateToFilter) {
     dateToFilter.value = "";
   }
+  applicationAppliedFilters = { ...applicationDefaultFilters };
+  updateApplicationFilterOptionSets();
   customSelects.forEach(syncCustomSelectUi);
   dateFields.forEach(syncDateFieldUi);
   tableState.currentPage = 1;
   closeCalendar();
+  updateApplicationFilterControls();
   applyTableFilters();
+});
+
+tableEmptyAction?.addEventListener("click", () => {
+  if (applicationSearch) {
+    applicationSearch.value = "";
+  }
+  resetFilters?.click();
 });
 
 paginationPrev?.addEventListener("click", () => {
@@ -2573,6 +3324,19 @@ initializeTheme();
 showAppView();
 syncInitialRouteView();
 syncPasswordToggleUi();
+enrichApplicationRows();
+setCustomSelectOptions(
+  regionFilter,
+  Array.from(new Set(Array.from(applicationRows).map((row) => row.getAttribute("data-region") ?? "").filter(Boolean))),
+  getApplicationRegionLabel,
+);
+setCustomSelectOptions(
+  stepFilter,
+  Array.from(new Set(Array.from(applicationRows).map((row) => row.getAttribute("data-step") ?? "").filter(Boolean))),
+  getApplicationStepLabel,
+);
+updateApplicationFilterOptionSets();
+updateApplicationFilterControls();
 applyTableFilters();
 applyReportFilters();
 syncReportFrozenColumn();
@@ -2599,6 +3363,16 @@ async function applyRouteFromHash() {
 
 window.addEventListener("hashchange", () => {
   applyRouteFromHash();
+});
+
+window.addEventListener("resize", () => {
+  if (filterToggle?.closest(".table-menu")?.classList.contains("table-menu--open")) {
+    syncTableMenuMaxHeight(filterToggle, filterMenu);
+  }
+
+  if (reportFilterToggle?.closest(".table-menu")?.classList.contains("table-menu--open")) {
+    syncTableMenuMaxHeight(reportFilterToggle, reportFilterMenu);
+  }
 });
 
 applyRouteFromHash();

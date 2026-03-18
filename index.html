@@ -290,6 +290,13 @@
                   <span class="table-action__badge" id="filterActiveCount" hidden>0</span>
                 </button>
                 <div class="table-dropdown table-dropdown--filters" id="filterMenu">
+                  <div class="application-filter-panel">
+                  <div class="application-filter-panel__header">
+                    <strong class="application-filter-panel__title">Filterlar</strong>
+                    <button class="application-filter-panel__close" id="filterMenuClose" type="button" aria-label="Filter oynasini yopish">
+                      <svg viewBox="0 0 24 24" fill="none"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
                   <div class="filter-field">
                     <label class="filter-label" for="statusFilter">Status</label>
                     <div class="custom-select" id="statusFilterMenu" data-custom-select>
@@ -311,6 +318,20 @@
                     </div>
                   </div>
                   <div class="filter-field">
+                    <label class="filter-label" for="stepFilter">Bosqich</label>
+                    <div class="custom-select" id="stepFilterMenu" data-custom-select>
+                      <button class="custom-select__trigger" id="stepFilterTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Bosqich">
+                        <span id="stepFilterLabel">Barchasi</span>
+                      </button>
+                      <div class="custom-select__dropdown" role="listbox" aria-label="Bosqich">
+                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                      </div>
+                      <select class="custom-select__native" id="stepFilter" aria-hidden="true" tabindex="-1">
+                        <option value="all">Barchasi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="filter-field">
                     <label class="filter-label" for="regionFilter">Hudud</label>
                     <div class="custom-select" id="regionFilterMenu" data-custom-select>
                       <button class="custom-select__trigger" id="regionFilterTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Hudud">
@@ -319,44 +340,90 @@
                       <div class="custom-select__dropdown" role="listbox" aria-label="Hudud">
                         <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
                         <button class="custom-select__option" type="button" role="option" data-value="toshkent shahri" aria-selected="false">Toshkent shahri</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="samarqand viloyati" aria-selected="false">Samarqand viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="farg'ona viloyati" aria-selected="false">Farg'ona viloyati</button>
-                        <button class="custom-select__option" type="button" role="option" data-value="buxoro viloyati" aria-selected="false">Buxoro viloyati</button>
+                        <button class="custom-select__option" type="button" role="option" data-value="samarqand viloyati" aria-selected="false">Samarqand</button>
+                        <button class="custom-select__option" type="button" role="option" data-value="farg'ona viloyati" aria-selected="false">Farg'ona</button>
+                        <button class="custom-select__option" type="button" role="option" data-value="buxoro viloyati" aria-selected="false">Buxoro</button>
                       </div>
                       <select class="custom-select__native" id="regionFilter" aria-hidden="true" tabindex="-1">
                         <option value="all">Barchasi</option>
                         <option value="toshkent shahri">Toshkent shahri</option>
-                        <option value="samarqand viloyati">Samarqand viloyati</option>
-                        <option value="farg'ona viloyati">Farg'ona viloyati</option>
-                        <option value="buxoro viloyati">Buxoro viloyati</option>
+                        <option value="samarqand viloyati">Samarqand</option>
+                        <option value="farg'ona viloyati">Farg'ona</option>
+                        <option value="buxoro viloyati">Buxoro</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="filter-field">
+                    <label class="filter-label" for="districtFilter">Tuman (shahar)</label>
+                    <div class="custom-select" id="districtFilterMenu" data-custom-select>
+                      <button class="custom-select__trigger" id="districtFilterTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Tuman (shahar)">
+                        <span id="districtFilterLabel">Barchasi</span>
+                      </button>
+                      <div class="custom-select__dropdown" role="listbox" aria-label="Tuman (shahar)">
+                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                      </div>
+                      <select class="custom-select__native" id="districtFilter" aria-hidden="true" tabindex="-1">
+                        <option value="all">Barchasi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="filter-field">
+                    <label class="filter-label" for="organizationTypeFilter">Tashkilot turi</label>
+                    <div class="custom-select" id="organizationTypeFilterMenu" data-custom-select>
+                      <button class="custom-select__trigger" id="organizationTypeFilterTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Tashkilot turi">
+                        <span id="organizationTypeFilterLabel">Barchasi</span>
+                      </button>
+                      <div class="custom-select__dropdown" role="listbox" aria-label="Tashkilot turi">
+                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                      </div>
+                      <select class="custom-select__native" id="organizationTypeFilter" aria-hidden="true" tabindex="-1">
+                        <option value="all">Barchasi</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="filter-field">
+                    <label class="filter-label" for="organizationFilter">Tashkilot</label>
+                    <div class="custom-select" id="organizationFilterMenu" data-custom-select>
+                      <button class="custom-select__trigger" id="organizationFilterTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Tashkilot">
+                        <span id="organizationFilterLabel">Barchasi</span>
+                      </button>
+                      <div class="custom-select__dropdown" role="listbox" aria-label="Tashkilot">
+                        <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                      </div>
+                      <select class="custom-select__native" id="organizationFilter" aria-hidden="true" tabindex="-1">
+                        <option value="all">Barchasi</option>
                       </select>
                     </div>
                   </div>
                   <div class="filter-field">
                     <label class="filter-label" for="dateFromFilter">Boshlanish sana</label>
                     <div class="custom-date" data-date-field>
-                      <button class="custom-date__trigger" id="dateFromTrigger" type="button" aria-label="Boshlanish sana">
-                        <span class="custom-date__label" id="dateFromLabel">Sanani tanlang</span>
-                        <span class="custom-date__icon" aria-hidden="true">
+                      <div class="custom-date__field">
+                        <input class="custom-date__text-input" id="dateFromInput" type="text" inputmode="numeric" maxlength="10" placeholder="Sanani tanlang" aria-label="Boshlanish sana">
+                        <button class="custom-date__button" id="dateFromTrigger" type="button" aria-label="Boshlanish sana kalendari">
                           <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        </span>
-                      </button>
+                        </button>
+                      </div>
                       <input class="custom-date__native" id="dateFromFilter" type="date" aria-hidden="true" tabindex="-1">
                     </div>
                   </div>
                   <div class="filter-field">
                     <label class="filter-label" for="dateToFilter">Tugash sana</label>
                     <div class="custom-date" data-date-field>
-                      <button class="custom-date__trigger" id="dateToTrigger" type="button" aria-label="Tugash sana">
-                        <span class="custom-date__label" id="dateToLabel">Sanani tanlang</span>
-                        <span class="custom-date__icon" aria-hidden="true">
+                      <div class="custom-date__field">
+                        <input class="custom-date__text-input" id="dateToInput" type="text" inputmode="numeric" maxlength="10" placeholder="Sanani tanlang" aria-label="Tugash sana">
+                        <button class="custom-date__button" id="dateToTrigger" type="button" aria-label="Tugash sana kalendari">
                           <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                        </span>
-                      </button>
+                        </button>
+                      </div>
                       <input class="custom-date__native" id="dateToFilter" type="date" aria-hidden="true" tabindex="-1">
                     </div>
                   </div>
-                  <button class="table-action table-action--block" id="resetFilters" type="button">Tozalash</button>
+                  <div class="filter-actions application-filter-actions">
+                    <button class="table-action table-action--block" id="applyFilters" type="button" disabled>Qo'llash</button>
+                    <button class="table-action table-action--block" id="resetFilters" type="button" disabled>Tozalash</button>
+                  </div>
+                  </div>
                 </div>
               </div>
               <button class="table-action table-action--icon" type="button" id="exportButton" aria-label="Eksport">
@@ -375,12 +442,13 @@
                   <th>Amallar</th>
                   <th>Ariza</th>
                   <th>Arizachi</th>
+                  <th>Tashkilot</th>
                   <th>Manzil</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr data-status="jarayonda" data-region="toshkent shahri" data-search="AR-000124 ALI VALIYEVICH BOTIROV 30304040505060 TOSHKENT SHAHRI MIROBOD TUMANI">
+                <tr data-status="jarayonda" data-region="toshkent shahri" data-search="AR-000124 ALI VALIYEVICH BOTIROV 30304040505060 TOSHKENT SHAHRI MIROBOD TUMANI TOSHKENT SH. MURUVVAT 1 (BOLALAR)">
                   <td class="actions-cell">
                     <div class="row-menu">
                       <button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi">
@@ -395,10 +463,11 @@
                   </td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000124</strong><span>13.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>ALI VALIYEVICH BOTIROV</strong><span>30304040505060</span></div></td>
+                  <td><div class="stacked-cell"><strong>Toshkent sh. Muruvvat 1 (bolalar)</strong><span>Toshkent shahri</span></div></td>
                   <td><div class="stacked-cell"><strong>Toshkent shahri</strong><span>Mirobod tumani</span></div></td>
                   <td><span class="status-badge status-badge--process">Jarayonda</span></td>
                 </tr>
-                <tr data-status="jarayonda" data-region="samarqand viloyati" data-search="AR-000123 GULNOZA SHERZOD QIZI RAHIMOVA 40705070809011 SAMARQAND VILOYATI SAMARQAND SHAHRI">
+                <tr data-status="jarayonda" data-region="samarqand viloyati" data-search="AR-000123 GULNOZA SHERZOD QIZI RAHIMOVA 40705070809011 SAMARQAND VILOYATI SAMARQAND SHAHRI URGUT MURUVVAT (AYOLLAR)">
                   <td class="actions-cell">
                     <div class="row-menu">
                       <button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi">
@@ -413,10 +482,11 @@
                   </td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000123</strong><span>12.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>GULNOZA SHERZOD QIZI RAHIMOVA</strong><span>40705070809011</span></div></td>
-                  <td><div class="stacked-cell"><strong>Samarqand viloyati</strong><span>Samarqand shahri</span></div></td>
+                  <td><div class="stacked-cell"><strong>Urgut Muruvvat (ayollar)</strong><span>Samarqand</span></div></td>
+                  <td><div class="stacked-cell"><strong>Samarqand</strong><span>Samarqand shahri</span></div></td>
                   <td><span class="status-badge status-badge--process">Jarayonda</span></td>
                 </tr>
-                <tr data-status="qabul qilingan" data-region="farg'ona viloyati" data-search="AR-000122 BEKZOD ANVAR O'G'LI TOSHMATOV 31212121212121 FARG'ONA VILOYATI QO'QON SHAHRI">
+                <tr data-status="qabul qilingan" data-region="farg'ona viloyati" data-search="AR-000122 BEKZOD ANVAR O'G'LI TOSHMATOV 31212121212121 FARG'ONA VILOYATI QO'QON SHAHRI QO'QON MURUVVAT (ERKAKLAR)">
                   <td class="actions-cell">
                     <div class="row-menu">
                       <button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi">
@@ -431,10 +501,11 @@
                   </td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000122</strong><span>11.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>BEKZOD ANVAR O'G'LI TOSHMATOV</strong><span>31212121212121</span></div></td>
-                  <td><div class="stacked-cell"><strong>Farg'ona viloyati</strong><span>Qo'qon shahri</span></div></td>
+                  <td><div class="stacked-cell"><strong>Qo'qon Muruvvat (erkaklar)</strong><span>Farg'ona</span></div></td>
+                  <td><div class="stacked-cell"><strong>Farg'ona</strong><span>Qo'qon shahri</span></div></td>
                   <td><span class="status-badge status-badge--accepted">Qabul qilingan</span></td>
                 </tr>
-                <tr data-status="rad etilgan" data-region="buxoro viloyati" data-search="AR-000121 SHAXNOZA ILHOM QIZI NASRIDDINOVA 52101010101010 BUXORO VILOYATI G'IJDUVON TUMANI">
+                <tr data-status="rad etilgan" data-region="buxoro viloyati" data-search="AR-000121 SHAXNOZA ILHOM QIZI NASRIDDINOVA 52101010101010 BUXORO VILOYATI G'IJDUVON TUMANI BUXORO MURUVVAT (AYOLLAR)">
                   <td class="actions-cell">
                     <div class="row-menu">
                       <button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi">
@@ -449,77 +520,91 @@
                   </td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000121</strong><span>10.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>SHAXNOZA ILHOM QIZI NASRIDDINOVA</strong><span>52101010101010</span></div></td>
-                  <td><div class="stacked-cell"><strong>Buxoro viloyati</strong><span>G'ijduvon tumani</span></div></td>
+                  <td><div class="stacked-cell"><strong>Buxoro Muruvvat (ayollar)</strong><span>Buxoro</span></div></td>
+                  <td><div class="stacked-cell"><strong>Buxoro</strong><span>G'ijduvon tumani</span></div></td>
                   <td><span class="status-badge status-badge--rejected">Rad etilgan</span></td>
                 </tr>
-                <tr data-status="qabul qilingan" data-region="toshkent shahri" data-search="AR-000120 MADINA RUSTAM QIZI TOSHEVA 41607080910112 TOSHKENT SHAHRI YUNUSOBOD TUMANI">
+                <tr data-status="qabul qilingan" data-region="toshkent shahri" data-search="AR-000120 MADINA RUSTAM QIZI TOSHEVA 41607080910112 TOSHKENT SHAHRI YUNUSOBOD TUMANI TOSHKENT SH. MURUVVAT 2 (BOLALAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000120</strong><span>09.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>MADINA RUSTAM QIZI TOSHEVA</strong><span>41607080910112</span></div></td>
+                  <td><div class="stacked-cell"><strong>Toshkent sh. Muruvvat 2 (bolalar)</strong><span>Toshkent shahri</span></div></td>
                   <td><div class="stacked-cell"><strong>Toshkent shahri</strong><span>Yunusobod tumani</span></div></td>
                   <td><span class="status-badge status-badge--accepted">Qabul qilingan</span></td>
                 </tr>
-                <tr data-status="jarayonda" data-region="farg'ona viloyati" data-search="AR-000119 JASUR SOBIR O'G'LI NEMATOV 32702030405061 FARG'ONA VILOYATI MARG'ILON SHAHRI">
+                <tr data-status="jarayonda" data-region="farg'ona viloyati" data-search="AR-000119 JASUR SOBIR O'G'LI NEMATOV 32702030405061 FARG'ONA VILOYATI MARG'ILON SHAHRI FARG'ONA MURUVVAT (BOLALAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000119</strong><span>08.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>JASUR SOBIR O'G'LI NEMATOV</strong><span>32702030405061</span></div></td>
-                  <td><div class="stacked-cell"><strong>Farg'ona viloyati</strong><span>Marg'ilon shahri</span></div></td>
+                  <td><div class="stacked-cell"><strong>Farg'ona Muruvvat (bolalar)</strong><span>Farg'ona</span></div></td>
+                  <td><div class="stacked-cell"><strong>Farg'ona</strong><span>Marg'ilon shahri</span></div></td>
                   <td><span class="status-badge status-badge--process">Jarayonda</span></td>
                 </tr>
-                <tr data-status="rad etilgan" data-region="samarqand viloyati" data-search="AR-000118 ZARNIGOR ODIL QIZI RAVSHANOVA 50211121314151 SAMARQAND VILOYATI KATTAQO'RG'ON TUMANI">
+                <tr data-status="rad etilgan" data-region="samarqand viloyati" data-search="AR-000118 ZARNIGOR ODIL QIZI RAVSHANOVA 50211121314151 SAMARQAND VILOYATI KATTAQO'RG'ON TUMANI URGUT MURUVVAT (AYOLLAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000118</strong><span>08.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>ZARNIGOR ODIL QIZI RAVSHANOVA</strong><span>50211121314151</span></div></td>
-                  <td><div class="stacked-cell"><strong>Samarqand viloyati</strong><span>Kattaqo'rg'on tumani</span></div></td>
+                  <td><div class="stacked-cell"><strong>Urgut Muruvvat (ayollar)</strong><span>Samarqand</span></div></td>
+                  <td><div class="stacked-cell"><strong>Samarqand</strong><span>Kattaqo'rg'on tumani</span></div></td>
                   <td><span class="status-badge status-badge--rejected">Rad etilgan</span></td>
                 </tr>
-                <tr data-status="qabul qilingan" data-region="buxoro viloyati" data-search="AR-000117 JAHONGIR OTABEK O'G'LI QODIROV 31122334455667 BUXORO VILOYATI KOGON SHAHRI">
+                <tr data-status="qabul qilingan" data-region="buxoro viloyati" data-search="AR-000117 JAHONGIR OTABEK O'G'LI QODIROV 31122334455667 BUXORO VILOYATI KOGON SHAHRI BUXORO MURUVVAT (BOLALAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000117</strong><span>07.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>JAHONGIR OTABEK O'G'LI QODIROV</strong><span>31122334455667</span></div></td>
-                  <td><div class="stacked-cell"><strong>Buxoro viloyati</strong><span>Kogon shahri</span></div></td>
+                  <td><div class="stacked-cell"><strong>Buxoro Muruvvat (bolalar)</strong><span>Buxoro</span></div></td>
+                  <td><div class="stacked-cell"><strong>Buxoro</strong><span>Kogon shahri</span></div></td>
                   <td><span class="status-badge status-badge--accepted">Qabul qilingan</span></td>
                 </tr>
-                <tr data-status="jarayonda" data-region="toshkent shahri" data-search="AR-000116 UMIDA AKMAL QIZI JO'RAYEVA 42050607080901 TOSHKENT SHAHRI OLMAZOR TUMANI">
+                <tr data-status="jarayonda" data-region="toshkent shahri" data-search="AR-000116 UMIDA AKMAL QIZI JO'RAYEVA 42050607080901 TOSHKENT SHAHRI OLMAZOR TUMANI TOSHKENT MURUVVAT (ERKAKLAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000116</strong><span>07.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>UMIDA AKMAL QIZI JO'RAYEVA</strong><span>42050607080901</span></div></td>
+                  <td><div class="stacked-cell"><strong>Toshkent Muruvvat (erkaklar)</strong><span>Toshkent shahri</span></div></td>
                   <td><div class="stacked-cell"><strong>Toshkent shahri</strong><span>Olmazor tumani</span></div></td>
                   <td><span class="status-badge status-badge--process">Jarayonda</span></td>
                 </tr>
-                <tr data-status="rad etilgan" data-region="farg'ona viloyati" data-search="AR-000115 SARDORBEK AKBAR O'G'LI YUSUPOV 30151515151515 FARG'ONA VILOYATI RISHTON TUMANI">
+                <tr data-status="rad etilgan" data-region="farg'ona viloyati" data-search="AR-000115 SARDORBEK AKBAR O'G'LI YUSUPOV 30151515151515 FARG'ONA VILOYATI RISHTON TUMANI QUDASH MURUVVAT (AYOLLAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000115</strong><span>06.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>SARDORBEK AKBAR O'G'LI YUSUPOV</strong><span>30151515151515</span></div></td>
-                  <td><div class="stacked-cell"><strong>Farg'ona viloyati</strong><span>Rishton tumani</span></div></td>
+                  <td><div class="stacked-cell"><strong>Qudash Muruvvat (ayollar)</strong><span>Farg'ona</span></div></td>
+                  <td><div class="stacked-cell"><strong>Farg'ona</strong><span>Rishton tumani</span></div></td>
                   <td><span class="status-badge status-badge--rejected">Rad etilgan</span></td>
                 </tr>
-                <tr data-status="qabul qilingan" data-region="samarqand viloyati" data-search="AR-000114 MEHRIBON ORTIQ QIZI ABDURAHMONOVA 49887766554433 SAMARQAND VILOYATI PASTDARG'OM TUMANI">
+                <tr data-status="qabul qilingan" data-region="samarqand viloyati" data-search="AR-000114 MEHRIBON ORTIQ QIZI ABDURAHMONOVA 49887766554433 SAMARQAND VILOYATI PASTDARG'OM TUMANI URGUT MURUVVAT (ERKAKLAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000114</strong><span>06.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>MEHRIBON ORTIQ QIZI ABDURAHMONOVA</strong><span>49887766554433</span></div></td>
-                  <td><div class="stacked-cell"><strong>Samarqand viloyati</strong><span>Pastdarg'om tumani</span></div></td>
+                  <td><div class="stacked-cell"><strong>Urgut Muruvvat (erkaklar)</strong><span>Samarqand</span></div></td>
+                  <td><div class="stacked-cell"><strong>Samarqand</strong><span>Pastdarg'om tumani</span></div></td>
                   <td><span class="status-badge status-badge--accepted">Qabul qilingan</span></td>
                 </tr>
-                <tr data-status="jarayonda" data-region="buxoro viloyati" data-search="AR-000113 AZIZA BAXTIYOR QIZI KAMOLOVA 62131415161718 BUXORO VILOYATI VOBKENT TUMANI">
+                <tr data-status="jarayonda" data-region="buxoro viloyati" data-search="AR-000113 AZIZA BAXTIYOR QIZI KAMOLOVA 62131415161718 BUXORO VILOYATI VOBKENT TUMANI QORAKO'L MURUVVAT (ERKAKLAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000113</strong><span>05.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>AZIZA BAXTIYOR QIZI KAMOLOVA</strong><span>62131415161718</span></div></td>
-                  <td><div class="stacked-cell"><strong>Buxoro viloyati</strong><span>Vobkent tumani</span></div></td>
+                  <td><div class="stacked-cell"><strong>Qorako'l Muruvvat (erkaklar)</strong><span>Buxoro</span></div></td>
+                  <td><div class="stacked-cell"><strong>Buxoro</strong><span>Vobkent tumani</span></div></td>
                   <td><span class="status-badge status-badge--process">Jarayonda</span></td>
                 </tr>
-                <tr data-status="rad etilgan" data-region="toshkent shahri" data-search="AR-000112 NODIR ISLOM O'G'LI TOJIBOYEV 35544332211009 TOSHKENT SHAHRI CHILONZOR TUMANI">
+                <tr data-status="rad etilgan" data-region="toshkent shahri" data-search="AR-000112 NODIR ISLOM O'G'LI TOJIBOYEV 35544332211009 TOSHKENT SHAHRI CHILONZOR TUMANI TOSHKENT MURUVVAT (ERKAKLAR)">
                   <td class="actions-cell"><div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div></td>
                   <td><div class="stacked-cell stacked-cell--application"><strong>AR-000112</strong><span>05.03.2026</span></div></td>
                   <td><div class="stacked-cell"><strong>NODIR ISLOM O'G'LI TOJIBOYEV</strong><span>35544332211009</span></div></td>
+                  <td><div class="stacked-cell"><strong>Toshkent Muruvvat (erkaklar)</strong><span>Toshkent shahri</span></div></td>
                   <td><div class="stacked-cell"><strong>Toshkent shahri</strong><span>Chilonzor tumani</span></div></td>
                   <td><span class="status-badge status-badge--rejected">Rad etilgan</span></td>
                 </tr>
                 <tr class="table-empty" id="tableEmptyRow" hidden>
-                  <td colspan="5">
+                  <td colspan="6">
                     <div class="table-empty__state">
-                      <strong>Hech narsa topilmadi</strong>
-                      <span>Filter yoki qidiruvni o'zgartirib ko'ring</span>
+                      <span class="table-empty__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                      </span>
+                      <strong id="tableEmptyTitle">Hech narsa topilmadi</strong>
+                      <span id="tableEmptyDescription">Filter yoki qidiruvni o'zgartirib ko'ring</span>
+                      <button class="table-empty__action" id="tableEmptyAction" type="button" hidden>Filtr va qidiruvni tozalash</button>
                     </div>
                   </td>
                 </tr>
@@ -529,9 +614,6 @@
           <div class="table-pagination">
             <div class="table-pagination__info" id="paginationInfo">1-12 / 12 ta yozuv</div>
             <div class="table-pagination__right">
-              <button class="pagination__button pagination__button--icon" id="paginationPrev" type="button" disabled aria-label="Oldingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-              <div class="pagination" id="paginationPages" aria-label="Sahifalar"></div>
-              <button class="pagination__button pagination__button--icon" id="paginationNext" type="button" aria-label="Keyingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <div class="pagination-select" id="rowsPerPageMenu">
                 <button class="pagination-select__trigger" id="rowsPerPageTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Bir sahifadagi yozuvlar soni">
                   <span id="rowsPerPageLabel">10 ta</span>
@@ -549,6 +631,9 @@
                   <option value="100">100 ta</option>
                 </select>
               </div>
+              <button class="pagination__button pagination__button--icon" id="paginationPrev" type="button" disabled aria-label="Oldingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <div class="pagination" id="paginationPages" aria-label="Sahifalar"></div>
+              <button class="pagination__button pagination__button--icon" id="paginationNext" type="button" aria-label="Keyingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </div>
           </div>
         </section>
@@ -704,23 +789,23 @@
             <div class="report-frozen-column" id="reportFrozenColumn" aria-hidden="true"></div>
             <table class="data-table report-table">
               <colgroup>
-                <col style="width: 210px;">
-                <col style="width: 108px;">
-                <col style="width: 88px;">
-                <col style="width: 96px;">
-                <col style="width: 88px;">
-                <col style="width: 88px;">
-                <col style="width: 84px;">
-                <col style="width: 84px;">
+                <col style="width: 176px;">
+                <col style="width: 92px;">
+                <col style="width: 76px;">
+                <col style="width: 82px;">
+                <col style="width: 76px;">
+                <col style="width: 76px;">
+                <col style="width: 70px;">
+                <col style="width: 76px;">
+                <col style="width: 60px;">
                 <col style="width: 72px;">
+                <col style="width: 68px;">
+                <col style="width: 68px;">
+                <col style="width: 60px;">
+                <col style="width: 60px;">
+                <col style="width: 66px;">
                 <col style="width: 84px;">
-                <col style="width: 76px;">
-                <col style="width: 76px;">
-                <col style="width: 74px;">
-                <col style="width: 74px;">
-                <col style="width: 74px;">
-                <col style="width: 96px;">
-                <col style="width: 86px;">
+                <col style="width: 78px;">
               </colgroup>
               <thead>
                 <tr>
@@ -769,10 +854,10 @@
                   <td>51,732</td>
                   <td>6,939</td>
                 </tr>
-                <tr data-region="qoraqalpogiston"><td>Qoraqalpog'iston Respublikasi</td><td>9,987</td><td>2,801</td><td>4,040</td><td>2,609</td><td>537</td><td>554</td><td>2,149</td><td>0</td><td>569</td><td>1,909</td><td>1,363</td><td>0</td><td>34</td><td>535</td><td>2,279</td><td>424</td></tr>
-                <tr data-region="andijon"><td>Andijon viloyati</td><td>2,867</td><td>1,560</td><td>603</td><td>503</td><td>201</td><td>1,122</td><td>6,924</td><td>34</td><td>1,907</td><td>5,844</td><td>4,143</td><td>0</td><td>116</td><td>1,787</td><td>7,155</td><td>929</td></tr>
-                <tr data-region="buxoro"><td>Buxoro viloyati</td><td>3,826</td><td>199</td><td>2,051</td><td>1,406</td><td>170</td><td>666</td><td>1,439</td><td>0</td><td>762</td><td>1,638</td><td>1,229</td><td>0</td><td>34</td><td>728</td><td>1,907</td><td>198</td></tr>
-                <tr data-region="jizzax"><td>Jizzax viloyati</td><td>9,637</td><td>56</td><td>4,080</td><td>5,056</td><td>445</td><td>238</td><td>2,839</td><td>22</td><td>727</td><td>2,055</td><td>1,771</td><td>1</td><td>76</td><td>647</td><td>2,707</td><td>395</td></tr>
+                <tr data-region="qoraqalpogiston"><td>Qoraqalpog'iston R.</td><td>9,987</td><td>2,801</td><td>4,040</td><td>2,609</td><td>537</td><td>554</td><td>2,149</td><td>0</td><td>569</td><td>1,909</td><td>1,363</td><td>0</td><td>34</td><td>535</td><td>2,279</td><td>424</td></tr>
+                <tr data-region="andijon"><td>Andijon</td><td>2,867</td><td>1,560</td><td>603</td><td>503</td><td>201</td><td>1,122</td><td>6,924</td><td>34</td><td>1,907</td><td>5,844</td><td>4,143</td><td>0</td><td>116</td><td>1,787</td><td>7,155</td><td>929</td></tr>
+                <tr data-region="buxoro"><td>Buxoro</td><td>3,826</td><td>199</td><td>2,051</td><td>1,406</td><td>170</td><td>666</td><td>1,439</td><td>0</td><td>762</td><td>1,638</td><td>1,229</td><td>0</td><td>34</td><td>728</td><td>1,907</td><td>198</td></tr>
+                <tr data-region="jizzax"><td>Jizzax</td><td>9,637</td><td>56</td><td>4,080</td><td>5,056</td><td>445</td><td>238</td><td>2,839</td><td>22</td><td>727</td><td>2,055</td><td>1,771</td><td>1</td><td>76</td><td>647</td><td>2,707</td><td>395</td></tr>
                 <tr data-region="qashqadaryo"><td>Qashqadaryo</td><td>3,272</td><td>1,016</td><td>1,402</td><td>603</td><td>251</td><td>724</td><td>7,594</td><td>7</td><td>1,312</td><td>5,572</td><td>4,065</td><td>0</td><td>84</td><td>1,221</td><td>7,425</td><td>907</td></tr>
                 <tr data-region="navoiy"><td>Navoiy</td><td>2,892</td><td>60</td><td>1,260</td><td>1,339</td><td>233</td><td>497</td><td>1,990</td><td>1</td><td>404</td><td>1,713</td><td>1,179</td><td>0</td><td>42</td><td>362</td><td>2,154</td><td>334</td></tr>
                 <tr data-region="namangan"><td>Namangan</td><td>4,089</td><td>251</td><td>1,985</td><td>1,628</td><td>225</td><td>423</td><td>2,769</td><td>6</td><td>891</td><td>2,384</td><td>1,705</td><td>0</td><td>116</td><td>773</td><td>2,887</td><td>313</td></tr>
@@ -812,7 +897,6 @@
           <div class="detail-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
             <div class="detail-modal__header">
               <div>
-                <p class="detail-modal__eyebrow">Ariza ma'lumoti</p>
                 <h3 id="detailModalTitle">Ariza tafsilotlari</h3>
               </div>
               <button class="detail-modal__close" type="button" id="detailModalClose" aria-label="Yopish">
