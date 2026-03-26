@@ -14,11 +14,13 @@ const logoutButton = document.getElementById("logoutButton");
 const sidebarCollapse = document.getElementById("sidebarCollapse");
 const pageBreadcrumb = document.getElementById("pageBreadcrumb");
 const pageTitle = document.getElementById("pageTitle");
+const moduleTitle = document.getElementById("moduleTitle");
+const languageCurrent = document.getElementById("languageCurrent");
+const languageItems = document.querySelectorAll("[data-language-code]");
 const themeToggle = document.getElementById("themeToggle");
 const themeToggleIcon = themeToggle?.querySelector("svg");
 const menuToggles = document.querySelectorAll("[data-menu-toggle]");
-const navToggles = document.querySelectorAll(".nav-item--toggle");
-const pageLinks = document.querySelectorAll("[data-page-title]");
+const sidebarNav = document.getElementById("sidebarNav");
 const applicationSearch = document.getElementById("applicationSearch");
 const statusFilter = document.getElementById("statusFilter");
 const regionFilter = document.getElementById("regionFilter");
@@ -63,9 +65,6 @@ const exportButton = document.getElementById("exportButton");
 const reportFilterToggle = document.getElementById("reportFilterToggle");
 const reportFilterMenu = document.getElementById("reportFilterMenu");
 const reportFilterActiveCount = document.getElementById("reportFilterActiveCount");
-const reportColumnsToggle = document.getElementById("reportColumnsToggle");
-const reportColumnsMenu = document.getElementById("reportColumnsMenu");
-const reportColumnInputs = document.querySelectorAll("[data-report-column-toggle]");
 const reportDiagnosisFilter = document.getElementById("reportDiagnosisFilter");
 const reportDisabilityGroupFilter = document.getElementById("reportDisabilityGroupFilter");
 const reportGenderFilter = document.getElementById("reportGenderFilter");
@@ -86,6 +85,12 @@ const reportTable = reportTableBody?.closest(".report-table");
 const reportScope = document.getElementById("reportScope");
 const reportScopeBack = document.getElementById("reportScopeBack");
 const reportScopePath = document.getElementById("reportScopePath");
+const reportSelectionBar = document.getElementById("reportSelectionBar");
+const reportSelectionCount = document.getElementById("reportSelectionCount");
+const reportSelectionSum = document.getElementById("reportSelectionSum");
+const reportSelectionAvg = document.getElementById("reportSelectionAvg");
+const reportSelectionMin = document.getElementById("reportSelectionMin");
+const reportSelectionMax = document.getElementById("reportSelectionMax");
 const reportSummaryBar = document.getElementById("reportSummaryBar");
 const reportFrozenColumn = document.getElementById("reportFrozenColumn");
 const emptyContentView = document.getElementById("emptyContentView");
@@ -114,6 +119,902 @@ const calendarWeekdays = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
 const tableState = { currentPage: 1, totalPages: 1, filteredRows: [] };
 const calendarState = { activeField: null, viewDate: null };
 const confirmState = { action: "", applicationId: "" };
+let currentModule = "muruvvat";
+let currentLanguage = "uz";
+let currentCanonicalTitle = "";
+let currentDetailApplicationId = "";
+
+const sidebarIconMap = {
+  dashboard: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z" stroke="currentColor" stroke-width="1.5"/></svg>',
+  institutions: '<svg viewBox="0 0 24 24" fill="none"><path d="M7 6h10M7 12h10M7 18h10M4 6h.01M4 12h.01M4 18h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  applications: '<svg viewBox="0 0 24 24" fill="none"><path d="M7 4h7l3 3v13H7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14 4v4h4M9 12h6M9 16h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  reports: '<svg viewBox="0 0 24 24" fill="none"><path d="M5 19V9M12 19V5M19 19v-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M12 10v5M12 7.5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+};
+
+const modulesConfig = {
+  muruvvat: {
+    label: "Muruvvat moduli",
+    defaultHash: "#applications",
+    routes: {
+      "#applications": "Arizalar - Arizalar ro'yxati",
+      "#/reports/disabilityinfo": "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot",
+      "#/muruvvat/dashboard": "Dashboard",
+      "#/muruvvat/internat/navbat": "Internat uylari - Navbat",
+      "#/muruvvat/internat/registered": "Internat uylari - Ro'yxatga olinganlar",
+      "#/muruvvat/internat/removed": "Internat uylari - Ro'yxatdan chiqqanlar",
+      "#/muruvvat/applications/forms": "Arizalar - So'rovnomalar",
+      "#/muruvvat/applications/acts": "Arizalar - Dalolatnomalar",
+      "#/muruvvat/applications/decisions": "Arizalar - Qarorlar",
+      "#/muruvvat/reports/applications": "Hisobotlar - Arizalar bo'yicha hisobot",
+      "#/muruvvat/reports/institutions": "Hisobotlar - Internat uylari bo'yicha hisobot",
+      "#/muruvvat/info/1": "Info - Info1",
+      "#/muruvvat/info/2": "Info - Info2",
+    },
+    nav: [
+      { type: "link", label: "Dashboard", title: "Dashboard", hash: "#/muruvvat/dashboard", icon: "dashboard" },
+      {
+        type: "group",
+        label: "Internat uylari",
+        icon: "institutions",
+        children: [
+          { label: "Navbat", title: "Internat uylari - Navbat", hash: "#/muruvvat/internat/navbat" },
+          { label: "Ro'yxatga olinganlar", title: "Internat uylari - Ro'yxatga olinganlar", hash: "#/muruvvat/internat/registered" },
+          { label: "Ro'yxatdan chiqqanlar", title: "Internat uylari - Ro'yxatdan chiqqanlar", hash: "#/muruvvat/internat/removed" },
+        ],
+      },
+      {
+        type: "group",
+        label: "Arizalar",
+        icon: "applications",
+        defaultOpen: true,
+        children: [
+          { label: "Arizalar ro'yxati", title: "Arizalar - Arizalar ro'yxati", hash: "#applications" },
+          { label: "So'rovnomalar", title: "Arizalar - So'rovnomalar", hash: "#/muruvvat/applications/forms" },
+          { label: "Dalolatnomalar", title: "Arizalar - Dalolatnomalar", hash: "#/muruvvat/applications/acts" },
+          { label: "Qarorlar", title: "Arizalar - Qarorlar", hash: "#/muruvvat/applications/decisions" },
+        ],
+      },
+      {
+        type: "group",
+        label: "Hisobotlar",
+        icon: "reports",
+        children: [
+          { label: "Arizalar bo'yicha hisobot", title: "Hisobotlar - Arizalar bo'yicha hisobot", hash: "#/muruvvat/reports/applications" },
+          { label: "Internat uylari bo'yicha hisobot", title: "Hisobotlar - Internat uylari bo'yicha hisobot", hash: "#/muruvvat/reports/institutions" },
+          { label: "Nogironligi bo'lgan shaxslar soni bo'yicha hisobot", title: "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot", hash: "#/reports/disabilityinfo" },
+        ],
+      },
+      {
+        type: "group",
+        label: "Info",
+        icon: "info",
+        children: [
+          { label: "Info1", title: "Info - Info1", hash: "#/muruvvat/info/1" },
+          { label: "Info2", title: "Info - Info2", hash: "#/muruvvat/info/2" },
+        ],
+      },
+    ],
+  },
+  ptpk: {
+    label: "PTPK moduli",
+    defaultHash: "#/ptpk/dashboard",
+    routes: {
+      "#/ptpk/dashboard": "Dashboard",
+      "#/ptpk/applications": "Arizalar - Arizalar ro'yxati",
+      "#/ptpk/applications/plans": "Arizalar - Yig'ilish rejalari",
+      "#/ptpk/applications/minutes": "Arizalar - Bayonnomalar",
+      "#/ptpk/applications/conclusions": "Arizalar - Xulosalar",
+      "#/ptpk/reports": "Hisobotlar",
+      "#/ptpk/info/1": "Info - Info 1",
+      "#/ptpk/info/2": "Info - Info 2",
+    },
+    nav: [
+      { type: "link", label: "Dashboard", title: "Dashboard", hash: "#/ptpk/dashboard", icon: "dashboard" },
+      {
+        type: "group",
+        label: "Arizalar",
+        icon: "applications",
+        defaultOpen: true,
+        children: [
+          { label: "Arizalar ro'yxati", title: "Arizalar - Arizalar ro'yxati", hash: "#/ptpk/applications" },
+          { label: "Yig'ilish rejalari", title: "Arizalar - Yig'ilish rejalari", hash: "#/ptpk/applications/plans" },
+          { label: "Bayonnomalar", title: "Arizalar - Bayonnomalar", hash: "#/ptpk/applications/minutes" },
+          { label: "Xulosalar", title: "Arizalar - Xulosalar", hash: "#/ptpk/applications/conclusions" },
+        ],
+      },
+      { type: "link", label: "Hisobotlar", title: "Hisobotlar", hash: "#/ptpk/reports", icon: "reports" },
+      {
+        type: "group",
+        label: "Info",
+        icon: "info",
+        children: [
+          { label: "Info 1", title: "Info - Info 1", hash: "#/ptpk/info/1" },
+          { label: "Info 2", title: "Info - Info 2", hash: "#/ptpk/info/2" },
+        ],
+      },
+    ],
+  },
+};
+
+const languageStorageKey = "mrv-language";
+const languageMeta = {
+  uz: { short: "UZ", htmlLang: "uz", label: "O'zbek" },
+  "uz-cyrl": { short: "ЎЗ", htmlLang: "uz-Cyrl", label: "Ўзбек" },
+  kaa: { short: "QQ", htmlLang: "kaa", label: "Qoraqalpoq" },
+  "kaa-cyrl": { short: "ҚҚ", htmlLang: "kaa-Cyrl", label: "Қорақалпоқ" },
+  ru: { short: "RU", htmlLang: "ru", label: "Русский" },
+  en: { short: "EN", htmlLang: "en", label: "English" },
+};
+
+const routeTitleKeys = {
+  Dashboard: "nav.dashboard",
+  "Internat uylari - Navbat": "page.internatQueue",
+  "Internat uylari - Ro'yxatga olinganlar": "page.internatRegistered",
+  "Internat uylari - Ro'yxatdan chiqqanlar": "page.internatRemoved",
+  "Arizalar - Arizalar ro'yxati": "page.applicationsList",
+  "Arizalar - So'rovnomalar": "page.forms",
+  "Arizalar - Dalolatnomalar": "page.acts",
+  "Arizalar - Qarorlar": "page.decisions",
+  "Hisobotlar - Arizalar bo'yicha hisobot": "page.reportApplications",
+  "Hisobotlar - Internat uylari bo'yicha hisobot": "page.reportInstitutions",
+  "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot": "page.reportDisability",
+  "Info - Info1": "page.info1",
+  "Info - Info2": "page.info2",
+  "Arizalar - Yig'ilish rejalari": "page.meetingPlans",
+  "Arizalar - Bayonnomalar": "page.minutes",
+  "Arizalar - Xulosalar": "page.conclusions",
+  Hisobotlar: "nav.reports",
+  "Info - Info 1": "page.info1",
+  "Info - Info 2": "page.info2",
+  Info: "nav.info",
+};
+
+const literalKeyMap = {
+  "Muruvvat moduli": "module.muruvvat",
+  "PTPK moduli": "module.ptpk",
+  Dashboard: "nav.dashboard",
+  "Internat uylari": "nav.institutions",
+  Navbat: "nav.queue",
+  "Ro'yxatga olinganlar": "nav.registered",
+  "Ro'yxatdan chiqqanlar": "nav.removed",
+  Arizalar: "nav.applications",
+  "Arizalar ro'yxati": "nav.applicationsList",
+  "So'rovnomalar": "nav.forms",
+  Dalolatnomalar: "nav.acts",
+  Qarorlar: "nav.decisions",
+  Hisobotlar: "nav.reports",
+  "Arizalar bo'yicha hisobot": "nav.reportApplications",
+  "Internat uylari bo'yicha hisobot": "nav.reportInstitutions",
+  "Nogironligi bo'lgan shaxslar soni bo'yicha hisobot": "nav.reportDisability",
+  Info: "nav.info",
+  Info1: "nav.info1",
+  Info2: "nav.info2",
+  "Info 1": "nav.info1",
+  "Info 2": "nav.info2",
+  "Asosiy menyu": "common.mainMenu",
+  "Yig'ilish rejalari": "nav.meetingPlans",
+  Bayonnomalar: "nav.minutes",
+  Xulosalar: "nav.conclusions",
+  "Jami arizalar": "applications.total",
+  Jarayonda: "status.process",
+  "Qabul qilingan": "status.accepted",
+  "Rad etilgan": "status.rejected",
+  "Ijobiy": "result.positive",
+  "Salbiy": "result.negative",
+  Status: "common.status",
+  Bosqich: "common.step",
+  Hudud: "common.region",
+  "Tuman (shahar)": "common.district",
+  "Tashkilot turi": "common.organizationType",
+  Tashkilot: "common.organization",
+  Sana: "common.date",
+  Manzil: "common.address",
+  Lavozim: "common.position",
+  "Boshlanish sana": "common.startDate",
+  "Tugash sana": "common.endDate",
+  Tashxis: "common.diagnosis",
+  "Nogironlik guruhi": "common.disabilityGroup",
+  Jinsi: "common.gender",
+  Yoshi: "common.age",
+  "Qo'llash": "common.apply",
+  Tozalash: "common.reset",
+  Barchasi: "common.all",
+  Erkak: "gender.male",
+  Ayol: "gender.female",
+  Yopish: "common.close",
+};
+
+const translations = {
+  uz: {},
+  "uz-cyrl": {
+    "module.muruvvat": "Мурувват модули",
+    "module.ptpk": "ПТПК модули",
+    "nav.dashboard": "Дашбоард",
+    "nav.institutions": "Интернат уйлари",
+    "nav.queue": "Навбат",
+    "nav.registered": "Рўйхатга олинганлар",
+    "nav.removed": "Рўйхатдан чиққанлар",
+    "nav.applications": "Аризалар",
+    "nav.applicationsList": "Аризалар рўйхати",
+    "nav.forms": "Сўровномалар",
+    "nav.acts": "Далолатномалар",
+    "nav.decisions": "Қарорлар",
+    "nav.reports": "Ҳисоботлар",
+    "nav.reportApplications": "Аризалар бўйича ҳисобот",
+    "nav.reportInstitutions": "Интернат уйлари бўйича ҳисобот",
+    "nav.reportDisability": "Ногиронлиги бўлган шахслар сони бўйича ҳисобот",
+    "nav.info": "Инфо",
+    "nav.info1": "Инфо 1",
+    "nav.info2": "Инфо 2",
+    "nav.meetingPlans": "Йиғилиш режалари",
+    "nav.minutes": "Баённомалар",
+    "nav.conclusions": "Хулосалар",
+    "page.internatQueue": "Интернат уйлари / Навбат",
+    "page.internatRegistered": "Интернат уйлари / Рўйхатга олинганлар",
+    "page.internatRemoved": "Интернат уйлари / Рўйхатдан чиққанлар",
+    "page.applicationsList": "Аризалар / Аризалар рўйхати",
+    "page.forms": "Аризалар / Сўровномалар",
+    "page.acts": "Аризалар / Далолатномалар",
+    "page.decisions": "Аризалар / Қарорлар",
+    "page.reportApplications": "Ҳисоботлар / Аризалар бўйича ҳисобот",
+    "page.reportInstitutions": "Ҳисоботлар / Интернат уйлари бўйича ҳисобот",
+    "page.reportDisability": "Ҳисоботлар / Ногиронлиги бўлган шахслар сони бўйича ҳисобот",
+    "page.info1": "Инфо / Инфо 1",
+    "page.info2": "Инфо / Инфо 2",
+    "page.meetingPlans": "Аризалар / Йиғилиш режалари",
+    "page.minutes": "Аризалар / Баённомалар",
+    "page.conclusions": "Аризалар / Хулосалар",
+    "applications.total": "Жами аризалар",
+    "status.process": "Жараёнда",
+    "status.accepted": "Қабул қилинган",
+    "status.rejected": "Рад этилган",
+    "status.new": "Янги",
+    "result.positive": "Ижобий",
+    "result.negative": "Салбий",
+    "common.status": "Статус",
+    "common.date": "Сана",
+    "common.address": "Манзил",
+    "common.position": "Лавозим",
+    "common.step": "Босқич",
+    "common.region": "Ҳудуд",
+    "common.district": "Туман (шаҳар)",
+    "common.organizationType": "Ташкилот тури",
+    "common.organization": "Ташкилот",
+    "common.startDate": "Бошланиш сана",
+    "common.endDate": "Тугаш сана",
+    "common.diagnosis": "Ташхис",
+    "common.disabilityGroup": "Ногиронлик гуруҳи",
+    "common.gender": "Жинси",
+    "common.age": "Ёши",
+    "common.apply": "Қўллаш",
+    "common.reset": "Тозалаш",
+    "common.all": "Барчаси",
+    "common.close": "Ёпиш",
+    "common.mainMenu": "Асосий меню",
+    "gender.male": "Эркак",
+    "gender.female": "Аёл",
+    "header.administrator": "Администратор",
+    "header.profile": "Профилни кўриш",
+    "header.settings": "Созламалар",
+    "header.logout": "Чиқиш",
+    "header.monitoring": "Мониторинг панели",
+    "header.reportsCenter": "Ҳисоботлар маркази",
+    "applications.searchPlaceholder": "ID, Ф.И.Ш. ёки ПИНФЛ",
+    "applications.actions": "Амаллар",
+    "applications.application": "Ариза",
+    "applications.applicant": "Аризачи",
+    "applications.address": "Манзил",
+    "applications.export": "Экспорт",
+    "applications.new": "Янги ариза",
+    "empty.notFound": "Мос маълумот топилмади",
+    "empty.noData": "Ҳозирча аризалар мавжуд эмас",
+    "date.placeholder": "Санани танланг",
+    "report.download": "Ҳисоботни юклаб олиш",
+    "report.totalPersons": "Жами НБШлар сони",
+    "report.byDiagnosis": "Ташхислари бўйича",
+    "report.byDisability": "Ногиронлик гуруҳи",
+    "report.scope.back": "Орқага",
+    "report.summary": "Республика жами",
+    "selection.count": "Сони",
+    "selection.sum": "Йиғинди",
+    "selection.avg": "Ўртача",
+    "selection.min": "Мин",
+    "selection.max": "Макс",
+    "detail.title": "Ариза тафсилотлари",
+    "detail.loading": "Ариза маълумотлари юкланмоқда...",
+    "detail.accept": "Қабул қилиш",
+    "detail.reject": "Рад этиш",
+    "detail.application": "Ариза маълумотлари",
+    "detail.receiver": "Аризани қабул қилувчи",
+    "detail.representative": "Қонуний вакил",
+    "detail.applicant": "Аризачи",
+    "detail.medicalDocuments": "Тиббий ҳужжатлар",
+    "detail.result": "Натижа",
+    "detail.representativeLevel": "Вакиллик даражаси",
+    "detail.phone": "Телефон рақами",
+    "detail.birthDate": "Туғилган санаси",
+    "detail.diagnosis": "Ташхиси",
+    "detail.address": "Манзили",
+    "detail.organizationName": "Ташкилот номи",
+    "detail.goToAct": "Далолатномага ўтиш",
+    "detail.goToDecision": "Қарорга ўтиш",
+    "detail.disabilityHistory": "Ногиронлик тарихи",
+    "detail.conclusionHistory": "Хулосалар тарихи",
+    "detail.applicationsHistory": "Аризалар тарихи",
+    "detail.documentHistory": "Ҳужжат тарихи",
+    "detail.assignedDate": "Тайинланган сана",
+    "detail.validUntil": "Амал қилиш муддати",
+    "detail.educationInstitutionType": "Таълим муассасаси тури",
+    "detail.actor": "Амалийotni бажарувчи",
+    "empty.notReady": "бўлими учун контент ҳали тайёрланмаган.",
+    "common.records": "ёзув",
+    "common.loading": "Юкланмоқда...",
+    "common.downloaded": "Юклаб олинди",
+    "common.fileReady": "Ариза файли тайёр бўлди.",
+    "detail.notFoundTitle": "Ариза топилмади",
+    "detail.notFoundDescription": "танланган ариза бўйича маълумот топилмади.",
+  },
+  kaa: {
+    "module.muruvvat": "Muruvvat moduli",
+    "module.ptpk": "PTPK moduli",
+    "nav.dashboard": "Dashboard",
+    "nav.institutions": "Internat úyleri",
+    "nav.queue": "Náwbet",
+    "nav.registered": "Dizimge alınganlar",
+    "nav.removed": "Dizimnen shıqqanlar",
+    "nav.applications": "Arızalar",
+    "nav.applicationsList": "Arızalar dizimi",
+    "nav.forms": "Sorawnamalar",
+    "nav.acts": "Dalolatnamalar",
+    "nav.decisions": "Qarorlar",
+    "nav.reports": "Esabatlar",
+    "nav.reportApplications": "Arızalar boyınsha esabat",
+    "nav.reportInstitutions": "Internat úyleri boyınsha esabat",
+    "nav.reportDisability": "Múgédakligi bar shaxslar sanı boyınsha esabat",
+    "nav.info": "Info",
+    "nav.info1": "Info 1",
+    "nav.info2": "Info 2",
+    "nav.meetingPlans": "Jiynalis rejeleri",
+    "nav.minutes": "Bayonnamalar",
+    "nav.conclusions": "Xulosalar",
+    "applications.total": "Jami arızalar",
+    "status.process": "Jarayonda",
+    "status.accepted": "Qabul qilingan",
+    "status.rejected": "Rad etilgan",
+    "status.new": "Jańa",
+    "result.positive": "Ijobiy",
+    "result.negative": "Salbiy",
+    "common.status": "Status",
+    "common.date": "Sana",
+    "common.address": "Manzil",
+    "common.position": "Lavozim",
+    "common.step": "Basqısh",
+    "common.region": "Hudud",
+    "common.district": "Tuman (shahar)",
+    "common.organizationType": "Tashkilot túri",
+    "common.organization": "Tashkilot",
+    "common.startDate": "Baslanıw sáne",
+    "common.endDate": "Tawısıw sáne",
+    "common.diagnosis": "Tashxis",
+    "common.disabilityGroup": "Nogironlik guruhi",
+    "common.gender": "Jınsı",
+    "common.age": "Jası",
+    "common.apply": "Qollaw",
+    "common.reset": "Tazalaw",
+    "common.all": "Barshası",
+    "common.close": "Jabıw",
+    "common.mainMenu": "Tiykarǵı menu",
+    "gender.male": "Erkek",
+    "gender.female": "Ayol",
+    "header.administrator": "Administrator",
+    "header.profile": "Profilni kóriw",
+    "header.settings": "Sazlamalar",
+    "header.logout": "Shıǵıw",
+    "applications.searchPlaceholder": "ID, F.I.Sh. yamasa PINFL",
+    "detail.title": "Arıza tafsilotları",
+    "date.placeholder": "Sánanı tańlań",
+  },
+  "kaa-cyrl": {
+    "module.muruvvat": "Мурувват модули",
+    "module.ptpk": "ПТПК модули",
+    "nav.dashboard": "Дашбоард",
+    "nav.institutions": "Интернат үйлери",
+    "nav.queue": "Нәўбет",
+    "nav.registered": "Дизимге алынғанлар",
+    "nav.removed": "Дизимнен шыққанлар",
+    "nav.applications": "Арызалар",
+    "nav.applicationsList": "Арызалар дизими",
+    "nav.forms": "Сораўнамалар",
+    "nav.acts": "Далолатнамалар",
+    "nav.decisions": "Қарорлар",
+    "nav.reports": "Есабатлар",
+    "nav.reportApplications": "Арызалар бойынша есабат",
+    "nav.reportInstitutions": "Интернат үйлери бойынша есабат",
+    "nav.reportDisability": "Мүгедаклиги бар шахслар саны бойынша есабат",
+    "nav.info": "Инфо",
+    "nav.info1": "Инфо 1",
+    "nav.info2": "Инфо 2",
+    "nav.meetingPlans": "Жыйналыс режелери",
+    "nav.minutes": "Баённамалар",
+    "nav.conclusions": "Хулосалар",
+    "applications.total": "Жами арызалар",
+    "status.process": "Жараёнда",
+    "status.accepted": "Қабул қилинған",
+    "status.rejected": "Рад этилган",
+    "status.new": "Жаңа",
+    "result.positive": "Ижобий",
+    "result.negative": "Салбий",
+    "common.status": "Статус",
+    "common.date": "Сана",
+    "common.address": "Манзил",
+    "common.position": "Лавозим",
+    "common.step": "Басқыш",
+    "common.region": "Ҳудуд",
+    "common.district": "Туман (шаҳар)",
+    "common.organizationType": "Ташкилот тури",
+    "common.organization": "Ташкилот",
+    "common.startDate": "Басланыў сәнә",
+    "common.endDate": "Таўысыў сәнә",
+    "common.diagnosis": "Ташхис",
+    "common.disabilityGroup": "Ногиронлик гуруҳи",
+    "common.gender": "Жинсы",
+    "common.age": "Жасы",
+    "common.apply": "Қоллаў",
+    "common.reset": "Тазалаў",
+    "common.all": "Баршасы",
+    "common.close": "Жабыў",
+    "common.mainMenu": "Тийкарғы меню",
+    "gender.male": "Еркак",
+    "gender.female": "Аёл",
+    "detail.title": "Арыза тәфсилотлары",
+    "date.placeholder": "Сәнаны таңдаң",
+  },
+  ru: {
+    "module.muruvvat": "Модуль Мурувват",
+    "module.ptpk": "Модуль ПТПК",
+    "nav.dashboard": "Дашборд",
+    "nav.institutions": "Дома-интернаты",
+    "nav.queue": "Очередь",
+    "nav.registered": "Зарегистрированные",
+    "nav.removed": "Выбывшие",
+    "nav.applications": "Заявления",
+    "nav.applicationsList": "Список заявлений",
+    "nav.forms": "Опросники",
+    "nav.acts": "Акты",
+    "nav.decisions": "Решения",
+    "nav.reports": "Отчёты",
+    "nav.reportApplications": "Отчёт по заявлениям",
+    "nav.reportInstitutions": "Отчёт по домам-интернатам",
+    "nav.reportDisability": "Отчёт по числу лиц с инвалидностью",
+    "nav.info": "Инфо",
+    "nav.info1": "Инфо 1",
+    "nav.info2": "Инфо 2",
+    "nav.meetingPlans": "Планы заседаний",
+    "nav.minutes": "Протоколы",
+    "nav.conclusions": "Заключения",
+    "page.applicationsList": "Заявления / Список заявлений",
+    "page.reportDisability": "Отчёты / Отчёт по числу лиц с инвалидностью",
+    "applications.total": "Всего заявлений",
+    "status.process": "В процессе",
+    "status.accepted": "Принято",
+    "status.rejected": "Отклонено",
+    "status.new": "Новый",
+    "result.positive": "Положительный",
+    "result.negative": "Отрицательный",
+    "common.status": "Статус",
+    "common.date": "Дата",
+    "common.address": "Адрес",
+    "common.position": "Должность",
+    "common.step": "Этап",
+    "common.region": "Регион",
+    "common.district": "Район (город)",
+    "common.organizationType": "Тип организации",
+    "common.organization": "Организация",
+    "common.startDate": "Дата начала",
+    "common.endDate": "Дата окончания",
+    "common.diagnosis": "Диагноз",
+    "common.disabilityGroup": "Группа инвалидности",
+    "common.gender": "Пол",
+    "common.age": "Возраст",
+    "common.apply": "Применить",
+    "common.reset": "Сбросить",
+    "common.all": "Все",
+    "common.close": "Закрыть",
+    "common.mainMenu": "Главное меню",
+    "gender.male": "Мужской",
+    "gender.female": "Женский",
+    "header.administrator": "Администратор",
+    "header.profile": "Профиль",
+    "header.settings": "Настройки",
+    "header.logout": "Выход",
+    "header.monitoring": "Панель мониторинга",
+    "header.reportsCenter": "Центр отчётов",
+    "applications.searchPlaceholder": "ID, Ф.И.О. или ПИНФЛ",
+    "applications.actions": "Действия",
+    "applications.application": "Заявление",
+    "applications.applicant": "Заявитель",
+    "applications.address": "Адрес",
+    "applications.export": "Экспорт",
+    "applications.new": "Новое заявление",
+    "empty.notFound": "Данные не найдены",
+    "empty.noData": "Пока заявлений нет",
+    "date.placeholder": "Выберите дату",
+    "report.download": "Скачать отчёт",
+    "report.totalPersons": "Общее число ЛСИ",
+    "report.byDiagnosis": "По диагнозам",
+    "report.byDisability": "Группа инвалидности",
+    "report.scope.back": "Назад",
+    "report.summary": "Итого по республике",
+    "selection.count": "Кол-во",
+    "selection.sum": "Сумма",
+    "selection.avg": "Среднее",
+    "selection.min": "Мин",
+    "selection.max": "Макс",
+    "detail.title": "Детали заявления",
+    "detail.loading": "Загрузка данных заявления...",
+    "detail.accept": "Принять",
+    "detail.reject": "Отклонить",
+    "detail.application": "Данные заявления",
+    "detail.receiver": "Принявший сотрудник",
+    "detail.representative": "Законный представитель",
+    "detail.applicant": "Заявитель",
+    "detail.medicalDocuments": "Медицинские документы",
+    "detail.result": "Результат",
+    "detail.representativeLevel": "Степень представительства",
+    "detail.phone": "Телефон",
+    "detail.birthDate": "Дата рождения",
+    "detail.diagnosis": "Диагноз",
+    "detail.address": "Адрес",
+    "detail.organizationName": "Название организации",
+    "detail.goToAct": "Перейти к акту",
+    "detail.goToDecision": "Перейти к решению",
+    "detail.disabilityHistory": "История инвалидности",
+    "detail.conclusionHistory": "История заключений",
+    "detail.applicationsHistory": "История заявлений",
+    "detail.documentHistory": "История документов",
+    "detail.assignedDate": "Дата назначения",
+    "detail.validUntil": "Срок действия",
+    "detail.educationInstitutionType": "Тип образовательного учреждения",
+    "detail.actor": "Исполнитель",
+    "empty.notReady": "раздел пока не подготовлен.",
+    "common.records": "записей",
+    "common.loading": "Загрузка...",
+    "common.downloaded": "Загружено",
+    "common.fileReady": "Файл заявления готов.",
+    "detail.notFoundTitle": "Заявление не найдено",
+    "detail.notFoundDescription": "данные по выбранному заявлению не найдены.",
+  },
+  en: {
+    "module.muruvvat": "Muruvvat module",
+    "module.ptpk": "PTPK module",
+    "nav.dashboard": "Dashboard",
+    "nav.institutions": "Residential homes",
+    "nav.queue": "Queue",
+    "nav.registered": "Registered",
+    "nav.removed": "Removed",
+    "nav.applications": "Applications",
+    "nav.applicationsList": "Application list",
+    "nav.forms": "Forms",
+    "nav.acts": "Acts",
+    "nav.decisions": "Decisions",
+    "nav.reports": "Reports",
+    "nav.reportApplications": "Applications report",
+    "nav.reportInstitutions": "Residential homes report",
+    "nav.reportDisability": "Disability persons report",
+    "nav.info": "Info",
+    "nav.info1": "Info 1",
+    "nav.info2": "Info 2",
+    "nav.meetingPlans": "Meeting plans",
+    "nav.minutes": "Minutes",
+    "nav.conclusions": "Conclusions",
+    "page.applicationsList": "Applications / Application list",
+    "page.reportDisability": "Reports / Disability persons report",
+    "applications.total": "Total applications",
+    "status.process": "In progress",
+    "status.accepted": "Accepted",
+    "status.rejected": "Rejected",
+    "status.new": "New",
+    "result.positive": "Positive",
+    "result.negative": "Negative",
+    "common.status": "Status",
+    "common.date": "Date",
+    "common.address": "Address",
+    "common.position": "Position",
+    "common.step": "Step",
+    "common.region": "Region",
+    "common.district": "District (city)",
+    "common.organizationType": "Organization type",
+    "common.organization": "Organization",
+    "common.startDate": "Start date",
+    "common.endDate": "End date",
+    "common.diagnosis": "Diagnosis",
+    "common.disabilityGroup": "Disability group",
+    "common.gender": "Gender",
+    "common.age": "Age",
+    "common.apply": "Apply",
+    "common.reset": "Reset",
+    "common.all": "All",
+    "common.close": "Close",
+    "common.mainMenu": "Main menu",
+    "gender.male": "Male",
+    "gender.female": "Female",
+    "header.administrator": "Administrator",
+    "header.profile": "View profile",
+    "header.settings": "Settings",
+    "header.logout": "Logout",
+    "header.monitoring": "Monitoring panel",
+    "header.reportsCenter": "Reports center",
+    "applications.searchPlaceholder": "ID, full name or PINFL",
+    "applications.actions": "Actions",
+    "applications.application": "Application",
+    "applications.applicant": "Applicant",
+    "applications.address": "Address",
+    "applications.export": "Export",
+    "applications.new": "New application",
+    "empty.notFound": "No matching data found",
+    "empty.noData": "No applications yet",
+    "date.placeholder": "Select date",
+    "report.download": "Download report",
+    "report.totalPersons": "Total PwD count",
+    "report.byDiagnosis": "By diagnosis",
+    "report.byDisability": "Disability group",
+    "report.scope.back": "Back",
+    "report.summary": "Republic total",
+    "selection.count": "Count",
+    "selection.sum": "Sum",
+    "selection.avg": "Average",
+    "selection.min": "Min",
+    "selection.max": "Max",
+    "detail.title": "Application details",
+    "detail.loading": "Loading application data...",
+    "detail.accept": "Accept",
+    "detail.reject": "Reject",
+    "detail.application": "Application information",
+    "detail.receiver": "Receiving officer",
+    "detail.representative": "Legal representative",
+    "detail.applicant": "Applicant",
+    "detail.medicalDocuments": "Medical documents",
+    "detail.result": "Result",
+    "detail.representativeLevel": "Representation level",
+    "detail.phone": "Phone number",
+    "detail.birthDate": "Birth date",
+    "detail.diagnosis": "Diagnosis",
+    "detail.address": "Address",
+    "detail.organizationName": "Organization name",
+    "detail.goToAct": "Go to act",
+    "detail.goToDecision": "Go to decision",
+    "detail.disabilityHistory": "Disability history",
+    "detail.conclusionHistory": "Conclusion history",
+    "detail.applicationsHistory": "Application history",
+    "detail.documentHistory": "Document history",
+    "detail.assignedDate": "Assigned date",
+    "detail.validUntil": "Valid until",
+    "detail.educationInstitutionType": "Education institution type",
+    "detail.actor": "Performed by",
+    "empty.notReady": "section content is not ready yet.",
+    "common.records": "records",
+    "common.loading": "Loading...",
+    "common.downloaded": "Downloaded",
+    "common.fileReady": "The application file is ready.",
+    "detail.notFoundTitle": "Application not found",
+    "detail.notFoundDescription": "No details were found for the selected application.",
+  },
+};
+
+function formatRecordCount(count) {
+  const safeCount = Number(count) || 0;
+  if (currentLanguage === "en") {
+    return `${safeCount} ${tr("common.records", "records")}`;
+  }
+  if (currentLanguage === "ru") {
+    return `${safeCount} ${safeCount === 1 ? "запись" : safeCount < 5 ? "записи" : "записей"}`;
+  }
+  return `${safeCount} ta yozuv`;
+}
+
+function formatPaginationInfo(from, to, total) {
+  if (currentLanguage === "en") {
+    return `${from}-${to} / ${total} ${tr("common.records", "records")}`;
+  }
+  if (currentLanguage === "ru") {
+    return `${from}-${to} / ${total} записей`;
+  }
+  return `${from}-${to} / ${total} ta yozuv`;
+}
+
+function tr(key, fallback = "") {
+  if (!key) {
+    return fallback;
+  }
+  return translations[currentLanguage]?.[key]
+    ?? translations.uz?.[key]
+    ?? fallback
+    ?? key;
+}
+
+function tl(literal) {
+  return tr(literalKeyMap[literal], literal);
+}
+
+function translateRouteTitle(title) {
+  const key = routeTitleKeys[title];
+  if (!key) {
+    return tl(title);
+  }
+  return tr(key, title);
+}
+
+function getSavedLanguagePreference() {
+  return window.localStorage.getItem(languageStorageKey) || "uz";
+}
+
+function updateLanguageMenuUi() {
+  const meta = languageMeta[currentLanguage] ?? languageMeta.uz;
+  if (languageCurrent) {
+    languageCurrent.textContent = meta.short;
+  }
+  document.documentElement.lang = meta.htmlLang;
+  languageItems.forEach((button) => {
+    button.classList.toggle("header-dropdown__item--active", button.getAttribute("data-language-code") === currentLanguage);
+  });
+}
+
+function applyStaticTranslations() {
+  updateLanguageMenuUi();
+
+  document.title = currentModule === "ptpk" ? tr("module.ptpk", "PTPK moduli") : tr("module.muruvvat", "Muruvvat moduli");
+
+  const loginHeroBadge = document.querySelector(".login-hero__badge");
+  if (loginHeroBadge) loginHeroBadge.textContent = tr("module.muruvvat", "Muruvvat moduli");
+  const loginHeroTitle = document.querySelector(".login-hero__title");
+  if (loginHeroTitle) loginHeroTitle.textContent = tr("login.heroTitle", "Internat uylariga joylashtirish jarayonini yagona oynada boshqaring.");
+  const loginHeroText = document.querySelector(".login-hero__text");
+  if (loginHeroText) loginHeroText.textContent = tr("login.heroText", "Arizalar, qarorlar, so'rovnomalar va monitoring holatini bitta tizimda yuritish uchun tizimga kiring.");
+  const loginStatLabels = document.querySelectorAll(".login-hero__card span");
+  if (loginStatLabels[0]) loginStatLabels[0].textContent = tr("login.statProcessed", "Qayta ishlangan arizalar");
+  if (loginStatLabels[1]) loginStatLabels[1].textContent = tr("login.statControl", "Markazlashgan nazorat");
+  if (loginStatLabels[2]) loginStatLabels[2].textContent = tr("login.statIntegration", "Barcha bo'limlar bilan integratsiya");
+  const loginBrandTitle = document.querySelector(".login-card__brand strong");
+  if (loginBrandTitle) loginBrandTitle.textContent = tr("module.muruvvat", "Muruvvat moduli");
+  const loginBrandSub = document.querySelector(".login-card__brand div span");
+  if (loginBrandSub) loginBrandSub.textContent = tr("login.systemAccess", "Tizimga kirish");
+  const loginHeading = document.querySelector(".login-card__heading h2");
+  if (loginHeading) loginHeading.textContent = tr("login.signIn", "Tizimga kiring");
+  const loginHeadingText = document.querySelector(".login-card__heading p");
+  if (loginHeadingText) loginHeadingText.textContent = tr("login.signInText", "Login va parol orqali ishchi kabinetga o'ting.");
+  const loginFieldLabels = document.querySelectorAll(".login-field > span");
+  if (loginFieldLabels[0]) loginFieldLabels[0].textContent = tr("login.username", "Login");
+  if (loginFieldLabels[1]) loginFieldLabels[1].textContent = tr("login.password", "Parol");
+  if (loginUsername) loginUsername.placeholder = tr("login.usernamePlaceholder", "Loginni kiriting");
+  if (loginPassword) loginPassword.placeholder = tr("login.passwordPlaceholder", "Parolni kiriting");
+  if (capsLockHint) capsLockHint.textContent = tr("login.caps", "Caps Lock yoqilgan bo'lishi mumkin.");
+  const rememberText = document.querySelector(".login-check span");
+  if (rememberText) rememberText.textContent = tr("login.remember", "Meni eslab qolish");
+  if (forgotPasswordButton) forgotPasswordButton.textContent = tr("login.forgot", "Parolni unutdingizmi?");
+  if (loginError) loginError.textContent = tr("login.error", "Login yoki parol noto'g'ri. Demo uchun `admin` / `muruvvat123` dan foydalaning.");
+  if (loginSubmit) loginSubmit.textContent = tr("login.submit", "Kirish");
+  const loginDivider = document.querySelector(".login-divider span");
+  if (loginDivider) loginDivider.textContent = tr("login.otherMethod", "yoki boshqa usul bilan");
+  const oneIdTitle = document.querySelector(".login-alt__copy strong");
+  if (oneIdTitle) oneIdTitle.textContent = tr("login.oneidTitle", "OneID orqali kirish");
+  const oneIdText = document.querySelector(".login-alt__copy span");
+  if (oneIdText) oneIdText.textContent = tr("login.oneidText", "Yagona identifikatsiya tizimi bilan xavfsiz autentifikatsiya");
+  const loginHintSpan = document.querySelector(".login-card__hint span");
+  if (loginHintSpan) loginHintSpan.textContent = tr("login.demo", "Demo kirish:");
+
+  const appMenu = document.querySelector('[data-menu-toggle="applications"]')?.nextElementSibling?.querySelectorAll(".header-dropdown__item");
+  if (appMenu?.[0]) appMenu[0].textContent = tr("module.muruvvat", "Muruvvat moduli");
+  if (appMenu?.[1]) appMenu[1].textContent = tr("module.ptpk", "PTPK moduli");
+  if (appMenu?.[2]) appMenu[2].textContent = tr("header.monitoring", "Monitoring paneli");
+  if (appMenu?.[3]) appMenu[3].textContent = tr("header.reportsCenter", "Hisobotlar markazi");
+  const accountMeta = document.querySelector(".header-account__meta span");
+  if (accountMeta) accountMeta.textContent = tr("header.administrator", "Administrator");
+  const accountMenu = document.querySelector('[data-menu-toggle="account"]')?.nextElementSibling?.querySelectorAll(".header-dropdown__item");
+  if (accountMenu?.[0]) accountMenu[0].textContent = tr("header.profile", "Profilni ko'rish");
+  if (accountMenu?.[1]) accountMenu[1].textContent = tr("header.settings", "Sozlamalar");
+  if (accountMenu?.[2]) accountMenu[2].textContent = tr("header.logout", "Chiqish");
+
+  const statLabels = document.querySelectorAll(".stat-card__label");
+  if (statLabels[0]) statLabels[0].textContent = tr("applications.total", "Jami arizalar");
+  if (statLabels[1]) statLabels[1].textContent = tr("status.process", "Jarayonda");
+  if (statLabels[2]) statLabels[2].textContent = tr("status.accepted", "Qabul qilingan");
+  if (statLabels[3]) statLabels[3].textContent = tr("status.rejected", "Rad etilgan");
+
+  if (applicationSearch) applicationSearch.placeholder = tr("applications.searchPlaceholder", "ID, F.I.Sh. yoki PINFL");
+  const staticSelectTranslations = [
+    { select: statusFilter, map: { all: tr("common.all", "Barchasi"), "jarayonda": tr("status.process", "Jarayonda"), "qabul qilingan": tr("status.accepted", "Qabul qilingan"), "rad etilgan": tr("status.rejected", "Rad etilgan") } },
+    { select: reportDiagnosisFilter, map: { all: tr("common.all", "Barchasi") } },
+    { select: reportDisabilityGroupFilter, map: { all: tr("common.all", "Barchasi") } },
+    { select: reportGenderFilter, map: { all: tr("common.all", "Barchasi"), erkak: tr("gender.male", "Erkak"), ayol: tr("gender.female", "Ayol") } },
+    { select: reportAgeFilter, map: { all: tr("common.all", "Barchasi") } },
+  ];
+  staticSelectTranslations.forEach(({ select, map }) => {
+    if (!select) return;
+    Array.from(select.options).forEach((option) => {
+      if (map[option.value]) option.textContent = map[option.value];
+    });
+    const menu = select.closest("[data-custom-select]");
+    menu?.querySelectorAll(".custom-select__option").forEach((option) => {
+      const value = option.getAttribute("data-value") || "";
+      if (map[value]) option.textContent = map[value];
+    });
+    if (menu) syncCustomSelectUi(menu);
+  });
+  const appFilterLabels = {
+    'label[for="statusFilter"]': tr("common.status", "Status"),
+    'label[for="stepFilter"]': tr("common.step", "Bosqich"),
+    'label[for="regionFilter"]': tr("common.region", "Hudud"),
+    'label[for="districtFilter"]': tr("common.district", "Tuman (shahar)"),
+    'label[for="organizationTypeFilter"]': tr("common.organizationType", "Tashkilot turi"),
+    'label[for="organizationFilter"]': tr("common.organization", "Tashkilot"),
+    'label[for="dateFromFilter"]': tr("common.startDate", "Boshlanish sana"),
+    'label[for="dateToFilter"]': tr("common.endDate", "Tugash sana"),
+    'label[for="reportDiagnosisFilter"]': tr("common.diagnosis", "Tashxis"),
+    'label[for="reportDisabilityGroupFilter"]': tr("common.disabilityGroup", "Nogironlik guruhi"),
+    'label[for="reportGenderFilter"]': tr("common.gender", "Jinsi"),
+    'label[for="reportAgeFilter"]': tr("common.age", "Yoshi"),
+  };
+  Object.entries(appFilterLabels).forEach(([selector, text]) => {
+    const element = document.querySelector(selector);
+    if (element) element.textContent = text;
+  });
+  const fromInput = document.getElementById("dateFromInput");
+  const toInput = document.getElementById("dateToInput");
+  if (fromInput) fromInput.placeholder = tr("date.placeholder", "Sanani tanlang");
+  if (toInput) toInput.placeholder = tr("date.placeholder", "Sanani tanlang");
+  const appTableHeads = document.querySelectorAll("#applicationsTable thead th");
+  if (appTableHeads[0]) appTableHeads[0].textContent = tr("applications.actions", "Amallar");
+  if (appTableHeads[1]) appTableHeads[1].textContent = tr("applications.application", "Ariza");
+  if (appTableHeads[2]) appTableHeads[2].textContent = tr("applications.applicant", "Arizachi");
+  if (appTableHeads[3]) appTableHeads[3].textContent = tr("common.organization", "Tashkilot");
+  if (appTableHeads[4]) appTableHeads[4].textContent = tr("applications.address", "Manzil");
+  if (appTableHeads[5]) appTableHeads[5].textContent = tr("common.status", "Status");
+  if (applyFilters) applyFilters.textContent = tr("common.apply", "Qo'llash");
+  if (resetFilters) resetFilters.textContent = tr("common.reset", "Tozalash");
+  if (exportButton?.querySelector(".sr-only")) exportButton.querySelector(".sr-only").textContent = tr("applications.export", "Eksport");
+  if (reportApplyFilters) reportApplyFilters.textContent = tr("common.apply", "Qo'llash");
+  if (reportResetFilters) reportResetFilters.textContent = tr("common.reset", "Tozalash");
+  if (reportScopeBack) reportScopeBack.textContent = tr("report.scope.back", "Orqaga");
+  if (reportExportButton?.querySelector(".sr-only")) reportExportButton.querySelector(".sr-only").textContent = tr("report.download", "Hisobotni yuklab olish");
+  const reportHeads = document.querySelectorAll(".report-table thead th");
+  if (reportHeads[0]) reportHeads[0].textContent = tr("common.region", "Hudud");
+  if (reportHeads[1]) reportHeads[1].textContent = tr("report.totalPersons", "Jami NBSHlar soni");
+  if (reportHeads[2]) reportHeads[2].textContent = tr("report.byDiagnosis", "Tashxislari bo'yicha");
+  if (reportHeads[3]) reportHeads[3].textContent = tr("report.byDisability", "Nogironlik guruhi");
+  if (reportHeads[4]) reportHeads[4].textContent = tr("common.gender", "Jinsi");
+  if (reportHeads[5]) reportHeads[5].textContent = tr("common.age", "Yoshi");
+  if (reportHeads[12]) reportHeads[12].textContent = tr("gender.male", "Erkak");
+  if (reportHeads[13]) reportHeads[13].textContent = tr("gender.female", "Ayol");
+  if (tableEmptyAction) tableEmptyAction.textContent = tr("common.reset", "Tozalash");
+  if (detailModalTitle) detailModalTitle.textContent = tr("detail.title", "Ariza tafsilotlari");
+  if (detailModalLoading?.querySelector("span:last-child")) detailModalLoading.querySelector("span:last-child").textContent = tr("detail.loading", "Ariza ma'lumotlari yuklanmoqda...");
+  if (detailAcceptButton) detailAcceptButton.textContent = tr("detail.accept", "Qabul qilish");
+  if (detailRejectButton) detailRejectButton.textContent = tr("detail.reject", "Rad etish");
+  const reportSelectionLabels = document.querySelectorAll(".report-selection__stat span");
+  if (reportSelectionLabels[0]) reportSelectionLabels[0].textContent = tr("selection.count", "Soni");
+  if (reportSelectionLabels[1]) reportSelectionLabels[1].textContent = tr("selection.sum", "Yig'indi");
+  if (reportSelectionLabels[2]) reportSelectionLabels[2].textContent = tr("selection.avg", "O'rtacha");
+  if (reportSelectionLabels[3]) reportSelectionLabels[3].textContent = tr("selection.min", "Min");
+  if (reportSelectionLabels[4]) reportSelectionLabels[4].textContent = tr("selection.max", "Max");
+}
+
+function applyLanguage(languageCode) {
+  currentLanguage = languageMeta[languageCode] ? languageCode : "uz";
+  window.localStorage.setItem(languageStorageKey, currentLanguage);
+  applyStaticTranslations();
+  renderSidebar(currentModule, currentCanonicalTitle || getTitleFromHash(window.location.hash));
+  syncPageHeading(currentCanonicalTitle || getTitleFromHash(window.location.hash) || "Arizalar - Arizalar ro'yxati");
+  enrichApplicationRows();
+  updateApplicationFilterOptionSets();
+  updateApplicationFilterControls();
+  updateReportFilterControls();
+  renderReportTable();
+  applyTableFilters();
+  if (!detailModal?.hasAttribute("hidden") && currentDetailApplicationId) {
+    openApplicationDetail(currentDetailApplicationId);
+  }
+}
 
 const calendarPopover = document.createElement("div");
 calendarPopover.className = "calendar-popover";
@@ -253,6 +1154,66 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function getModuleKeyFromHash(hashValue) {
+  return hashValue.startsWith("#/ptpk") ? "ptpk" : "muruvvat";
+}
+
+function getModuleConfig(moduleKey = currentModule) {
+  return modulesConfig[moduleKey] ?? modulesConfig.muruvvat;
+}
+
+function renderSidebar(moduleKey = currentModule, activeTitle = "") {
+  const moduleConfig = getModuleConfig(moduleKey);
+  currentModule = moduleKey;
+
+  if (moduleTitle) {
+    moduleTitle.textContent = tl(moduleConfig.label);
+  }
+
+  if (!sidebarNav) {
+    return;
+  }
+
+  const html = moduleConfig.nav
+    .map((item) => {
+      const icon = sidebarIconMap[item.icon] ?? sidebarIconMap.info;
+
+      if (item.type === "group") {
+        const isOpen = item.children.some((child) => child.title === activeTitle) || Boolean(item.defaultOpen && !activeTitle);
+        const children = item.children
+          .map((child) => `
+            <a class="nav-subitem${child.title === activeTitle ? " nav-subitem--active" : ""}" href="${child.hash}" data-page-title="${escapeHtml(child.title)}">
+              ${escapeHtml(tl(child.label))}
+            </a>
+          `)
+          .join("");
+
+        return `
+          <div class="nav-group${isOpen ? " nav-group--open" : ""}">
+            <button class="nav-item nav-item--toggle" type="button" aria-expanded="${isOpen ? "true" : "false"}">
+              <span class="nav-item__icon" aria-hidden="true">${icon}</span>
+              <span>${escapeHtml(tl(item.label))}</span>
+              <span class="nav-caret" aria-hidden="true"></span>
+            </button>
+            <div class="nav-submenu">
+              ${children}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <a class="nav-item${item.title === activeTitle ? " nav-item--active" : ""}" href="${item.hash}" data-page-title="${escapeHtml(item.title)}">
+          <span class="nav-item__icon" aria-hidden="true">${icon}</span>
+          <span>${escapeHtml(tl(item.label))}</span>
+        </a>
+      `;
+    })
+    .join("");
+
+  sidebarNav.innerHTML = html;
+}
+
 function toRegionKey(name) {
   return name
     .toLowerCase()
@@ -314,6 +1275,7 @@ const reportState = {
   level: "region",
   selectedRegionKey: null,
 };
+const reportSelectedCells = new Set();
 
 const reportDefaultFilters = Object.freeze({
   diagnosis: "all",
@@ -387,15 +1349,6 @@ const reportColumnKeys = [
   "age55_60",
 ];
 
-const reportColumnGroups = {
-  diagnosis: ["f00f03", "f71", "f72", "f73"],
-  disability: ["group1", "group2", "group3", "nbb"],
-  gender: ["male", "female"],
-  age: ["age0_3", "age3_7", "age7_18", "age18_55_60", "age55_60"],
-};
-
-const reportVisibleColumns = new Set(reportColumnKeys);
-
 const initialReportRows = reportTableBody ? Array.from(reportTableBody.querySelectorAll("tr")) : [];
 const reportSummaryData = initialReportRows.length ? extractReportRowData(initialReportRows[0], "summary") : null;
 const reportRegionData = initialReportRows.slice(1).map((row, index) => extractReportRowData(row, `region-${index + 1}`)).filter(Boolean);
@@ -433,8 +1386,8 @@ function updateReportScope() {
   const isDistrictLevel = reportState.level === "district" && selectedRegion;
   reportScope.hidden = !isDistrictLevel;
   reportScopePath.textContent = isDistrictLevel
-    ? `Respublika jami / ${selectedRegion.name}`
-    : "Respublika jami";
+    ? `${tr("report.summary", "Respublika jami")} / ${selectedRegion.name}`
+    : tr("report.summary", "Respublika jami");
 }
 
 function getVisibleReportRows() {
@@ -482,38 +1435,80 @@ function getReportSummarySource() {
     return { source: selectedRegion, label: `${selectedRegion.name} bo'yicha jami` };
   }
 
-  return { source: reportSummaryData, label: reportSummaryData?.name ?? "Respublika jami" };
+  return { source: reportSummaryData, label: tr("report.summary", reportSummaryData?.name ?? "Respublika jami") };
 }
 
-function syncReportColumnVisibility() {
-  if (!reportTable) {
+function parseReportCellValue(value) {
+  const normalized = String(value || "").replace(/,/g, "").trim();
+  const numeric = Number(normalized);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function clearReportSelection() {
+  reportSelectedCells.forEach((cell) => cell.classList.remove("report-table__cell--selected"));
+  reportSelectedCells.clear();
+  updateReportSelectionSummary();
+}
+
+function updateReportSelectionSummary() {
+  if (!reportSelectionBar) {
     return;
   }
 
-  reportTable.querySelectorAll("[data-col]").forEach((cell) => {
-    const columnKey = cell.getAttribute("data-col");
-    const isHidden = columnKey !== "region" && !reportVisibleColumns.has(columnKey);
-    cell.toggleAttribute("data-report-hidden", isHidden);
-  });
+  const values = Array.from(reportSelectedCells)
+    .map((cell) => parseReportCellValue(cell.textContent))
+    .filter((value) => value !== null);
 
-  Object.entries(reportColumnGroups).forEach(([groupKey, columns]) => {
-    const groupCell = reportTable.querySelector(`[data-group="${groupKey}"]`);
-    if (!(groupCell instanceof HTMLTableCellElement)) {
-      return;
-    }
+  const hasValues = values.length > 0;
+  reportSelectionBar.hidden = !hasValues;
 
-    const visibleCount = columns.filter((columnKey) => reportVisibleColumns.has(columnKey)).length;
-    groupCell.toggleAttribute("data-report-hidden", visibleCount === 0);
-    if (visibleCount > 0) {
-      groupCell.colSpan = visibleCount;
-    }
-  });
+  if (!hasValues) {
+    if (reportSelectionCount) reportSelectionCount.textContent = "0";
+    if (reportSelectionSum) reportSelectionSum.textContent = "0";
+    if (reportSelectionAvg) reportSelectionAvg.textContent = "0";
+    if (reportSelectionMin) reportSelectionMin.textContent = "0";
+    if (reportSelectionMax) reportSelectionMax.textContent = "0";
+    return;
+  }
+
+  const sum = values.reduce((total, value) => total + value, 0);
+  const avg = sum / values.length;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
+  if (reportSelectionCount) reportSelectionCount.textContent = formatReportNumber(values.length);
+  if (reportSelectionSum) reportSelectionSum.textContent = formatReportNumber(sum);
+  if (reportSelectionAvg) reportSelectionAvg.textContent = formatReportNumber(Math.round(avg * 100) / 100);
+  if (reportSelectionMin) reportSelectionMin.textContent = formatReportNumber(min);
+  if (reportSelectionMax) reportSelectionMax.textContent = formatReportNumber(max);
+}
+
+function toggleReportCellSelection(cell, additive = false) {
+  if (!(cell instanceof HTMLTableCellElement)) {
+    return;
+  }
+
+  if (!additive) {
+    clearReportSelection();
+  }
+
+  if (reportSelectedCells.has(cell)) {
+    reportSelectedCells.delete(cell);
+    cell.classList.remove("report-table__cell--selected");
+  } else {
+    reportSelectedCells.add(cell);
+    cell.classList.add("report-table__cell--selected");
+  }
+
+  updateReportSelectionSummary();
 }
 
 function renderReportTable() {
   if (!reportTableBody || !reportSummaryData) {
     return;
   }
+
+  clearReportSelection();
 
   const rows = getVisibleReportRows();
   const { source: summarySource, label: summaryLabel } = getReportSummarySource();
@@ -542,7 +1537,6 @@ function renderReportTable() {
   `;
 
   updateReportScope();
-  syncReportColumnVisibility();
 }
 
 function showToast(title, description, variant = "success") {
@@ -776,16 +1770,20 @@ function getApplicantAvatar(application) {
   return avatarPool[numericSeed % avatarPool.length];
 }
 
+function getReceiverAvatar(gender) {
+  return String(gender || "").toLowerCase() === "ayol" ? "operator-female.png" : "operator-male.png";
+}
+
 function getStatusBadgeVariant(status) {
   const normalized = status.toLowerCase();
   if (normalized === "jarayonda") {
-    return { className: "status-badge--process", label: "Jarayonda" };
+    return { className: "status-badge--process", label: tr("status.process", "Jarayonda") };
   }
-  if (normalized === "qabul qilingan") {
-    return { className: "status-badge--accepted", label: "Qabul qilingan" };
+  if (normalized === "qabul qilingan" || normalized === "tasdiqlangan") {
+    return { className: "status-badge--accepted", label: tr("status.accepted", "Qabul qilingan") };
   }
   if (normalized === "rad etilgan") {
-    return { className: "status-badge--rejected", label: "Rad etilgan" };
+    return { className: "status-badge--rejected", label: tr("status.rejected", "Rad etilgan") };
   }
   return { className: "", label: status };
 }
@@ -828,13 +1826,19 @@ function formatReadableDate(value) {
 
 function formatStatusBadge(status) {
   const statusClass = getStatusBadgeClass(status);
-  return `<span class="status-badge ${statusClass}">${status}</span>`;
+  const variant = getStatusBadgeVariant(status);
+  return `<span class="status-badge ${statusClass}">${variant.label}</span>`;
 }
 
 function formatResultBadge(result) {
   const normalized = (result || "").toLowerCase();
   const className = normalized === "ijobiy" ? "status-badge--accepted" : "status-badge--rejected";
-  return `<span class="status-badge ${className}">${result || "-"}</span>`;
+  const label = normalized === "ijobiy"
+    ? tr("result.positive", "Ijobiy")
+    : normalized === "salbiy"
+      ? tr("result.negative", "Salbiy")
+      : (result || "-");
+  return `<span class="status-badge ${className}">${label}</span>`;
 }
 
 function buildDetailFieldGrid(items) {
@@ -1119,7 +2123,12 @@ function getApplicationById(applicationId) {
   const addressCell = row.children[4]?.querySelector(".stacked-cell");
   const statusLabel = row.querySelector(".status-badge")?.textContent?.trim() ?? "";
   const numericPart = Number(applicationId.replace(/\D/g, "")) || 0;
-  const operator = ["D.Sh. Karimova", "A.B. Xasanov", "N.O. Rasulova"][numericPart % 3];
+  const operator = [
+    "Dilshoda Sharipovna Karimova",
+    "Abdurahmon Bunyod o'g'li Xasanov",
+    "Nigora Olimovna Rasulova",
+  ][numericPart % 3];
+  const operatorGender = /dilshoda|nigora/i.test(operator) ? "Ayol" : "Erkak";
   const diagnosisCatalog = [
     { code: "F71*", label: "Mo'tadil darajadagi aqliy zaiflik" },
     { code: "F72*", label: "Og'ir darajadagi aqliy zaiflik" },
@@ -1138,8 +2147,8 @@ function getApplicationById(applicationId) {
     pinfl: `50${String(100000000000 + numericPart).slice(-12)}`,
     position: ["Yetakchi mutaxassis", "Bosh inspektor", "Mas'ul kotib"][numericPart % 3],
     address: `${addressCell?.querySelector("strong")?.textContent?.trim() ?? "-"}, ${addressCell?.querySelector("span")?.textContent?.trim() ?? "-"}, IHMA hududiy bo'limi`,
-    gender: "Erkak",
-    avatar: getApplicantAvatar({ applicantName: formatPersonName(operator), id: `receiver-${applicationId}`, gender: "Erkak" }),
+    gender: operatorGender,
+    avatar: getReceiverAvatar(operatorGender),
   };
   const representativeName = ["Karimov Ulug'bek Islomovich", "Raximova Dilfuza Abduqodirovna", "Toshpulatov Jamshid Sherzod o'g'li"][numericPart % 3];
   const representativeGender = representativeName.toLowerCase().includes("dilfuza") ? "Ayol" : "Erkak";
@@ -1287,6 +2296,7 @@ function getApplicationById(applicationId) {
 }
 
 function closeDetailModal() {
+  currentDetailApplicationId = "";
   detailModal?.setAttribute("hidden", "");
   detailModalLoading?.setAttribute("hidden", "");
   detailModalBody?.setAttribute("hidden", "");
@@ -1307,9 +2317,15 @@ async function openApplicationDetail(applicationId) {
   const application = getApplicationById(applicationId);
 
   if (!application) {
-    showToast("Ariza topilmadi", `${applicationId} bo'yicha ma'lumot topilmadi.`, "error");
+    showToast(
+      tr("detail.notFoundTitle", "Ariza topilmadi"),
+      `${applicationId}: ${tr("detail.notFoundDescription", "bo'yicha ma'lumot topilmadi.")}`,
+      "error",
+    );
     return;
   }
+
+  currentDetailApplicationId = applicationId;
 
   detailModal?.removeAttribute("hidden");
   detailModalLoading?.removeAttribute("hidden");
@@ -1329,15 +2345,15 @@ async function openApplicationDetail(applicationId) {
     detailContent.innerHTML = [
       `<div class="detail-section-grid">
         ${buildDetailSection(
-          "Ariza ma'lumotlari",
+          tr("detail.application", "Ariza ma'lumotlari"),
           buildDetailFieldGrid([
             { label: "ID", value: application.id },
-            { label: "Sana", value: formatReadableDate(application.date) },
-            { label: "Status", value: formatStatusBadge(application.status) },
+            { label: tl("Sana"), value: formatReadableDate(application.date) },
+            { label: tl("Status"), value: formatStatusBadge(application.status) },
           ]),
         )}
         ${buildDetailSection(
-          "Arizani qabul qiluvchi",
+          tr("detail.receiver", "Arizani qabul qiluvchi"),
           `<div class="detail-person-layout">
             ${buildDetailPersonCard(
               application.receiver,
@@ -1346,13 +2362,13 @@ async function openApplicationDetail(applicationId) {
             ${buildDetailFieldGrid([
               { label: "FIO", value: application.receiver.fullName },
               { label: "JSHSHIR", value: application.receiver.pinfl },
-              { label: "Lavozim", value: application.receiver.position },
-              { label: "Manzil", value: application.receiver.address },
+              { label: tl("Lavozim"), value: application.receiver.position },
+              { label: tl("Manzil"), value: application.receiver.address },
             ])}
           </div>`,
         )}
         ${buildDetailSection(
-          "Qonuniy vakil",
+          tr("detail.representative", "Qonuniy vakil"),
           `<div class="detail-person-layout">
             ${buildDetailPersonCard(
               application.representative,
@@ -1361,123 +2377,123 @@ async function openApplicationDetail(applicationId) {
             ${buildDetailFieldGrid([
               { label: "FIO", value: application.representative.fullName },
               { label: "JSHSHIR", value: application.representative.pinfl },
-              { label: "Vakillik darajasi", value: application.representative.level },
-              { label: "Manzil", value: application.representative.address },
-              { label: "Telefon raqami", value: application.representative.phone },
+              { label: tr("detail.representativeLevel", "Vakillik darajasi"), value: application.representative.level },
+              { label: tl("Manzil"), value: application.representative.address },
+              { label: tr("detail.phone", "Telefon raqami"), value: application.representative.phone },
             ])}
           </div>`,
         )}
         ${buildDetailSection(
-          "Arizachi",
+          tr("detail.applicant", "Arizachi"),
           `<div class="detail-person-layout">
             ${buildDetailPersonCard(application.applicant, `<img class="detail-person-card__avatar" src="${application.applicant.avatar}" alt="${application.applicant.fullName} rasmi" />`)}
             ${buildDetailFieldGrid([
               { label: "FIO", value: application.applicant.fullName },
               { label: "JSHSHIR", value: application.applicant.pinfl },
-              { label: "Tug'ilgan sanasi", value: application.applicant.birthDate },
-              { label: "Jinsi", value: application.applicant.gender },
-              { label: "Nogironlik guruhi", value: application.applicant.disabilityGroup },
-              { label: "Tashxisi", value: application.applicant.diagnosis },
-              { label: "Manzili", value: application.applicant.address },
+              { label: tr("detail.birthDate", "Tug'ilgan sanasi"), value: application.applicant.birthDate },
+              { label: tl("Jinsi"), value: tl(application.applicant.gender) },
+              { label: tl("Nogironlik guruhi"), value: application.applicant.disabilityGroup },
+              { label: tr("detail.diagnosis", "Tashxisi"), value: application.applicant.diagnosis },
+              { label: tr("detail.address", "Manzili"), value: application.applicant.address },
             ])}
           </div>`,
         )}
         ${buildDetailSection(
-          "Tashkilot",
+          tl("Tashkilot"),
           buildDetailFieldGrid([
-            { label: "Tashkilot turi", value: application.organization.type },
-            { label: "Tashkilot nomi", value: application.organization.name },
-            { label: "Manzil", value: application.organization.address },
+            { label: tl("Tashkilot turi"), value: tl(application.organization.type) },
+            { label: tr("detail.organizationName", "Tashkilot nomi"), value: application.organization.name },
+            { label: tl("Manzil"), value: application.organization.address },
           ]),
         )}
         ${buildDetailSection(
-          "Tibbiy hujjatlar",
+          tr("detail.medicalDocuments", "Tibbiy hujjatlar"),
           buildDetailDocuments(application.medicalDocuments),
         )}
         <div class="detail-section-grid__double">
           ${buildDetailSection(
-            "Dalolatnoma",
+            tl("Dalolatnomalar").replace(/lar$/,""),
             buildDetailFieldGrid([
               { label: "ID", value: application.act.id },
-              { label: "Sana", value: application.act.date },
-              { label: "Natija", value: formatResultBadge(application.act.result) },
-              { label: "Status", value: formatStatusBadge(application.act.status) },
+              { label: tl("Sana"), value: application.act.date },
+              { label: tr("detail.result", "Natija"), value: formatResultBadge(application.act.result) },
+              { label: tl("Status"), value: formatStatusBadge(application.act.status) },
             ]) +
-              buildDetailInlineActions([{ label: "Dalolatnomaga o'tish", pageTitle: "Arizalar - Dalolatnomalar" }]),
+              buildDetailInlineActions([{ label: tr("detail.goToAct", "Dalolatnomaga o'tish"), pageTitle: "Arizalar - Dalolatnomalar" }]),
           )}
           ${buildDetailSection(
-            "Qaror",
+            tl("Qarorlar").replace(/lar$/,""),
             buildDetailFieldGrid([
               { label: "ID", value: application.decision.id },
-              { label: "Sana", value: application.decision.date },
-              { label: "Natija", value: formatResultBadge(application.decision.result) },
-              { label: "Status", value: formatStatusBadge(application.decision.status) },
+              { label: tl("Sana"), value: application.decision.date },
+              { label: tr("detail.result", "Natija"), value: formatResultBadge(application.decision.result) },
+              { label: tl("Status"), value: formatStatusBadge(application.decision.status) },
             ]) +
-              buildDetailInlineActions([{ label: "Qarorga o'tish", pageTitle: "Arizalar - Qarorlar" }]),
+              buildDetailInlineActions([{ label: tr("detail.goToDecision", "Qarorga o'tish"), pageTitle: "Arizalar - Qarorlar" }]),
           )}
         </div>
       </div>`,
       buildDetailAccordion(
-        "Nogironlik tarixi",
+        tr("detail.disabilityHistory", "Nogironlik tarixi"),
         buildDetailRecordList(
           application.disabilityHistory.map((item) => ({
             title: item.id,
             meta: item.assignedDate,
             fields: [
-              { label: "Ta'yinlangan sana", value: item.assignedDate },
-              { label: "Amal qilish muddati", value: item.validUntil },
-              { label: "Nogironlik guruhi", value: item.group },
-              { label: "Tashxisi", value: item.diagnosis },
-              { label: "Status", value: item.status },
+              { label: tr("detail.assignedDate", "Ta'yinlangan sana"), value: item.assignedDate },
+              { label: tr("detail.validUntil", "Amal qilish muddati"), value: item.validUntil },
+              { label: tl("Nogironlik guruhi"), value: item.group },
+              { label: tr("detail.diagnosis", "Tashxisi"), value: item.diagnosis },
+              { label: tl("Status"), value: item.status },
             ],
           })),
         ),
-        `${application.disabilityHistory.length} ta yozuv`,
+        formatRecordCount(application.disabilityHistory.length),
         true,
       ),
       buildDetailAccordion(
-        "Xulosalar tarixi",
+        tr("detail.conclusionHistory", "Xulosalar tarixi"),
         buildDetailRecordList(
           application.conclusionHistory.map((item) => ({
             title: item.id,
             meta: item.date,
             fields: [
-              { label: "Sana", value: item.date },
-              { label: "Ta'lim muassasasi turi", value: item.institutionType },
-              { label: "Amal qilish muddati", value: item.validUntil },
-              { label: "Status", value: item.status },
+              { label: tl("Sana"), value: item.date },
+              { label: tr("detail.educationInstitutionType", "Ta'lim muassasasi turi"), value: item.institutionType },
+              { label: tr("detail.validUntil", "Amal qilish muddati"), value: item.validUntil },
+              { label: tl("Status"), value: item.status },
             ],
           })),
         ),
-        `${application.conclusionHistory.length} ta yozuv`,
+        formatRecordCount(application.conclusionHistory.length),
       ),
       buildDetailAccordion(
-        "Arizalar tarixi",
+        tr("detail.applicationsHistory", "Arizalar tarixi"),
         buildDetailRecordList(
           application.applicationHistory.map((item) => ({
             title: item.id,
             meta: item.date,
             fields: [
-              { label: "Sana", value: item.date },
-              { label: "Status", value: item.status },
+              { label: tl("Sana"), value: item.date },
+              { label: tl("Status"), value: item.status },
             ],
           })),
         ),
-        `${application.applicationHistory.length} ta yozuv`,
+        formatRecordCount(application.applicationHistory.length),
       ),
       buildDetailAccordion(
-        "Hujjat tarixi",
+        tr("detail.documentHistory", "Hujjat tarixi"),
         buildDetailRecordList(
           application.documentLogs.map((item) => ({
             title: item.operation,
             meta: item.date,
             fields: [
-              { label: "Sana", value: item.date },
-              { label: "Amaliyotni bajaruvchi", value: item.actor },
+              { label: tl("Sana"), value: item.date },
+              { label: tr("detail.actor", "Amaliyotni bajaruvchi"), value: item.actor },
             ],
           })),
         ),
-        `${application.documentLogs.length} ta yozuv`,
+        formatRecordCount(application.documentLogs.length),
       ),
     ].join("");
   }
@@ -1689,10 +2705,11 @@ function showEmptyView(title) {
   contentLoader?.setAttribute("hidden", "");
   emptyContentView?.removeAttribute("hidden");
   if (emptyViewTitle) {
-    emptyViewTitle.textContent = title;
+    emptyViewTitle.textContent = translateRouteTitle(title);
   }
   if (emptyViewDescription) {
-    emptyViewDescription.textContent = `"${title}" bo'limi uchun kontent hali tayyorlanmagan.`;
+    const translatedTitle = translateRouteTitle(title);
+    emptyViewDescription.textContent = `"${translatedTitle}" ${tr("empty.notReady", "bo'limi uchun kontent hali tayyorlanmagan.")}`;
   }
 }
 
@@ -1721,27 +2738,14 @@ async function navigateToView(title) {
 }
 
 function getHashForTitle(title) {
-  if (title === "Arizalar - Arizalar ro'yxati") {
-    return "#applications";
-  }
-
-  if (title === "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot") {
-    return "#/reports/disabilityinfo";
-  }
-
-  return "";
+  const moduleConfig = getModuleConfig();
+  const routeEntry = Object.entries(moduleConfig.routes).find(([, routeTitle]) => routeTitle === title);
+  return routeEntry?.[0] ?? "";
 }
 
 function getTitleFromHash(hashValue) {
-  if (hashValue === "#applications") {
-    return "Arizalar - Arizalar ro'yxati";
-  }
-
-  if (hashValue === "#/reports/disabilityinfo") {
-    return "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot";
-  }
-
-  return "";
+  const moduleKey = getModuleKeyFromHash(hashValue);
+  return modulesConfig[moduleKey]?.routes?.[hashValue] ?? "";
 }
 
 function getReportFilterValues() {
@@ -1759,7 +2763,7 @@ function getApplicationRegionLabel(value) {
 }
 
 function getApplicationStepLabel(value) {
-  return applicationStepLabels[value] ?? value;
+  return tl(applicationStepLabels[value] ?? value);
 }
 
 function getDefaultStepForStatus(status) {
@@ -1777,7 +2781,7 @@ function getDefaultStepForStatus(status) {
 }
 
 function getApplicationOrganizationTypeLabel(value) {
-  return applicationOrganizationTypeLabels[value] ?? value;
+  return tl(applicationOrganizationTypeLabels[value] ?? value);
 }
 
 function getApplicationSelectLabel(select) {
@@ -1812,12 +2816,12 @@ function setCustomSelectOptions(select, values, getLabel) {
   allOption.className = "custom-select__option";
   allOption.setAttribute("role", "option");
   allOption.setAttribute("data-value", "all");
-  allOption.textContent = "Barchasi";
+  allOption.textContent = tr("common.all", "Barchasi");
   dropdown.append(allOption);
 
   const allNativeOption = document.createElement("option");
   allNativeOption.value = "all";
-  allNativeOption.textContent = "Barchasi";
+  allNativeOption.textContent = tr("common.all", "Barchasi");
   select.append(allNativeOption);
 
   normalizedValues.forEach((value) => {
@@ -2089,6 +3093,11 @@ function syncInitialRouteView() {
     return;
   }
 
+  if (routeTitle) {
+    showEmptyView(routeTitle.split(" - ").pop() ?? routeTitle);
+    return;
+  }
+
   showApplicationsView();
 }
 
@@ -2129,6 +3138,11 @@ function initializeTheme() {
   applyTheme(isDark);
 }
 
+function initializeLanguage() {
+  currentLanguage = languageMeta[getSavedLanguagePreference()] ? getSavedLanguagePreference() : "uz";
+  applyStaticTranslations();
+}
+
 if (loginForm && loginUsername && loginPassword && loginSubmit) {
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -2147,7 +3161,7 @@ if (loginForm && loginUsername && loginPassword && loginSubmit) {
       showAppView();
       syncInitialRouteView();
       applyRouteFromHash();
-      showToast("Xush kelibsiz", "Muruvvat moduliga muvaffaqiyatli kirildi.");
+      showToast("Xush kelibsiz", `${getModuleConfig(getModuleKeyFromHash(window.location.hash)).label}ga muvaffaqiyatli kirildi.`);
       return;
     }
 
@@ -2296,14 +3310,6 @@ document.addEventListener("click", (event) => {
     }
   }
 
-  if (reportColumnsToggle && reportColumnsMenu) {
-    const reportColumnsContainer = reportColumnsToggle.closest(".table-menu");
-    if (reportColumnsContainer && !reportColumnsContainer.contains(target)) {
-      reportColumnsContainer.classList.remove("table-menu--open");
-      reportColumnsToggle.setAttribute("aria-expanded", "false");
-    }
-  }
-
   if (rowsPerPageMenu && !rowsPerPageMenu.contains(target)) {
     rowsPerPageMenu.classList.remove("pagination-select--open");
     rowsPerPageTrigger?.setAttribute("aria-expanded", "false");
@@ -2329,39 +3335,18 @@ document.addEventListener("click", (event) => {
   }
 });
 
-navToggles.forEach((toggle) => {
-  toggle.addEventListener("click", () => {
-    const group = toggle.closest(".nav-group");
-    if (!group) {
-      return;
-    }
-
-    const isOpen = group.classList.contains("nav-group--open");
-
-    document.querySelectorAll(".nav-group").forEach((item) => {
-      item.classList.remove("nav-group--open");
-      const button = item.querySelector(".nav-item--toggle");
-      if (button) {
-        button.setAttribute("aria-expanded", "false");
-      }
-    });
-
-    if (!isOpen) {
-      group.classList.add("nav-group--open");
-      toggle.setAttribute("aria-expanded", "true");
-    }
-  });
-});
-
 function syncPageHeading(title) {
   if (!pageTitle || !title) {
     return;
   }
 
-  const parts = title.split(" - ");
+  currentCanonicalTitle = title;
+  const translatedTitle = translateRouteTitle(title);
+  const parts = translatedTitle.split(" / ");
   pageTitle.textContent = parts[parts.length - 1];
+  document.title = parts[parts.length - 1];
   if (pageBreadcrumb) {
-    pageBreadcrumb.textContent = parts.length > 1 ? parts.join(" / ") : "Asosiy menyu";
+    pageBreadcrumb.textContent = parts.length > 1 ? parts.join(" / ") : tl("Asosiy menyu");
   }
 }
 
@@ -2403,26 +3388,50 @@ function syncActiveNavigation(link) {
   }
 }
 
-pageLinks.forEach((link) => {
-  link.addEventListener("click", async (event) => {
-    event.preventDefault();
-
-    const title = link.getAttribute("data-page-title");
-    syncPageHeading(title);
-    syncActiveNavigation(link);
-
-    if (window.innerWidth <= 1180) {
-      sidebar?.classList.remove("sidebar--open");
+sidebarNav?.addEventListener("click", async (event) => {
+  const toggle = event.target.closest(".nav-item--toggle");
+  if (toggle instanceof HTMLElement) {
+    const group = toggle.closest(".nav-group");
+    if (!group) {
+      return;
     }
 
-    if (title) {
-      const nextHash = getHashForTitle(title);
-      if (nextHash && window.location.hash !== nextHash) {
-        window.location.hash = nextHash;
+    const isOpen = group.classList.contains("nav-group--open");
+    document.querySelectorAll(".nav-group").forEach((item) => {
+      if (item !== group) {
+        item.classList.remove("nav-group--open");
+        item.querySelector(".nav-item--toggle")?.setAttribute("aria-expanded", "false");
       }
-      await navigateToView(title);
+    });
+
+    group.classList.toggle("nav-group--open", !isOpen);
+    toggle.setAttribute("aria-expanded", String(!isOpen));
+    return;
+  }
+
+  const link = event.target.closest("[data-page-title]");
+  if (!(link instanceof HTMLElement)) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const title = link.getAttribute("data-page-title");
+  syncPageHeading(title);
+  syncActiveNavigation(link);
+
+  if (window.innerWidth <= 1180) {
+    sidebar?.classList.remove("sidebar--open");
+  }
+
+  if (title) {
+    const nextHash = getHashForTitle(title);
+    if (nextHash && window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+      return;
     }
-  });
+    await navigateToView(title);
+  }
 });
 
 function applyTableFilters() {
@@ -2529,7 +3538,9 @@ function applyTableFilters() {
   if (paginationInfo) {
     const from = matchedRows.length > 0 ? startIndex + 1 : 0;
     const to = matchedRows.length > 0 ? Math.min(endIndex, matchedRows.length) : 0;
-    paginationInfo.textContent = matchedRows.length > 0 ? `${from}-${to} / ${matchedRows.length} ta yozuv` : "0 / 0 ta yozuv";
+    paginationInfo.textContent = matchedRows.length > 0
+      ? formatPaginationInfo(from, to, matchedRows.length)
+      : formatPaginationInfo(0, 0, 0);
   }
 
   renderPagination(tableState.totalPages);
@@ -2556,7 +3567,7 @@ downloadActions.forEach((button) => {
     const originalIcon = icon?.innerHTML ?? "";
 
     if (label) {
-      label.textContent = "Yuklanmoqda...";
+      label.textContent = tr("common.loading", "Yuklanmoqda...");
     }
     if (icon) {
       icon.innerHTML = '<circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.6" opacity="0.25"/><path d="M19 12a7 7 0 0 0-7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>';
@@ -2570,7 +3581,10 @@ downloadActions.forEach((button) => {
       if (icon) {
         icon.innerHTML = originalIcon;
       }
-      showToast("Yuklab olindi", "Ariza fayli tayyor bo'ldi.");
+      showToast(
+        tr("common.downloaded", "Yuklab olindi"),
+        tr("common.fileReady", "Ariza fayli tayyor bo'ldi."),
+      );
     }, 1000);
   });
 });
@@ -2706,6 +3720,16 @@ if (filterToggle && filterMenu) {
   });
 });
 
+languageItems.forEach((button) => {
+  button.addEventListener("click", () => {
+    const nextLanguage = button.getAttribute("data-language-code") || "uz";
+    applyLanguage(nextLanguage);
+    button.closest(".header-menu")?.classList.remove("header-menu--open");
+    const toggle = button.closest(".header-menu")?.querySelector("[data-menu-toggle]");
+    toggle?.setAttribute("aria-expanded", "false");
+  });
+});
+
 applyFilters?.addEventListener("click", () => {
   applicationAppliedFilters = { ...getApplicationFilterValues() };
   updateApplicationFilterControls();
@@ -2734,20 +3758,6 @@ if (reportFilterToggle && reportFilterMenu) {
     if (!isOpen) {
       syncTableMenuMaxHeight(reportFilterToggle, reportFilterMenu);
     }
-  });
-}
-
-if (reportColumnsToggle && reportColumnsMenu) {
-  reportColumnsToggle.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const columnsContainer = reportColumnsToggle.closest(".table-menu");
-    if (!columnsContainer) {
-      return;
-    }
-
-    const isOpen = columnsContainer.classList.contains("table-menu--open");
-    columnsContainer.classList.toggle("table-menu--open", !isOpen);
-    reportColumnsToggle.setAttribute("aria-expanded", String(!isOpen));
   });
 }
 
@@ -2989,26 +3999,15 @@ reportScopeBack?.addEventListener("click", () => {
   renderReportTable();
 });
 
-reportColumnInputs.forEach((input) => {
-  input.addEventListener("change", () => {
-    const columnKey = input.getAttribute("data-report-column-toggle");
-    if (!columnKey) {
-      return;
-    }
-
-    if (input.checked) {
-      reportVisibleColumns.add(columnKey);
-    } else {
-      reportVisibleColumns.delete(columnKey);
-    }
-
-    renderReportTable();
-  });
-});
-
 reportTableBody?.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const valueCell = target.closest('td[data-col]:not([data-col="region"])');
+  if (valueCell instanceof HTMLTableCellElement && reportTableBody.contains(valueCell)) {
+    toggleReportCellSelection(valueCell, event.ctrlKey || event.metaKey);
     return;
   }
 
@@ -3020,6 +4019,12 @@ reportTableBody?.addEventListener("click", (event) => {
   reportState.level = "district";
   reportState.selectedRegionKey = regionButton.dataset.reportRegion ?? null;
   renderReportTable();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && reportSelectedCells.size > 0) {
+    clearReportSelection();
+  }
 });
 
 calendarPopover.addEventListener("click", (event) => {
@@ -3303,6 +4308,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 initializeTheme();
+initializeLanguage();
 showAppView();
 syncInitialRouteView();
 syncPasswordToggleUi();
@@ -3329,13 +4335,21 @@ enhanceProcessRowActions();
 enhanceApplicationViewActions();
 
 async function applyRouteFromHash() {
+  const moduleKey = getModuleKeyFromHash(window.location.hash);
+  const moduleConfig = getModuleConfig(moduleKey);
   const routeTitle = getTitleFromHash(window.location.hash);
+
   if (!routeTitle) {
-    syncPageHeading("Arizalar - Arizalar ro'yxati");
-    showApplicationsView();
+    const defaultTitle = getTitleFromHash(moduleConfig.defaultHash) || "Arizalar - Arizalar ro'yxati";
+    renderSidebar(moduleKey, defaultTitle);
+    syncPageHeading(defaultTitle);
+    const targetLink = document.querySelector(`[data-page-title="${defaultTitle}"]`);
+    syncActiveNavigation(targetLink instanceof HTMLElement ? targetLink : null);
+    await navigateToView(defaultTitle);
     return;
   }
 
+  renderSidebar(moduleKey, routeTitle);
   const targetLink = document.querySelector(`[data-page-title="${routeTitle}"]`);
   syncPageHeading(routeTitle);
   syncActiveNavigation(targetLink instanceof HTMLElement ? targetLink : null);
