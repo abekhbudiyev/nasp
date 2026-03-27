@@ -1,4 +1,4 @@
-const menuToggle = document.getElementById("menuToggle");
+﻿const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
 const appShell = document.getElementById("appShell");
 const loginView = document.getElementById("loginView");
@@ -240,11 +240,12 @@ const modulesConfig = {
 const languageStorageKey = "mrv-language";
 const languageMeta = {
   uz: { short: "UZ", htmlLang: "uz", label: "O'zbek" },
-  "uz-cyrl": { short: "ЎЗ", htmlLang: "uz-Cyrl", label: "Ўзбек" },
+  "uz-cyrl": { short: "ÐŽÐ—", htmlLang: "uz-Cyrl", label: "ÐŽÐ·Ð±ÐµÐº" },
   kaa: { short: "QQ", htmlLang: "kaa", label: "Qoraqalpoq" },
-  "kaa-cyrl": { short: "ҚҚ", htmlLang: "kaa-Cyrl", label: "Қорақалпоқ" },
-  ru: { short: "RU", htmlLang: "ru", label: "Русский" },
+  "kaa-cyrl": { short: "ÒšÒš", htmlLang: "kaa-Cyrl", label: "ÒšÐ¾Ñ€Ð°Ò›Ð°Ð»Ð¿Ð¾Ò›" },
+  ru: { short: "RU", htmlLang: "ru", label: "Ð ÑƒÑÑÐºÐ¸Ð¹" },
   en: { short: "EN", htmlLang: "en", label: "English" },
+  i18n: { short: "I18N", htmlLang: "en", label: "i18n keys" },
 };
 
 const routeTitleKeys = {
@@ -323,367 +324,561 @@ const literalKeyMap = {
   Erkak: "gender.male",
   Ayol: "gender.female",
   Yopish: "common.close",
+  "Yetakchi mutaxassis": "value.position.leadingSpecialist",
+  "Bosh inspektor": "value.position.chiefInspector",
+  "Mas'ul kotib": "value.position.secretary",
+  "Ota-onasi": "value.representative.parent",
+  Vasiy: "value.representative.guardian",
+  "Qonuniy vakil": "value.representative.legalRepresentative",
+  "Maxsus maktab": "value.education.specialSchool",
+  "Inklyuziv ta'lim": "value.education.inclusiveEducation",
+  "Uy ta'limi": "value.education.homeEducation",
+  Faol: "value.state.active",
+  Arxiv: "value.state.archive",
+  Amalda: "value.state.valid",
+  Yakunlangan: "value.state.completed",
+  Bolalar: "value.organizationType.children",
+  Erkaklar: "value.organizationType.men",
+  Ayollar: "value.organizationType.women",
+  "Ariza yaratildi": "value.log.applicationCreated",
+  "Dalolatnoma biriktirildi": "value.log.actAttached",
+  "Qaror loyihasi shakllantirildi": "value.log.decisionPrepared",
+  "Komissiya kotibi": "value.actor.commissionSecretary",
+  "Ambulator kartadan yoki kasallik tarixidan ko'chirma": "value.document.ambulatoryExtract",
+  "Nogironligi bo'lgan shaxsni reabilitatsiya qilishning yakka tartibdagi dasturi": "value.document.rehabProgram",
+  "Ruhiy-asab kasalliklari dispanseri tibbiy-maslahat komissiyasi xulosasi": "value.document.neuroCommission",
+  "Onkologik dispanser xulosasi": "value.document.oncology",
+  "OITSga qarshi kurash markazi xulosasi": "value.document.aidsCenter",
+  "Teri-tanosil kasalliklari dispanseri xulosasi": "value.document.skinCenter",
+  "Silga qarshi kurashish dispanseri xulosasi": "value.document.tuberculosisCenter",
+  "Fuqaroni muomalaga layoqatsiz deb topish to'g'risida sudning hal qiluv qarori": "value.document.courtDecision",
+  "Muomalaga layoqatsiz deb topilgan fuqaroga vasiy tayinlash to'g'risida tuman (shahar) hokimi qarori": "value.document.guardianDecision",
+  "Psixologik-tibbiy-pedagogik komissiya xulosasi": "value.document.ptpkConclusion",
+};
+
+const valueTranslations = {
+  "uz-cyrl": {
+    "value.position.leadingSpecialist": "Ð•Ñ‚Ð°ÐºÑ‡Ð¸ Ð¼ÑƒÑ‚Ð°Ñ…Ð°ÑÑÐ¸Ñ",
+    "value.position.chiefInspector": "Ð‘Ð¾Ñˆ Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€",
+    "value.position.secretary": "ÐœÐ°ÑÑŠÑƒÐ» ÐºÐ¾Ñ‚Ð¸Ð±",
+    "value.representative.parent": "ÐžÑ‚Ð°-Ð¾Ð½Ð°ÑÐ¸",
+    "value.representative.guardian": "Ð’Ð°ÑÐ¸Ð¹",
+    "value.representative.legalRepresentative": "ÒšÐ¾Ð½ÑƒÐ½Ð¸Ð¹ Ð²Ð°ÐºÐ¸Ð»",
+    "value.education.specialSchool": "ÐœÐ°Ñ…ÑÑƒÑ Ð¼Ð°ÐºÑ‚Ð°Ð±",
+    "value.education.inclusiveEducation": "Ð˜Ð½ÐºÐ»ÑŽÐ·Ð¸Ð² Ñ‚Ð°ÑŠÐ»Ð¸Ð¼",
+    "value.education.homeEducation": "Ð£Ð¹ Ñ‚Ð°ÑŠÐ»Ð¸Ð¼Ð¸",
+    "value.state.active": "Ð¤Ð°Ð¾Ð»",
+    "value.state.archive": "ÐÑ€Ñ…Ð¸Ð²",
+    "value.state.valid": "ÐÐ¼Ð°Ð»Ð´Ð°",
+    "value.state.completed": "Ð¯ÐºÑƒÐ½Ð»Ð°Ð½Ð³Ð°Ð½",
+    "value.organizationType.children": "Ð‘Ð¾Ð»Ð°Ð»Ð°Ñ€",
+    "value.organizationType.men": "Ð­Ñ€ÐºÐ°ÐºÐ»Ð°Ñ€",
+    "value.organizationType.women": "ÐÑ‘Ð»Ð»Ð°Ñ€",
+    "value.log.applicationCreated": "ÐÑ€Ð¸Ð·Ð° ÑÑ€Ð°Ñ‚Ð¸Ð»Ð´Ð¸",
+    "value.log.actAttached": "Ð”Ð°Ð»Ð¾Ð»Ð°Ñ‚Ð½Ð¾Ð¼Ð° Ð±Ð¸Ñ€Ð¸ÐºÑ‚Ð¸Ñ€Ð¸Ð»Ð´Ð¸",
+    "value.log.decisionPrepared": "ÒšÐ°Ñ€Ð¾Ñ€ Ð»Ð¾Ð¹Ð¸Ò³Ð°ÑÐ¸ ÑˆÐ°ÐºÐ»Ð»Ð°Ð½Ñ‚Ð¸Ñ€Ð¸Ð»Ð´Ð¸",
+    "value.actor.commissionSecretary": "ÐšÐ¾Ð¼Ð¸ÑÑÐ¸Ñ ÐºÐ¾Ñ‚Ð¸Ð±Ð¸",
+    "value.document.ambulatoryExtract": "ÐÐ¼Ð±ÑƒÐ»Ð°Ñ‚Ð¾Ñ€ ÐºÐ°Ñ€Ñ‚Ð°ÑÐ¸ Ñ‘ÐºÐ¸ ÐºÐ°ÑÐ°Ð»Ð»Ð¸Ðº Ñ‚Ð°Ñ€Ð¸Ñ…Ð¸Ð´Ð°Ð½ ÐºÑžÑ‡Ð¸Ñ€Ð¼Ð°",
+    "value.document.rehabProgram": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ð³Ð¸ Ð±ÑžÐ»Ð³Ð°Ð½ ÑˆÐ°Ñ…ÑÐ½Ð¸ Ñ€ÐµÐ°Ð±Ð¸Ð»Ð¸Ñ‚Ð°Ñ†Ð¸Ñ Ò›Ð¸Ð»Ð¸ÑˆÐ½Ð¸Ð½Ð³ ÑÐºÐºÐ° Ñ‚Ð°Ñ€Ñ‚Ð¸Ð±Ð´Ð°Ð³Ð¸ Ð´Ð°ÑÑ‚ÑƒÑ€Ð¸",
+    "value.document.neuroCommission": "Ð ÑƒÒ³Ð¸Ð¹-Ð°ÑÐ°Ð± ÐºÐ°ÑÐ°Ð»Ð»Ð¸ÐºÐ»Ð°Ñ€Ð¸ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð¸ Ñ‚Ð¸Ð±Ð±Ð¸Ð¹-Ð¼Ð°ÑÐ»Ð°Ò³Ð°Ñ‚ ÐºÐ¾Ð¼Ð¸ÑÑÐ¸ÑÑÐ¸ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÐ¸",
+    "value.document.oncology": "ÐžÐ½ÐºÐ¾Ð»Ð¾Ð³Ð¸Ðº Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÐ¸",
+    "value.document.aidsCenter": "ÐžÐ˜Ð¢Ð¡Ð³Ð° Ò›Ð°Ñ€ÑˆÐ¸ ÐºÑƒÑ€Ð°Ñˆ Ð¼Ð°Ñ€ÐºÐ°Ð·Ð¸ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÐ¸",
+    "value.document.skinCenter": "Ð¢ÐµÑ€Ð¸-Ñ‚Ð°Ð½Ð¾ÑÐ¸Ð» ÐºÐ°ÑÐ°Ð»Ð»Ð¸ÐºÐ»Ð°Ñ€Ð¸ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð¸ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÐ¸",
+    "value.document.tuberculosisCenter": "Ð¡Ð¸Ð»Ð³Ð° Ò›Ð°Ñ€ÑˆÐ¸ ÐºÑƒÑ€Ð°ÑˆÐ¸Ñˆ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð¸ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÐ¸",
+    "value.document.courtDecision": "Ð¤ÑƒÒ›Ð°Ñ€Ð¾Ð½Ð¸ Ð¼ÑƒÐ¾Ð¼Ð°Ð»Ð°Ð³Ð° Ð»Ð°Ñ‘Ò›Ð°Ñ‚ÑÐ¸Ð· Ð´ÐµÐ± Ñ‚Ð¾Ð¿Ð¸Ñˆ Ñ‚ÑžÒ“Ñ€Ð¸ÑÐ¸Ð´Ð° ÑÑƒÐ´Ð½Ð¸Ð½Ð³ Ò³Ð°Ð» Ò›Ð¸Ð»ÑƒÐ² Ò›Ð°Ñ€Ð¾Ñ€Ð¸",
+    "value.document.guardianDecision": "ÐœÑƒÐ¾Ð¼Ð°Ð»Ð°Ð³Ð° Ð»Ð°Ñ‘Ò›Ð°Ñ‚ÑÐ¸Ð· Ð´ÐµÐ± Ñ‚Ð¾Ð¿Ð¸Ð»Ð³Ð°Ð½ Ñ„ÑƒÒ›Ð°Ñ€Ð¾Ð³Ð° Ð²Ð°ÑÐ¸Ð¹ Ñ‚Ð°Ð¹Ð¸Ð½Ð»Ð°Ñˆ Ñ‚ÑžÒ“Ñ€Ð¸ÑÐ¸Ð´Ð° Ñ‚ÑƒÐ¼Ð°Ð½ (ÑˆÐ°Ò³Ð°Ñ€) Ò³Ð¾ÐºÐ¸Ð¼Ð¸ Ò›Ð°Ñ€Ð¾Ñ€Ð¸",
+    "value.document.ptpkConclusion": "ÐŸÑÐ¸Ñ…Ð¾Ð»Ð¾Ð³Ð¸Ðº-Ñ‚Ð¸Ð±Ð±Ð¸Ð¹-Ð¿ÐµÐ´Ð°Ð³Ð¾Ð³Ð¸Ðº ÐºÐ¾Ð¼Ð¸ÑÑÐ¸Ñ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÐ¸",
+  },
+  kaa: {
+    "value.position.leadingSpecialist": "Jetekshi mutaxassis",
+    "value.position.chiefInspector": "Bas inspektor",
+    "value.position.secretary": "JauaplÄ± katip",
+    "value.representative.parent": "Ata-anasÄ±",
+    "value.representative.guardian": "Wasiy",
+    "value.representative.legalRepresentative": "NÄ±zamÄ±y waki'l",
+    "value.education.specialSchool": "ArnawlÄ± mektep",
+    "value.education.inclusiveEducation": "Inklyuziv ta'lim",
+    "value.education.homeEducation": "U'y ta'limi",
+    "value.state.active": "Faol",
+    "value.state.archive": "Arxiv",
+    "value.state.valid": "A'melde",
+    "value.state.completed": "Juwmaqlangan",
+    "value.organizationType.children": "Balalar",
+    "value.organizationType.men": "Erkakler",
+    "value.organizationType.women": "Hayallar",
+    "value.log.applicationCreated": "Ariza jaratÄ±ldÄ±",
+    "value.log.actAttached": "Dalolatnoma biriktirildi",
+    "value.log.decisionPrepared": "Qaror joybarÄ± tayarlandi",
+    "value.actor.commissionSecretary": "Komissiya katibi",
+    "value.document.ambulatoryExtract": "Ambulator kartadan yaki kesellik tariyxÄ±nan ko'shirme",
+    "value.document.rehabProgram": "Nogironligi bolgan shaxsti reabilitatsiya qÄ±lÄ±wnÄ±Å„ jeke da'sturi",
+    "value.document.neuroCommission": "Ruxiy-asab kesellikleri dispanseri tibbiy-ma'slahet komissiyasi xulosasi",
+    "value.document.oncology": "Onkologiyaliq dispanser xulosasi",
+    "value.document.aidsCenter": "OITSqa qarsi gu'res merkeziniÅ„ xulosasi",
+    "value.document.skinCenter": "Teri-tanosil kesellikleri dispanseri xulosasi",
+    "value.document.tuberculosisCenter": "Silge qarsi gu'resiw dispanseri xulosasi",
+    "value.document.courtDecision": "PuqaranÄ± muomalaga layoqatsÄ±z dep tabÄ±w haqqÄ±nda sud qararÄ±",
+    "value.document.guardianDecision": "Muomalaga layoqatsÄ±z dep tabÄ±lÇµan puqaraÇµa wasiy tayÄ±nlaw haqqÄ±nda ha'kim qararÄ±",
+    "value.document.ptpkConclusion": "PsixologiyalÄ±q-tibbiy-pedagogikalÄ±q komissiya xulosasi",
+  },
+  "kaa-cyrl": {
+    "value.position.leadingSpecialist": "Ð–ÐµÑ‚ÐµÐºÑˆÐ¸ Ð¼ÑƒÑ‚Ð°Ñ…Ð°ÑÑÐ¸Ñ",
+    "value.position.chiefInspector": "Ð‘Ð°Ñ Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€",
+    "value.position.secretary": "Ð–Ð°ÑƒÐ°Ð¿Ð»Ñ‹ ÐºÐ°Ñ‚Ð¸Ð¿",
+    "value.representative.parent": "ÐÑ‚Ð°-Ð°Ð½Ð°ÑÑ‹",
+    "value.representative.guardian": "ÐŽÐ°ÑÐ¸Ð¹",
+    "value.representative.legalRepresentative": "ÐÑ‹Ð·Ð°Ð¼Ñ‹Ð¹ ÑžÓ™ÐºÐ¸Ð»",
+    "value.education.specialSchool": "ÐÑ€Ð½Ð°ÑžÐ»Ñ‹ Ð¼ÐµÐºÑ‚ÐµÐ¿",
+    "value.education.inclusiveEducation": "Ð˜Ð½ÐºÐ»ÑŽÐ·Ð¸Ð² Ñ‚Ó™Ð»Ð¸Ð¼",
+    "value.education.homeEducation": "Ò®Ð¹ Ñ‚Ó™Ð»Ð¸Ð¼Ð¸",
+    "value.state.active": "Ð¤Ð°Ð¾Ð»",
+    "value.state.archive": "ÐÑ€Ñ…Ð¸Ð²",
+    "value.state.valid": "Ó˜Ð¼ÐµÐ»Ð´Ðµ",
+    "value.state.completed": "Ð–ÑƒÑžÐ¼Ð°Ò›Ð»Ð°Ð½Ò“Ð°Ð½",
+    "value.organizationType.children": "Ð‘Ð°Ð»Ð°Ð»Ð°Ñ€",
+    "value.organizationType.men": "Ð•Ñ€ÐºÐ°ÐºÐ»ÐµÑ€",
+    "value.organizationType.women": "Ò²Ð°ÑÐ»Ð»Ð°Ñ€",
+    "value.log.applicationCreated": "ÐÑ€Ð¸Ð·Ð° Ð¶Ð°Ñ€Ð°Ñ‚Ñ‹Ð»Ð´Ñ‹",
+    "value.log.actAttached": "Ð”Ð°Ð»Ð¾Ð»Ð°Ñ‚Ð½Ð¾Ð¼Ð° Ð±Ð¸Ñ€Ð¸ÐºÑ‚Ð¸Ñ€Ð¸Ð»Ð´Ð¸",
+    "value.log.decisionPrepared": "ÒšÐ°Ñ€Ð¾Ñ€ Ð¶Ð¾Ð±Ð°Ñ€Ñ‹ Ñ‚Ð°ÑÑ€Ð»Ð°Ð½Ð´Ñ‹",
+    "value.actor.commissionSecretary": "ÐšÐ¾Ð¼Ð¸ÑÑÐ¸Ñ ÐºÐ°Ñ‚Ð¸Ð±Ð¸",
+    "value.document.ambulatoryExtract": "ÐÐ¼Ð±ÑƒÐ»Ð°Ñ‚Ð¾Ñ€ ÐºÐ°Ñ€Ñ‚Ð°ÑÑ‹Ð½Ð°Ð½ ÑÐºÐ¸ ÐºÐµÑÐµÐ»Ð»Ð¸Ðº Ñ‚Ð°Ñ€Ð¸Ð¹Ñ…Ñ‹Ð½Ð°Ð½ ÐºÓ©ÑˆÐ¸Ñ€Ð¼Ðµ",
+    "value.document.rehabProgram": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ð³Ð¸ Ð±Ð¾Ð»Ò“Ð°Ð½ ÑˆÐ°Ñ…ÑÑ‚Ñ‹ Ñ€ÐµÐ°Ð±Ð¸Ð»Ð¸Ñ‚Ð°Ñ†Ð¸Ñ Ò›Ñ‹Ð»Ñ‹ÑžÐ´Ñ‹Ò£ Ð¶ÐµÐºÐµ Ð´Ó™ÑÑ‚ÑƒÑ€Ð¸",
+    "value.document.neuroCommission": "Ð ÑƒÒ³Ð¸Ð¹-Ð°ÑÐ°Ð± ÐºÐµÑÐµÐ»Ð»Ð¸ÐºÐ»ÐµÑ€Ð¸ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð¸ Ñ‚Ð¸Ð±Ð±Ð¸Ð¹-Ð¼Ó™ÑÐ»Ð°Ò³Ð°Ñ‚ ÐºÐ¾Ð¼Ð¸ÑÑÐ¸ÑÑÑ‹ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÑ‹",
+    "value.document.oncology": "ÐžÐ½ÐºÐ¾Ð»Ð¾Ð³Ð¸ÑÐ»Ñ‹Ò› Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÑ‹",
+    "value.document.aidsCenter": "ÐžÐ˜Ð¢Ð¡Ò›Ð° Ò›Ð°Ñ€ÑÑ‹ ÐºÒ¯Ñ€ÐµÑ Ð¼Ð°Ñ€ÐºÐ°Ð·Ð¸Ð½Ð¸Ò£ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÑ‹",
+    "value.document.skinCenter": "Ð¢ÐµÑ€Ð¸-Ñ‚Ð°Ð½Ð¾ÑÐ¸Ð» ÐºÐµÑÐµÐ»Ð»Ð¸ÐºÐ»ÐµÑ€Ð¸ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð¸ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÑ‹",
+    "value.document.tuberculosisCenter": "Ð¡Ð¸Ð»Ð³Ðµ Ò›Ð°Ñ€ÑÑ‹ ÐºÒ¯Ñ€ÐµÑÐ¸Ñž Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð¸ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÑ‹",
+    "value.document.courtDecision": "ÐŸÑƒÒ›Ð°Ñ€Ð°Ð½Ñ‹ Ð¼ÑƒÐ¾Ð¼Ð°Ð»Ð°Ò“Ð° Ð»Ð°ÑÒ›Ð°Ñ‚ÑÑ‹Ð· Ð´ÐµÐ¿ Ñ‚Ð°Ð±Ñ‹Ñž Ò³Ð°Ò›Ò›Ñ‹Ð½Ð´Ð° ÑÑƒÐ´ Ò›Ð°Ñ€Ð°Ñ€Ñ‹",
+    "value.document.guardianDecision": "ÐœÑƒÐ¾Ð¼Ð°Ð»Ð°Ò“Ð° Ð»Ð°ÑÒ›Ð°Ñ‚ÑÑ‹Ð· Ð´ÐµÐ¿ Ñ‚Ð°Ð±Ñ‹Ð»Ò“Ð°Ð½ Ð¿ÑƒÒ›Ð°Ñ€Ð°Ò“Ð° ÑžÐ°ÑÐ¸Ð¹ Ñ‚Ð°Ð¹Ñ‹Ð½Ð»Ð°Ñž Ò³Ð°Ò›Ò›Ñ‹Ð½Ð´Ð° Ò³Ó™ÐºÐ¸Ð¼ Ò›Ð°Ñ€Ð°Ñ€Ñ‹",
+    "value.document.ptpkConclusion": "ÐŸÑÐ¸Ñ…Ð¾Ð»Ð¾Ð³Ð¸ÑÐ»Ñ‹Ò›-Ñ‚Ð¸Ð±Ð±Ð¸Ð¹-Ð¿ÐµÐ´Ð°Ð³Ð¾Ð³Ð¸ÐºÐ°Ð»Ñ‹Ò› ÐºÐ¾Ð¼Ð¸ÑÑÐ¸Ñ Ñ…ÑƒÐ»Ð¾ÑÐ°ÑÑ‹",
+  },
+  ru: {
+    "value.position.leadingSpecialist": "Ð’ÐµÐ´ÑƒÑ‰Ð¸Ð¹ ÑÐ¿ÐµÑ†Ð¸Ð°Ð»Ð¸ÑÑ‚",
+    "value.position.chiefInspector": "Ð“Ð»Ð°Ð²Ð½Ñ‹Ð¹ Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€",
+    "value.position.secretary": "ÐžÑ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÐµÐ½Ð½Ñ‹Ð¹ ÑÐµÐºÑ€ÐµÑ‚Ð°Ñ€ÑŒ",
+    "value.representative.parent": "Ð Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒ",
+    "value.representative.guardian": "ÐžÐ¿ÐµÐºÑƒÐ½",
+    "value.representative.legalRepresentative": "Ð—Ð°ÐºÐ¾Ð½Ð½Ñ‹Ð¹ Ð¿Ñ€ÐµÐ´ÑÑ‚Ð°Ð²Ð¸Ñ‚ÐµÐ»ÑŒ",
+    "value.education.specialSchool": "Ð¡Ð¿ÐµÑ†Ð¸Ð°Ð»ÑŒÐ½Ð°Ñ ÑˆÐºÐ¾Ð»Ð°",
+    "value.education.inclusiveEducation": "Ð˜Ð½ÐºÐ»ÑŽÐ·Ð¸Ð²Ð½Ð¾Ðµ Ð¾Ð±ÑƒÑ‡ÐµÐ½Ð¸Ðµ",
+    "value.education.homeEducation": "Ð”Ð¾Ð¼Ð°ÑˆÐ½ÐµÐµ Ð¾Ð±ÑƒÑ‡ÐµÐ½Ð¸Ðµ",
+    "value.state.active": "ÐÐºÑ‚Ð¸Ð²Ð½Ð¾",
+    "value.state.archive": "ÐÑ€Ñ…Ð¸Ð²",
+    "value.state.valid": "Ð”ÐµÐ¹ÑÑ‚Ð²ÑƒÐµÑ‚",
+    "value.state.completed": "Ð—Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¾",
+    "value.organizationType.children": "Ð”ÐµÑ‚Ð¸",
+    "value.organizationType.men": "ÐœÑƒÐ¶Ñ‡Ð¸Ð½Ñ‹",
+    "value.organizationType.women": "Ð–ÐµÐ½Ñ‰Ð¸Ð½Ñ‹",
+    "value.log.applicationCreated": "Ð—Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ðµ ÑÐ¾Ð·Ð´Ð°Ð½Ð¾",
+    "value.log.actAttached": "ÐÐºÑ‚ Ð¿Ñ€Ð¸ÐºÑ€ÐµÐ¿Ð»ÐµÐ½",
+    "value.log.decisionPrepared": "ÐŸÐ¾Ð´Ð³Ð¾Ñ‚Ð¾Ð²Ð»ÐµÐ½ Ð¿Ñ€Ð¾ÐµÐºÑ‚ Ñ€ÐµÑˆÐµÐ½Ð¸Ñ",
+    "value.actor.commissionSecretary": "Ð¡ÐµÐºÑ€ÐµÑ‚Ð°Ñ€ÑŒ ÐºÐ¾Ð¼Ð¸ÑÑÐ¸Ð¸",
+    "value.document.ambulatoryExtract": "Ð’Ñ‹Ð¿Ð¸ÑÐºÐ° Ð¸Ð· Ð°Ð¼Ð±ÑƒÐ»Ð°Ñ‚Ð¾Ñ€Ð½Ð¾Ð¹ ÐºÐ°Ñ€Ñ‚Ñ‹ Ð¸Ð»Ð¸ Ð¸ÑÑ‚Ð¾Ñ€Ð¸Ð¸ Ð±Ð¾Ð»ÐµÐ·Ð½Ð¸",
+    "value.document.rehabProgram": "Ð˜Ð½Ð´Ð¸Ð²Ð¸Ð´ÑƒÐ°Ð»ÑŒÐ½Ð°Ñ Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ð° Ñ€ÐµÐ°Ð±Ð¸Ð»Ð¸Ñ‚Ð°Ñ†Ð¸Ð¸ Ð»Ð¸Ñ†Ð° Ñ Ð¸Ð½Ð²Ð°Ð»Ð¸Ð´Ð½Ð¾ÑÑ‚ÑŒÑŽ",
+    "value.document.neuroCommission": "Ð—Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ð¼ÐµÐ´Ð¸ÐºÐ¾-ÐºÐ¾Ð½ÑÑƒÐ»ÑŒÑ‚Ð°Ñ‚Ð¸Ð²Ð½Ð¾Ð¹ ÐºÐ¾Ð¼Ð¸ÑÑÐ¸Ð¸ Ð¿ÑÐ¸Ñ…Ð¾Ð½ÐµÐ²Ñ€Ð¾Ð»Ð¾Ð³Ð¸Ñ‡ÐµÑÐºÐ¾Ð³Ð¾ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð°",
+    "value.document.oncology": "Ð—Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ð¾Ð½ÐºÐ¾Ð»Ð¾Ð³Ð¸Ñ‡ÐµÑÐºÐ¾Ð³Ð¾ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð°",
+    "value.document.aidsCenter": "Ð—Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ñ†ÐµÐ½Ñ‚Ñ€Ð° Ð¿Ð¾ Ð±Ð¾Ñ€ÑŒÐ±Ðµ ÑÐ¾ Ð¡ÐŸÐ˜Ð”",
+    "value.document.skinCenter": "Ð—Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ ÐºÐ¾Ð¶Ð½Ð¾-Ð²ÐµÐ½ÐµÑ€Ð¾Ð»Ð¾Ð³Ð¸Ñ‡ÐµÑÐºÐ¾Ð³Ð¾ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð°",
+    "value.document.tuberculosisCenter": "Ð—Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ð¿Ñ€Ð¾Ñ‚Ð¸Ð²Ð¾Ñ‚ÑƒÐ±ÐµÑ€ÐºÑƒÐ»ÐµÐ·Ð½Ð¾Ð³Ð¾ Ð´Ð¸ÑÐ¿Ð°Ð½ÑÐµÑ€Ð°",
+    "value.document.courtDecision": "Ð ÐµÑˆÐµÐ½Ð¸Ðµ ÑÑƒÐ´Ð° Ð¾ Ð¿Ñ€Ð¸Ð·Ð½Ð°Ð½Ð¸Ð¸ Ð³Ñ€Ð°Ð¶Ð´Ð°Ð½Ð¸Ð½Ð° Ð½ÐµÐ´ÐµÐµÑÐ¿Ð¾ÑÐ¾Ð±Ð½Ñ‹Ð¼",
+    "value.document.guardianDecision": "Ð ÐµÑˆÐµÐ½Ð¸Ðµ Ñ…Ð¾ÐºÐ¸Ð¼Ð° Ñ€Ð°Ð¹Ð¾Ð½Ð° (Ð³Ð¾Ñ€Ð¾Ð´Ð°) Ð¾ Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ð¸ Ð¾Ð¿ÐµÐºÑƒÐ½Ð° Ð³Ñ€Ð°Ð¶Ð´Ð°Ð½Ð¸Ð½Ñƒ, Ð¿Ñ€Ð¸Ð·Ð½Ð°Ð½Ð½Ð¾Ð¼Ñƒ Ð½ÐµÐ´ÐµÐµÑÐ¿Ð¾ÑÐ¾Ð±Ð½Ñ‹Ð¼",
+    "value.document.ptpkConclusion": "Ð—Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ð¿ÑÐ¸Ñ…Ð¾Ð»Ð¾Ð³Ð¾-Ð¼ÐµÐ´Ð¸ÐºÐ¾-Ð¿ÐµÐ´Ð°Ð³Ð¾Ð³Ð¸Ñ‡ÐµÑÐºÐ¾Ð¹ ÐºÐ¾Ð¼Ð¸ÑÑÐ¸Ð¸",
+  },
+  en: {
+    "value.position.leadingSpecialist": "Lead specialist",
+    "value.position.chiefInspector": "Chief inspector",
+    "value.position.secretary": "Responsible secretary",
+    "value.representative.parent": "Parent",
+    "value.representative.guardian": "Guardian",
+    "value.representative.legalRepresentative": "Legal representative",
+    "value.education.specialSchool": "Special school",
+    "value.education.inclusiveEducation": "Inclusive education",
+    "value.education.homeEducation": "Home education",
+    "value.state.active": "Active",
+    "value.state.archive": "Archive",
+    "value.state.valid": "Valid",
+    "value.state.completed": "Completed",
+    "value.organizationType.children": "Children",
+    "value.organizationType.men": "Men",
+    "value.organizationType.women": "Women",
+    "value.log.applicationCreated": "Application created",
+    "value.log.actAttached": "Act attached",
+    "value.log.decisionPrepared": "Decision draft prepared",
+    "value.actor.commissionSecretary": "Commission secretary",
+    "value.document.ambulatoryExtract": "Extract from ambulatory card or medical history",
+    "value.document.rehabProgram": "Individual rehabilitation program for a person with disability",
+    "value.document.neuroCommission": "Conclusion of the medical advisory commission of the neuropsychiatric dispensary",
+    "value.document.oncology": "Oncology dispensary conclusion",
+    "value.document.aidsCenter": "AIDS prevention center conclusion",
+    "value.document.skinCenter": "Dermatovenerologic dispensary conclusion",
+    "value.document.tuberculosisCenter": "Tuberculosis dispensary conclusion",
+    "value.document.courtDecision": "Court decision on declaring a citizen legally incapacitated",
+    "value.document.guardianDecision": "District (city) khokim decision on appointing a guardian for a legally incapacitated citizen",
+    "value.document.ptpkConclusion": "Psychological-medical-pedagogical commission conclusion",
+  },
 };
 
 const translations = {
   uz: {},
+  i18n: {},
   "uz-cyrl": {
-    "module.muruvvat": "Мурувват модули",
-    "module.ptpk": "ПТПК модули",
-    "nav.dashboard": "Дашбоард",
-    "nav.institutions": "Интернат уйлари",
-    "nav.queue": "Навбат",
-    "nav.registered": "Рўйхатга олинганлар",
-    "nav.removed": "Рўйхатдан чиққанлар",
-    "nav.applications": "Аризалар",
-    "nav.applicationsList": "Аризалар рўйхати",
-    "nav.forms": "Сўровномалар",
-    "nav.acts": "Далолатномалар",
-    "nav.decisions": "Қарорлар",
-    "nav.reports": "Ҳисоботлар",
-    "nav.reportApplications": "Аризалар бўйича ҳисобот",
-    "nav.reportInstitutions": "Интернат уйлари бўйича ҳисобот",
-    "nav.reportDisability": "Ногиронлиги бўлган шахслар сони бўйича ҳисобот",
-    "nav.info": "Инфо",
-    "nav.info1": "Инфо 1",
-    "nav.info2": "Инфо 2",
-    "nav.meetingPlans": "Йиғилиш режалари",
-    "nav.minutes": "Баённомалар",
-    "nav.conclusions": "Хулосалар",
-    "page.internatQueue": "Интернат уйлари / Навбат",
-    "page.internatRegistered": "Интернат уйлари / Рўйхатга олинганлар",
-    "page.internatRemoved": "Интернат уйлари / Рўйхатдан чиққанлар",
-    "page.applicationsList": "Аризалар / Аризалар рўйхати",
-    "page.forms": "Аризалар / Сўровномалар",
-    "page.acts": "Аризалар / Далолатномалар",
-    "page.decisions": "Аризалар / Қарорлар",
-    "page.reportApplications": "Ҳисоботлар / Аризалар бўйича ҳисобот",
-    "page.reportInstitutions": "Ҳисоботлар / Интернат уйлари бўйича ҳисобот",
-    "page.reportDisability": "Ҳисоботлар / Ногиронлиги бўлган шахслар сони бўйича ҳисобот",
-    "page.info1": "Инфо / Инфо 1",
-    "page.info2": "Инфо / Инфо 2",
-    "page.meetingPlans": "Аризалар / Йиғилиш режалари",
-    "page.minutes": "Аризалар / Баённомалар",
-    "page.conclusions": "Аризалар / Хулосалар",
-    "applications.total": "Жами аризалар",
-    "status.process": "Жараёнда",
-    "status.accepted": "Қабул қилинган",
-    "status.rejected": "Рад этилган",
-    "status.new": "Янги",
-    "result.positive": "Ижобий",
-    "result.negative": "Салбий",
-    "common.status": "Статус",
-    "common.date": "Сана",
-    "common.address": "Манзил",
-    "common.position": "Лавозим",
-    "common.step": "Босқич",
-    "common.region": "Ҳудуд",
-    "common.district": "Туман (шаҳар)",
-    "common.organizationType": "Ташкилот тури",
-    "common.organization": "Ташкилот",
-    "common.startDate": "Бошланиш сана",
-    "common.endDate": "Тугаш сана",
-    "common.diagnosis": "Ташхис",
-    "common.disabilityGroup": "Ногиронлик гуруҳи",
-    "common.gender": "Жинси",
-    "common.age": "Ёши",
-    "common.apply": "Қўллаш",
-    "common.reset": "Тозалаш",
-    "common.all": "Барчаси",
-    "common.close": "Ёпиш",
-    "common.mainMenu": "Асосий меню",
-    "gender.male": "Эркак",
-    "gender.female": "Аёл",
-    "header.administrator": "Администратор",
-    "header.profile": "Профилни кўриш",
-    "header.settings": "Созламалар",
-    "header.logout": "Чиқиш",
-    "header.monitoring": "Мониторинг панели",
-    "header.reportsCenter": "Ҳисоботлар маркази",
-    "applications.searchPlaceholder": "ID, Ф.И.Ш. ёки ПИНФЛ",
-    "applications.actions": "Амаллар",
-    "applications.application": "Ариза",
-    "applications.applicant": "Аризачи",
-    "applications.address": "Манзил",
-    "applications.export": "Экспорт",
-    "applications.new": "Янги ариза",
-    "empty.notFound": "Мос маълумот топилмади",
-    "empty.noData": "Ҳозирча аризалар мавжуд эмас",
-    "date.placeholder": "Санани танланг",
-    "report.download": "Ҳисоботни юклаб олиш",
-    "report.totalPersons": "Жами НБШлар сони",
-    "report.byDiagnosis": "Ташхислари бўйича",
-    "report.byDisability": "Ногиронлик гуруҳи",
-    "report.scope.back": "Орқага",
-    "report.summary": "Республика жами",
-    "selection.count": "Сони",
-    "selection.sum": "Йиғинди",
-    "selection.avg": "Ўртача",
-    "selection.min": "Мин",
-    "selection.max": "Макс",
-    "detail.title": "Ариза тафсилотлари",
-    "detail.loading": "Ариза маълумотлари юкланмоқда...",
-    "detail.accept": "Қабул қилиш",
-    "detail.reject": "Рад этиш",
-    "detail.application": "Ариза маълумотлари",
-    "detail.receiver": "Аризани қабул қилувчи",
-    "detail.representative": "Қонуний вакил",
-    "detail.applicant": "Аризачи",
-    "detail.medicalDocuments": "Тиббий ҳужжатлар",
-    "detail.result": "Натижа",
-    "detail.representativeLevel": "Вакиллик даражаси",
-    "detail.phone": "Телефон рақами",
-    "detail.birthDate": "Туғилган санаси",
-    "detail.diagnosis": "Ташхиси",
-    "detail.address": "Манзили",
-    "detail.organizationName": "Ташкилот номи",
-    "detail.goToAct": "Далолатномага ўтиш",
-    "detail.goToDecision": "Қарорга ўтиш",
-    "detail.disabilityHistory": "Ногиронлик тарихи",
-    "detail.conclusionHistory": "Хулосалар тарихи",
-    "detail.applicationsHistory": "Аризалар тарихи",
-    "detail.documentHistory": "Ҳужжат тарихи",
-    "detail.assignedDate": "Тайинланган сана",
-    "detail.validUntil": "Амал қилиш муддати",
-    "detail.educationInstitutionType": "Таълим муассасаси тури",
-    "detail.actor": "Амалийotni бажарувчи",
-    "empty.notReady": "бўлими учун контент ҳали тайёрланмаган.",
-    "common.records": "ёзув",
-    "common.loading": "Юкланмоқда...",
-    "common.downloaded": "Юклаб олинди",
-    "common.fileReady": "Ариза файли тайёр бўлди.",
-    "detail.notFoundTitle": "Ариза топилмади",
-    "detail.notFoundDescription": "танланган ариза бўйича маълумот топилмади.",
+    "module.muruvvat": "ÐœÑƒÑ€ÑƒÐ²Ð²Ð°Ñ‚ Ð¼Ð¾Ð´ÑƒÐ»Ð¸",
+    "module.ptpk": "ÐŸÐ¢ÐŸÐš Ð¼Ð¾Ð´ÑƒÐ»Ð¸",
+    "nav.dashboard": "Ð”Ð°ÑˆÐ±Ð¾Ð°Ñ€Ð´",
+    "nav.institutions": "Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ ÑƒÐ¹Ð»Ð°Ñ€Ð¸",
+    "nav.queue": "ÐÐ°Ð²Ð±Ð°Ñ‚",
+    "nav.registered": "Ð ÑžÐ¹Ñ…Ð°Ñ‚Ð³Ð° Ð¾Ð»Ð¸Ð½Ð³Ð°Ð½Ð»Ð°Ñ€",
+    "nav.removed": "Ð ÑžÐ¹Ñ…Ð°Ñ‚Ð´Ð°Ð½ Ñ‡Ð¸Ò›Ò›Ð°Ð½Ð»Ð°Ñ€",
+    "nav.applications": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€",
+    "nav.applicationsList": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ Ñ€ÑžÐ¹Ñ…Ð°Ñ‚Ð¸",
+    "nav.forms": "Ð¡ÑžÑ€Ð¾Ð²Ð½Ð¾Ð¼Ð°Ð»Ð°Ñ€",
+    "nav.acts": "Ð”Ð°Ð»Ð¾Ð»Ð°Ñ‚Ð½Ð¾Ð¼Ð°Ð»Ð°Ñ€",
+    "nav.decisions": "ÒšÐ°Ñ€Ð¾Ñ€Ð»Ð°Ñ€",
+    "nav.reports": "Ò²Ð¸ÑÐ¾Ð±Ð¾Ñ‚Ð»Ð°Ñ€",
+    "nav.reportApplications": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ Ð±ÑžÐ¹Ð¸Ñ‡Ð° Ò³Ð¸ÑÐ¾Ð±Ð¾Ñ‚",
+    "nav.reportInstitutions": "Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ ÑƒÐ¹Ð»Ð°Ñ€Ð¸ Ð±ÑžÐ¹Ð¸Ñ‡Ð° Ò³Ð¸ÑÐ¾Ð±Ð¾Ñ‚",
+    "nav.reportDisability": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ð³Ð¸ Ð±ÑžÐ»Ð³Ð°Ð½ ÑˆÐ°Ñ…ÑÐ»Ð°Ñ€ ÑÐ¾Ð½Ð¸ Ð±ÑžÐ¹Ð¸Ñ‡Ð° Ò³Ð¸ÑÐ¾Ð±Ð¾Ñ‚",
+    "nav.info": "Ð˜Ð½Ñ„Ð¾",
+    "nav.info1": "Ð˜Ð½Ñ„Ð¾ 1",
+    "nav.info2": "Ð˜Ð½Ñ„Ð¾ 2",
+    "nav.meetingPlans": "Ð™Ð¸Ò“Ð¸Ð»Ð¸Ñˆ Ñ€ÐµÐ¶Ð°Ð»Ð°Ñ€Ð¸",
+    "nav.minutes": "Ð‘Ð°Ñ‘Ð½Ð½Ð¾Ð¼Ð°Ð»Ð°Ñ€",
+    "nav.conclusions": "Ð¥ÑƒÐ»Ð¾ÑÐ°Ð»Ð°Ñ€",
+    "page.internatQueue": "Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ ÑƒÐ¹Ð»Ð°Ñ€Ð¸ / ÐÐ°Ð²Ð±Ð°Ñ‚",
+    "page.internatRegistered": "Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ ÑƒÐ¹Ð»Ð°Ñ€Ð¸ / Ð ÑžÐ¹Ñ…Ð°Ñ‚Ð³Ð° Ð¾Ð»Ð¸Ð½Ð³Ð°Ð½Ð»Ð°Ñ€",
+    "page.internatRemoved": "Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ ÑƒÐ¹Ð»Ð°Ñ€Ð¸ / Ð ÑžÐ¹Ñ…Ð°Ñ‚Ð´Ð°Ð½ Ñ‡Ð¸Ò›Ò›Ð°Ð½Ð»Ð°Ñ€",
+    "page.applicationsList": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ / ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ Ñ€ÑžÐ¹Ñ…Ð°Ñ‚Ð¸",
+    "page.forms": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ / Ð¡ÑžÑ€Ð¾Ð²Ð½Ð¾Ð¼Ð°Ð»Ð°Ñ€",
+    "page.acts": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ / Ð”Ð°Ð»Ð¾Ð»Ð°Ñ‚Ð½Ð¾Ð¼Ð°Ð»Ð°Ñ€",
+    "page.decisions": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ / ÒšÐ°Ñ€Ð¾Ñ€Ð»Ð°Ñ€",
+    "page.reportApplications": "Ò²Ð¸ÑÐ¾Ð±Ð¾Ñ‚Ð»Ð°Ñ€ / ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ Ð±ÑžÐ¹Ð¸Ñ‡Ð° Ò³Ð¸ÑÐ¾Ð±Ð¾Ñ‚",
+    "page.reportInstitutions": "Ò²Ð¸ÑÐ¾Ð±Ð¾Ñ‚Ð»Ð°Ñ€ / Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ ÑƒÐ¹Ð»Ð°Ñ€Ð¸ Ð±ÑžÐ¹Ð¸Ñ‡Ð° Ò³Ð¸ÑÐ¾Ð±Ð¾Ñ‚",
+    "page.reportDisability": "Ò²Ð¸ÑÐ¾Ð±Ð¾Ñ‚Ð»Ð°Ñ€ / ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ð³Ð¸ Ð±ÑžÐ»Ð³Ð°Ð½ ÑˆÐ°Ñ…ÑÐ»Ð°Ñ€ ÑÐ¾Ð½Ð¸ Ð±ÑžÐ¹Ð¸Ñ‡Ð° Ò³Ð¸ÑÐ¾Ð±Ð¾Ñ‚",
+    "page.info1": "Ð˜Ð½Ñ„Ð¾ / Ð˜Ð½Ñ„Ð¾ 1",
+    "page.info2": "Ð˜Ð½Ñ„Ð¾ / Ð˜Ð½Ñ„Ð¾ 2",
+    "page.meetingPlans": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ / Ð™Ð¸Ò“Ð¸Ð»Ð¸Ñˆ Ñ€ÐµÐ¶Ð°Ð»Ð°Ñ€Ð¸",
+    "page.minutes": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ / Ð‘Ð°Ñ‘Ð½Ð½Ð¾Ð¼Ð°Ð»Ð°Ñ€",
+    "page.conclusions": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ / Ð¥ÑƒÐ»Ð¾ÑÐ°Ð»Ð°Ñ€",
+    "applications.total": "Ð–Ð°Ð¼Ð¸ Ð°Ñ€Ð¸Ð·Ð°Ð»Ð°Ñ€",
+    "status.process": "Ð–Ð°Ñ€Ð°Ñ‘Ð½Ð´Ð°",
+    "status.accepted": "ÒšÐ°Ð±ÑƒÐ» Ò›Ð¸Ð»Ð¸Ð½Ð³Ð°Ð½",
+    "status.rejected": "Ð Ð°Ð´ ÑÑ‚Ð¸Ð»Ð³Ð°Ð½",
+    "status.new": "Ð¯Ð½Ð³Ð¸",
+    "result.positive": "Ð˜Ð¶Ð¾Ð±Ð¸Ð¹",
+    "result.negative": "Ð¡Ð°Ð»Ð±Ð¸Ð¹",
+    "common.status": "Ð¡Ñ‚Ð°Ñ‚ÑƒÑ",
+    "common.date": "Ð¡Ð°Ð½Ð°",
+    "common.address": "ÐœÐ°Ð½Ð·Ð¸Ð»",
+    "common.position": "Ð›Ð°Ð²Ð¾Ð·Ð¸Ð¼",
+    "common.step": "Ð‘Ð¾ÑÒ›Ð¸Ñ‡",
+    "common.region": "Ò²ÑƒÐ´ÑƒÐ´",
+    "common.district": "Ð¢ÑƒÐ¼Ð°Ð½ (ÑˆÐ°Ò³Ð°Ñ€)",
+    "common.organizationType": "Ð¢Ð°ÑˆÐºÐ¸Ð»Ð¾Ñ‚ Ñ‚ÑƒÑ€Ð¸",
+    "common.organization": "Ð¢Ð°ÑˆÐºÐ¸Ð»Ð¾Ñ‚",
+    "common.startDate": "Ð‘Ð¾ÑˆÐ»Ð°Ð½Ð¸Ñˆ ÑÐ°Ð½Ð°",
+    "common.endDate": "Ð¢ÑƒÐ³Ð°Ñˆ ÑÐ°Ð½Ð°",
+    "common.diagnosis": "Ð¢Ð°ÑˆÑ…Ð¸Ñ",
+    "common.disabilityGroup": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ðº Ð³ÑƒÑ€ÑƒÒ³Ð¸",
+    "common.gender": "Ð–Ð¸Ð½ÑÐ¸",
+    "common.age": "ÐÑˆÐ¸",
+    "common.apply": "ÒšÑžÐ»Ð»Ð°Ñˆ",
+    "common.reset": "Ð¢Ð¾Ð·Ð°Ð»Ð°Ñˆ",
+    "common.all": "Ð‘Ð°Ñ€Ñ‡Ð°ÑÐ¸",
+    "common.close": "ÐÐ¿Ð¸Ñˆ",
+    "common.mainMenu": "ÐÑÐ¾ÑÐ¸Ð¹ Ð¼ÐµÐ½ÑŽ",
+    "gender.male": "Ð­Ñ€ÐºÐ°Ðº",
+    "gender.female": "ÐÑ‘Ð»",
+    "header.administrator": "ÐÐ´Ð¼Ð¸Ð½Ð¸ÑÑ‚Ñ€Ð°Ñ‚Ð¾Ñ€",
+    "header.profile": "ÐŸÑ€Ð¾Ñ„Ð¸Ð»Ð½Ð¸ ÐºÑžÑ€Ð¸Ñˆ",
+    "header.settings": "Ð¡Ð¾Ð·Ð»Ð°Ð¼Ð°Ð»Ð°Ñ€",
+    "header.logout": "Ð§Ð¸Ò›Ð¸Ñˆ",
+    "header.monitoring": "ÐœÐ¾Ð½Ð¸Ñ‚Ð¾Ñ€Ð¸Ð½Ð³ Ð¿Ð°Ð½ÐµÐ»Ð¸",
+    "header.reportsCenter": "Ò²Ð¸ÑÐ¾Ð±Ð¾Ñ‚Ð»Ð°Ñ€ Ð¼Ð°Ñ€ÐºÐ°Ð·Ð¸",
+    "applications.searchPlaceholder": "ID, Ð¤.Ð˜.Ð¨. Ñ‘ÐºÐ¸ ÐŸÐ˜ÐÐ¤Ð›",
+    "applications.actions": "ÐÐ¼Ð°Ð»Ð»Ð°Ñ€",
+    "applications.application": "ÐÑ€Ð¸Ð·Ð°",
+    "applications.applicant": "Ð¥Ð¸Ð·Ð¼Ð°Ñ‚ Ð¾Ð»ÑƒÐ²Ñ‡Ð¸",
+    "applications.address": "ÐœÐ°Ð½Ð·Ð¸Ð»",
+    "applications.export": "Ð­ÐºÑÐ¿Ð¾Ñ€Ñ‚",
+    "applications.new": "Ð¯Ð½Ð³Ð¸ Ð°Ñ€Ð¸Ð·Ð°",
+    "empty.notFound": "ÐœÐ¾Ñ Ð¼Ð°ÑŠÐ»ÑƒÐ¼Ð¾Ñ‚ Ñ‚Ð¾Ð¿Ð¸Ð»Ð¼Ð°Ð´Ð¸",
+    "empty.noData": "Ò²Ð¾Ð·Ð¸Ñ€Ñ‡Ð° Ð°Ñ€Ð¸Ð·Ð°Ð»Ð°Ñ€ Ð¼Ð°Ð²Ð¶ÑƒÐ´ ÑÐ¼Ð°Ñ",
+    "date.placeholder": "Ð¡Ð°Ð½Ð°Ð½Ð¸ Ñ‚Ð°Ð½Ð»Ð°Ð½Ð³",
+    "report.download": "Ò²Ð¸ÑÐ¾Ð±Ð¾Ñ‚Ð½Ð¸ ÑŽÐºÐ»Ð°Ð± Ð¾Ð»Ð¸Ñˆ",
+    "report.totalPersons": "Ð–Ð°Ð¼Ð¸ ÐÐ‘Ð¨Ð»Ð°Ñ€ ÑÐ¾Ð½Ð¸",
+    "report.byDiagnosis": "Ð¢Ð°ÑˆÑ…Ð¸ÑÐ»Ð°Ñ€Ð¸ Ð±ÑžÐ¹Ð¸Ñ‡Ð°",
+    "report.byDisability": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ðº Ð³ÑƒÑ€ÑƒÒ³Ð¸",
+    "report.scope.back": "ÐžÑ€Ò›Ð°Ð³Ð°",
+    "report.summary": "Ð ÐµÑÐ¿ÑƒÐ±Ð»Ð¸ÐºÐ° Ð¶Ð°Ð¼Ð¸",
+    "selection.count": "Ð¡Ð¾Ð½Ð¸",
+    "selection.sum": "Ð™Ð¸Ò“Ð¸Ð½Ð´Ð¸",
+    "selection.avg": "ÐŽÑ€Ñ‚Ð°Ñ‡Ð°",
+    "selection.min": "ÐœÐ¸Ð½",
+    "selection.max": "ÐœÐ°ÐºÑ",
+    "detail.title": "ÐÑ€Ð¸Ð·Ð° Ñ‚Ð°Ñ„ÑÐ¸Ð»Ð¾Ñ‚Ð»Ð°Ñ€Ð¸",
+    "detail.loading": "ÐÑ€Ð¸Ð·Ð° Ð¼Ð°ÑŠÐ»ÑƒÐ¼Ð¾Ñ‚Ð»Ð°Ñ€Ð¸ ÑŽÐºÐ»Ð°Ð½Ð¼Ð¾Ò›Ð´Ð°...",
+    "detail.accept": "ÒšÐ°Ð±ÑƒÐ» Ò›Ð¸Ð»Ð¸Ñˆ",
+    "detail.reject": "Ð Ð°Ð´ ÑÑ‚Ð¸Ñˆ",
+    "detail.application": "ÐÑ€Ð¸Ð·Ð° Ð¼Ð°ÑŠÐ»ÑƒÐ¼Ð¾Ñ‚Ð»Ð°Ñ€Ð¸",
+    "detail.receiver": "ÐÑ€Ð¸Ð·Ð°Ð½Ð¸ Ò›Ð°Ð±ÑƒÐ» Ò›Ð¸Ð»ÑƒÐ²Ñ‡Ð¸",
+    "detail.representative": "ÒšÐ¾Ð½ÑƒÐ½Ð¸Ð¹ Ð²Ð°ÐºÐ¸Ð»",
+    "detail.applicant": "Ð¥Ð¸Ð·Ð¼Ð°Ñ‚ Ð¾Ð»ÑƒÐ²Ñ‡Ð¸",
+    "detail.medicalDocuments": "Ð¢Ð¸Ð±Ð±Ð¸Ð¹ Ò³ÑƒÐ¶Ð¶Ð°Ñ‚Ð»Ð°Ñ€",
+    "detail.result": "ÐÐ°Ñ‚Ð¸Ð¶Ð°",
+    "detail.representativeLevel": "Ð’Ð°ÐºÐ¸Ð»Ð»Ð¸Ðº Ð´Ð°Ñ€Ð°Ð¶Ð°ÑÐ¸",
+    "detail.phone": "Ð¢ÐµÐ»ÐµÑ„Ð¾Ð½ Ñ€Ð°Ò›Ð°Ð¼Ð¸",
+    "detail.birthDate": "Ð¢ÑƒÒ“Ð¸Ð»Ð³Ð°Ð½ ÑÐ°Ð½Ð°ÑÐ¸",
+    "detail.diagnosis": "Ð¢Ð°ÑˆÑ…Ð¸ÑÐ¸",
+    "detail.address": "ÐœÐ°Ð½Ð·Ð¸Ð»Ð¸",
+    "detail.organizationName": "Ð¢Ð°ÑˆÐºÐ¸Ð»Ð¾Ñ‚ Ð½Ð¾Ð¼Ð¸",
+    "detail.goToAct": "Ð”Ð°Ð»Ð¾Ð»Ð°Ñ‚Ð½Ð¾Ð¼Ð°Ð³Ð° ÑžÑ‚Ð¸Ñˆ",
+    "detail.goToDecision": "ÒšÐ°Ñ€Ð¾Ñ€Ð³Ð° ÑžÑ‚Ð¸Ñˆ",
+    "detail.disabilityHistory": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ðº Ñ‚Ð°Ñ€Ð¸Ñ…Ð¸",
+    "detail.conclusionHistory": "Ð¥ÑƒÐ»Ð¾ÑÐ°Ð»Ð°Ñ€ Ñ‚Ð°Ñ€Ð¸Ñ…Ð¸",
+    "detail.applicationsHistory": "ÐÑ€Ð¸Ð·Ð°Ð»Ð°Ñ€ Ñ‚Ð°Ñ€Ð¸Ñ…Ð¸",
+    "detail.documentHistory": "Ò²ÑƒÐ¶Ð¶Ð°Ñ‚ Ñ‚Ð°Ñ€Ð¸Ñ…Ð¸",
+    "detail.assignedDate": "Ð¢Ð°Ð¹Ð¸Ð½Ð»Ð°Ð½Ð³Ð°Ð½ ÑÐ°Ð½Ð°",
+    "detail.validUntil": "ÐÐ¼Ð°Ð» Ò›Ð¸Ð»Ð¸Ñˆ Ð¼ÑƒÐ´Ð´Ð°Ñ‚Ð¸",
+    "detail.educationInstitutionType": "Ð¢Ð°ÑŠÐ»Ð¸Ð¼ Ð¼ÑƒÐ°ÑÑÐ°ÑÐ°ÑÐ¸ Ñ‚ÑƒÑ€Ð¸",
+    "detail.actor": "ÐÐ¼Ð°Ð»Ð¸Ð¹otni Ð±Ð°Ð¶Ð°Ñ€ÑƒÐ²Ñ‡Ð¸",
+    "empty.notReady": "Ð±ÑžÐ»Ð¸Ð¼Ð¸ ÑƒÑ‡ÑƒÐ½ ÐºÐ¾Ð½Ñ‚ÐµÐ½Ñ‚ Ò³Ð°Ð»Ð¸ Ñ‚Ð°Ð¹Ñ‘Ñ€Ð»Ð°Ð½Ð¼Ð°Ð³Ð°Ð½.",
+    "common.records": "Ñ‘Ð·ÑƒÐ²",
+    "common.loading": "Ð®ÐºÐ»Ð°Ð½Ð¼Ð¾Ò›Ð´Ð°...",
+    "common.downloaded": "Ð®ÐºÐ»Ð°Ð± Ð¾Ð»Ð¸Ð½Ð´Ð¸",
+    "common.fileReady": "ÐÑ€Ð¸Ð·Ð° Ñ„Ð°Ð¹Ð»Ð¸ Ñ‚Ð°Ð¹Ñ‘Ñ€ Ð±ÑžÐ»Ð´Ð¸.",
+    "detail.notFoundTitle": "ÐÑ€Ð¸Ð·Ð° Ñ‚Ð¾Ð¿Ð¸Ð»Ð¼Ð°Ð´Ð¸",
+    "detail.notFoundDescription": "Ñ‚Ð°Ð½Ð»Ð°Ð½Ð³Ð°Ð½ Ð°Ñ€Ð¸Ð·Ð° Ð±ÑžÐ¹Ð¸Ñ‡Ð° Ð¼Ð°ÑŠÐ»ÑƒÐ¼Ð¾Ñ‚ Ñ‚Ð¾Ð¿Ð¸Ð»Ð¼Ð°Ð´Ð¸.",
   },
   kaa: {
     "module.muruvvat": "Muruvvat moduli",
     "module.ptpk": "PTPK moduli",
     "nav.dashboard": "Dashboard",
-    "nav.institutions": "Internat úyleri",
-    "nav.queue": "Náwbet",
-    "nav.registered": "Dizimge alınganlar",
-    "nav.removed": "Dizimnen shıqqanlar",
-    "nav.applications": "Arızalar",
-    "nav.applicationsList": "Arızalar dizimi",
+    "nav.institutions": "Internat Ãºyleri",
+    "nav.queue": "NÃ¡wbet",
+    "nav.registered": "Dizimge alÄ±nganlar",
+    "nav.removed": "Dizimnen shÄ±qqanlar",
+    "nav.applications": "ArÄ±zalar",
+    "nav.applicationsList": "ArÄ±zalar dizimi",
     "nav.forms": "Sorawnamalar",
     "nav.acts": "Dalolatnamalar",
     "nav.decisions": "Qarorlar",
     "nav.reports": "Esabatlar",
-    "nav.reportApplications": "Arızalar boyınsha esabat",
-    "nav.reportInstitutions": "Internat úyleri boyınsha esabat",
-    "nav.reportDisability": "Múgédakligi bar shaxslar sanı boyınsha esabat",
+    "nav.reportApplications": "ArÄ±zalar boyÄ±nsha esabat",
+    "nav.reportInstitutions": "Internat Ãºyleri boyÄ±nsha esabat",
+    "nav.reportDisability": "MÃºgÃ©dakligi bar shaxslar sanÄ± boyÄ±nsha esabat",
     "nav.info": "Info",
     "nav.info1": "Info 1",
     "nav.info2": "Info 2",
     "nav.meetingPlans": "Jiynalis rejeleri",
     "nav.minutes": "Bayonnamalar",
     "nav.conclusions": "Xulosalar",
-    "applications.total": "Jami arızalar",
+    "applications.total": "Jami arÄ±zalar",
     "status.process": "Jarayonda",
     "status.accepted": "Qabul qilingan",
     "status.rejected": "Rad etilgan",
-    "status.new": "Jańa",
+    "status.new": "JaÅ„a",
     "result.positive": "Ijobiy",
     "result.negative": "Salbiy",
     "common.status": "Status",
     "common.date": "Sana",
     "common.address": "Manzil",
     "common.position": "Lavozim",
-    "common.step": "Basqısh",
+    "common.step": "BasqÄ±sh",
     "common.region": "Hudud",
     "common.district": "Tuman (shahar)",
-    "common.organizationType": "Tashkilot túri",
+    "common.organizationType": "Tashkilot tÃºri",
     "common.organization": "Tashkilot",
-    "common.startDate": "Baslanıw sáne",
-    "common.endDate": "Tawısıw sáne",
+    "common.startDate": "BaslanÄ±w sÃ¡ne",
+    "common.endDate": "TawÄ±sÄ±w sÃ¡ne",
     "common.diagnosis": "Tashxis",
     "common.disabilityGroup": "Nogironlik guruhi",
-    "common.gender": "Jınsı",
-    "common.age": "Jası",
+    "common.gender": "JÄ±nsÄ±",
+    "common.age": "JasÄ±",
     "common.apply": "Qollaw",
     "common.reset": "Tazalaw",
-    "common.all": "Barshası",
-    "common.close": "Jabıw",
-    "common.mainMenu": "Tiykarǵı menu",
+    "common.all": "BarshasÄ±",
+    "common.close": "JabÄ±w",
+    "common.mainMenu": "TiykarÇµÄ± menu",
     "gender.male": "Erkek",
     "gender.female": "Ayol",
     "header.administrator": "Administrator",
-    "header.profile": "Profilni kóriw",
+    "header.profile": "Profilni kÃ³riw",
     "header.settings": "Sazlamalar",
-    "header.logout": "Shıǵıw",
+    "header.logout": "ShÄ±ÇµÄ±w",
     "applications.searchPlaceholder": "ID, F.I.Sh. yamasa PINFL",
-    "detail.title": "Arıza tafsilotları",
-    "date.placeholder": "Sánanı tańlań",
+    "detail.title": "ArÄ±za tafsilotlarÄ±",
+    "date.placeholder": "SÃ¡nanÄ± taÅ„laÅ„",
   },
   "kaa-cyrl": {
-    "module.muruvvat": "Мурувват модули",
-    "module.ptpk": "ПТПК модули",
-    "nav.dashboard": "Дашбоард",
-    "nav.institutions": "Интернат үйлери",
-    "nav.queue": "Нәўбет",
-    "nav.registered": "Дизимге алынғанлар",
-    "nav.removed": "Дизимнен шыққанлар",
-    "nav.applications": "Арызалар",
-    "nav.applicationsList": "Арызалар дизими",
-    "nav.forms": "Сораўнамалар",
-    "nav.acts": "Далолатнамалар",
-    "nav.decisions": "Қарорлар",
-    "nav.reports": "Есабатлар",
-    "nav.reportApplications": "Арызалар бойынша есабат",
-    "nav.reportInstitutions": "Интернат үйлери бойынша есабат",
-    "nav.reportDisability": "Мүгедаклиги бар шахслар саны бойынша есабат",
-    "nav.info": "Инфо",
-    "nav.info1": "Инфо 1",
-    "nav.info2": "Инфо 2",
-    "nav.meetingPlans": "Жыйналыс режелери",
-    "nav.minutes": "Баённамалар",
-    "nav.conclusions": "Хулосалар",
-    "applications.total": "Жами арызалар",
-    "status.process": "Жараёнда",
-    "status.accepted": "Қабул қилинған",
-    "status.rejected": "Рад этилган",
-    "status.new": "Жаңа",
-    "result.positive": "Ижобий",
-    "result.negative": "Салбий",
-    "common.status": "Статус",
-    "common.date": "Сана",
-    "common.address": "Манзил",
-    "common.position": "Лавозим",
-    "common.step": "Басқыш",
-    "common.region": "Ҳудуд",
-    "common.district": "Туман (шаҳар)",
-    "common.organizationType": "Ташкилот тури",
-    "common.organization": "Ташкилот",
-    "common.startDate": "Басланыў сәнә",
-    "common.endDate": "Таўысыў сәнә",
-    "common.diagnosis": "Ташхис",
-    "common.disabilityGroup": "Ногиронлик гуруҳи",
-    "common.gender": "Жинсы",
-    "common.age": "Жасы",
-    "common.apply": "Қоллаў",
-    "common.reset": "Тазалаў",
-    "common.all": "Баршасы",
-    "common.close": "Жабыў",
-    "common.mainMenu": "Тийкарғы меню",
-    "gender.male": "Еркак",
-    "gender.female": "Аёл",
-    "detail.title": "Арыза тәфсилотлары",
-    "date.placeholder": "Сәнаны таңдаң",
+    "module.muruvvat": "ÐœÑƒÑ€ÑƒÐ²Ð²Ð°Ñ‚ Ð¼Ð¾Ð´ÑƒÐ»Ð¸",
+    "module.ptpk": "ÐŸÐ¢ÐŸÐš Ð¼Ð¾Ð´ÑƒÐ»Ð¸",
+    "nav.dashboard": "Ð”Ð°ÑˆÐ±Ð¾Ð°Ñ€Ð´",
+    "nav.institutions": "Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ Ò¯Ð¹Ð»ÐµÑ€Ð¸",
+    "nav.queue": "ÐÓ™ÑžÐ±ÐµÑ‚",
+    "nav.registered": "Ð”Ð¸Ð·Ð¸Ð¼Ð³Ðµ Ð°Ð»Ñ‹Ð½Ò“Ð°Ð½Ð»Ð°Ñ€",
+    "nav.removed": "Ð”Ð¸Ð·Ð¸Ð¼Ð½ÐµÐ½ ÑˆÑ‹Ò›Ò›Ð°Ð½Ð»Ð°Ñ€",
+    "nav.applications": "ÐÑ€Ñ‹Ð·Ð°Ð»Ð°Ñ€",
+    "nav.applicationsList": "ÐÑ€Ñ‹Ð·Ð°Ð»Ð°Ñ€ Ð´Ð¸Ð·Ð¸Ð¼Ð¸",
+    "nav.forms": "Ð¡Ð¾Ñ€Ð°ÑžÐ½Ð°Ð¼Ð°Ð»Ð°Ñ€",
+    "nav.acts": "Ð”Ð°Ð»Ð¾Ð»Ð°Ñ‚Ð½Ð°Ð¼Ð°Ð»Ð°Ñ€",
+    "nav.decisions": "ÒšÐ°Ñ€Ð¾Ñ€Ð»Ð°Ñ€",
+    "nav.reports": "Ð•ÑÐ°Ð±Ð°Ñ‚Ð»Ð°Ñ€",
+    "nav.reportApplications": "ÐÑ€Ñ‹Ð·Ð°Ð»Ð°Ñ€ Ð±Ð¾Ð¹Ñ‹Ð½ÑˆÐ° ÐµÑÐ°Ð±Ð°Ñ‚",
+    "nav.reportInstitutions": "Ð˜Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚ Ò¯Ð¹Ð»ÐµÑ€Ð¸ Ð±Ð¾Ð¹Ñ‹Ð½ÑˆÐ° ÐµÑÐ°Ð±Ð°Ñ‚",
+    "nav.reportDisability": "ÐœÒ¯Ð³ÐµÐ´Ð°ÐºÐ»Ð¸Ð³Ð¸ Ð±Ð°Ñ€ ÑˆÐ°Ñ…ÑÐ»Ð°Ñ€ ÑÐ°Ð½Ñ‹ Ð±Ð¾Ð¹Ñ‹Ð½ÑˆÐ° ÐµÑÐ°Ð±Ð°Ñ‚",
+    "nav.info": "Ð˜Ð½Ñ„Ð¾",
+    "nav.info1": "Ð˜Ð½Ñ„Ð¾ 1",
+    "nav.info2": "Ð˜Ð½Ñ„Ð¾ 2",
+    "nav.meetingPlans": "Ð–Ñ‹Ð¹Ð½Ð°Ð»Ñ‹Ñ Ñ€ÐµÐ¶ÐµÐ»ÐµÑ€Ð¸",
+    "nav.minutes": "Ð‘Ð°Ñ‘Ð½Ð½Ð°Ð¼Ð°Ð»Ð°Ñ€",
+    "nav.conclusions": "Ð¥ÑƒÐ»Ð¾ÑÐ°Ð»Ð°Ñ€",
+    "applications.total": "Ð–Ð°Ð¼Ð¸ Ð°Ñ€Ñ‹Ð·Ð°Ð»Ð°Ñ€",
+    "status.process": "Ð–Ð°Ñ€Ð°Ñ‘Ð½Ð´Ð°",
+    "status.accepted": "ÒšÐ°Ð±ÑƒÐ» Ò›Ð¸Ð»Ð¸Ð½Ò“Ð°Ð½",
+    "status.rejected": "Ð Ð°Ð´ ÑÑ‚Ð¸Ð»Ð³Ð°Ð½",
+    "status.new": "Ð–Ð°Ò£Ð°",
+    "result.positive": "Ð˜Ð¶Ð¾Ð±Ð¸Ð¹",
+    "result.negative": "Ð¡Ð°Ð»Ð±Ð¸Ð¹",
+    "common.status": "Ð¡Ñ‚Ð°Ñ‚ÑƒÑ",
+    "common.date": "Ð¡Ð°Ð½Ð°",
+    "common.address": "ÐœÐ°Ð½Ð·Ð¸Ð»",
+    "common.position": "Ð›Ð°Ð²Ð¾Ð·Ð¸Ð¼",
+    "common.step": "Ð‘Ð°ÑÒ›Ñ‹Ñˆ",
+    "common.region": "Ò²ÑƒÐ´ÑƒÐ´",
+    "common.district": "Ð¢ÑƒÐ¼Ð°Ð½ (ÑˆÐ°Ò³Ð°Ñ€)",
+    "common.organizationType": "Ð¢Ð°ÑˆÐºÐ¸Ð»Ð¾Ñ‚ Ñ‚ÑƒÑ€Ð¸",
+    "common.organization": "Ð¢Ð°ÑˆÐºÐ¸Ð»Ð¾Ñ‚",
+    "common.startDate": "Ð‘Ð°ÑÐ»Ð°Ð½Ñ‹Ñž ÑÓ™Ð½Ó™",
+    "common.endDate": "Ð¢Ð°ÑžÑ‹ÑÑ‹Ñž ÑÓ™Ð½Ó™",
+    "common.diagnosis": "Ð¢Ð°ÑˆÑ…Ð¸Ñ",
+    "common.disabilityGroup": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ðº Ð³ÑƒÑ€ÑƒÒ³Ð¸",
+    "common.gender": "Ð–Ð¸Ð½ÑÑ‹",
+    "common.age": "Ð–Ð°ÑÑ‹",
+    "common.apply": "ÒšÐ¾Ð»Ð»Ð°Ñž",
+    "common.reset": "Ð¢Ð°Ð·Ð°Ð»Ð°Ñž",
+    "common.all": "Ð‘Ð°Ñ€ÑˆÐ°ÑÑ‹",
+    "common.close": "Ð–Ð°Ð±Ñ‹Ñž",
+    "common.mainMenu": "Ð¢Ð¸Ð¹ÐºÐ°Ñ€Ò“Ñ‹ Ð¼ÐµÐ½ÑŽ",
+    "gender.male": "Ð•Ñ€ÐºÐ°Ðº",
+    "gender.female": "ÐÑ‘Ð»",
+    "detail.title": "ÐÑ€Ñ‹Ð·Ð° Ñ‚Ó™Ñ„ÑÐ¸Ð»Ð¾Ñ‚Ð»Ð°Ñ€Ñ‹",
+    "date.placeholder": "Ð¡Ó™Ð½Ð°Ð½Ñ‹ Ñ‚Ð°Ò£Ð´Ð°Ò£",
   },
   ru: {
-    "module.muruvvat": "Модуль Мурувват",
-    "module.ptpk": "Модуль ПТПК",
-    "nav.dashboard": "Дашборд",
-    "nav.institutions": "Дома-интернаты",
-    "nav.queue": "Очередь",
-    "nav.registered": "Зарегистрированные",
-    "nav.removed": "Выбывшие",
-    "nav.applications": "Заявления",
-    "nav.applicationsList": "Список заявлений",
-    "nav.forms": "Опросники",
-    "nav.acts": "Акты",
-    "nav.decisions": "Решения",
-    "nav.reports": "Отчёты",
-    "nav.reportApplications": "Отчёт по заявлениям",
-    "nav.reportInstitutions": "Отчёт по домам-интернатам",
-    "nav.reportDisability": "Отчёт по числу лиц с инвалидностью",
-    "nav.info": "Инфо",
-    "nav.info1": "Инфо 1",
-    "nav.info2": "Инфо 2",
-    "nav.meetingPlans": "Планы заседаний",
-    "nav.minutes": "Протоколы",
-    "nav.conclusions": "Заключения",
-    "page.applicationsList": "Заявления / Список заявлений",
-    "page.reportDisability": "Отчёты / Отчёт по числу лиц с инвалидностью",
-    "applications.total": "Всего заявлений",
-    "status.process": "В процессе",
-    "status.accepted": "Принято",
-    "status.rejected": "Отклонено",
-    "status.new": "Новый",
-    "result.positive": "Положительный",
-    "result.negative": "Отрицательный",
-    "common.status": "Статус",
-    "common.date": "Дата",
-    "common.address": "Адрес",
-    "common.position": "Должность",
-    "common.step": "Этап",
-    "common.region": "Регион",
-    "common.district": "Район (город)",
-    "common.organizationType": "Тип организации",
-    "common.organization": "Организация",
-    "common.startDate": "Дата начала",
-    "common.endDate": "Дата окончания",
-    "common.diagnosis": "Диагноз",
-    "common.disabilityGroup": "Группа инвалидности",
-    "common.gender": "Пол",
-    "common.age": "Возраст",
-    "common.apply": "Применить",
-    "common.reset": "Сбросить",
-    "common.all": "Все",
-    "common.close": "Закрыть",
-    "common.mainMenu": "Главное меню",
-    "gender.male": "Мужской",
-    "gender.female": "Женский",
-    "header.administrator": "Администратор",
-    "header.profile": "Профиль",
-    "header.settings": "Настройки",
-    "header.logout": "Выход",
-    "header.monitoring": "Панель мониторинга",
-    "header.reportsCenter": "Центр отчётов",
-    "applications.searchPlaceholder": "ID, Ф.И.О. или ПИНФЛ",
-    "applications.actions": "Действия",
-    "applications.application": "Заявление",
-    "applications.applicant": "Заявитель",
-    "applications.address": "Адрес",
-    "applications.export": "Экспорт",
-    "applications.new": "Новое заявление",
-    "empty.notFound": "Данные не найдены",
-    "empty.noData": "Пока заявлений нет",
-    "date.placeholder": "Выберите дату",
-    "report.download": "Скачать отчёт",
-    "report.totalPersons": "Общее число ЛСИ",
-    "report.byDiagnosis": "По диагнозам",
-    "report.byDisability": "Группа инвалидности",
-    "report.scope.back": "Назад",
-    "report.summary": "Итого по республике",
-    "selection.count": "Кол-во",
-    "selection.sum": "Сумма",
-    "selection.avg": "Среднее",
-    "selection.min": "Мин",
-    "selection.max": "Макс",
-    "detail.title": "Детали заявления",
-    "detail.loading": "Загрузка данных заявления...",
-    "detail.accept": "Принять",
-    "detail.reject": "Отклонить",
-    "detail.application": "Данные заявления",
-    "detail.receiver": "Принявший сотрудник",
-    "detail.representative": "Законный представитель",
-    "detail.applicant": "Заявитель",
-    "detail.medicalDocuments": "Медицинские документы",
-    "detail.result": "Результат",
-    "detail.representativeLevel": "Степень представительства",
-    "detail.phone": "Телефон",
-    "detail.birthDate": "Дата рождения",
-    "detail.diagnosis": "Диагноз",
-    "detail.address": "Адрес",
-    "detail.organizationName": "Название организации",
-    "detail.goToAct": "Перейти к акту",
-    "detail.goToDecision": "Перейти к решению",
-    "detail.disabilityHistory": "История инвалидности",
-    "detail.conclusionHistory": "История заключений",
-    "detail.applicationsHistory": "История заявлений",
-    "detail.documentHistory": "История документов",
-    "detail.assignedDate": "Дата назначения",
-    "detail.validUntil": "Срок действия",
-    "detail.educationInstitutionType": "Тип образовательного учреждения",
-    "detail.actor": "Исполнитель",
-    "empty.notReady": "раздел пока не подготовлен.",
-    "common.records": "записей",
-    "common.loading": "Загрузка...",
-    "common.downloaded": "Загружено",
-    "common.fileReady": "Файл заявления готов.",
-    "detail.notFoundTitle": "Заявление не найдено",
-    "detail.notFoundDescription": "данные по выбранному заявлению не найдены.",
+    "module.muruvvat": "ÐœÐ¾Ð´ÑƒÐ»ÑŒ ÐœÑƒÑ€ÑƒÐ²Ð²Ð°Ñ‚",
+    "module.ptpk": "ÐœÐ¾Ð´ÑƒÐ»ÑŒ ÐŸÐ¢ÐŸÐš",
+    "nav.dashboard": "Ð”Ð°ÑˆÐ±Ð¾Ñ€Ð´",
+    "nav.institutions": "Ð”Ð¾Ð¼Ð°-Ð¸Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚Ñ‹",
+    "nav.queue": "ÐžÑ‡ÐµÑ€ÐµÐ´ÑŒ",
+    "nav.registered": "Ð—Ð°Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ðµ",
+    "nav.removed": "Ð’Ñ‹Ð±Ñ‹Ð²ÑˆÐ¸Ðµ",
+    "nav.applications": "Ð—Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ñ",
+    "nav.applicationsList": "Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ð¹",
+    "nav.forms": "ÐžÐ¿Ñ€Ð¾ÑÐ½Ð¸ÐºÐ¸",
+    "nav.acts": "ÐÐºÑ‚Ñ‹",
+    "nav.decisions": "Ð ÐµÑˆÐµÐ½Ð¸Ñ",
+    "nav.reports": "ÐžÑ‚Ñ‡Ñ‘Ñ‚Ñ‹",
+    "nav.reportApplications": "ÐžÑ‚Ñ‡Ñ‘Ñ‚ Ð¿Ð¾ Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸ÑÐ¼",
+    "nav.reportInstitutions": "ÐžÑ‚Ñ‡Ñ‘Ñ‚ Ð¿Ð¾ Ð´Ð¾Ð¼Ð°Ð¼-Ð¸Ð½Ñ‚ÐµÑ€Ð½Ð°Ñ‚Ð°Ð¼",
+    "nav.reportDisability": "ÐžÑ‚Ñ‡Ñ‘Ñ‚ Ð¿Ð¾ Ñ‡Ð¸ÑÐ»Ñƒ Ð»Ð¸Ñ† Ñ Ð¸Ð½Ð²Ð°Ð»Ð¸Ð´Ð½Ð¾ÑÑ‚ÑŒÑŽ",
+    "nav.info": "Ð˜Ð½Ñ„Ð¾",
+    "nav.info1": "Ð˜Ð½Ñ„Ð¾ 1",
+    "nav.info2": "Ð˜Ð½Ñ„Ð¾ 2",
+    "nav.meetingPlans": "ÐŸÐ»Ð°Ð½Ñ‹ Ð·Ð°ÑÐµÐ´Ð°Ð½Ð¸Ð¹",
+    "nav.minutes": "ÐŸÑ€Ð¾Ñ‚Ð¾ÐºÐ¾Ð»Ñ‹",
+    "nav.conclusions": "Ð—Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ñ",
+    "page.applicationsList": "Ð—Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ñ / Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ð¹",
+    "page.reportDisability": "ÐžÑ‚Ñ‡Ñ‘Ñ‚Ñ‹ / ÐžÑ‚Ñ‡Ñ‘Ñ‚ Ð¿Ð¾ Ñ‡Ð¸ÑÐ»Ñƒ Ð»Ð¸Ñ† Ñ Ð¸Ð½Ð²Ð°Ð»Ð¸Ð´Ð½Ð¾ÑÑ‚ÑŒÑŽ",
+    "applications.total": "Ð’ÑÐµÐ³Ð¾ Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ð¹",
+    "status.process": "Ð’ Ð¿Ñ€Ð¾Ñ†ÐµÑÑÐµ",
+    "status.accepted": "ÐŸÑ€Ð¸Ð½ÑÑ‚Ð¾",
+    "status.rejected": "ÐžÑ‚ÐºÐ»Ð¾Ð½ÐµÐ½Ð¾",
+    "status.new": "ÐÐ¾Ð²Ñ‹Ð¹",
+    "result.positive": "ÐŸÐ¾Ð»Ð¾Ð¶Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹",
+    "result.negative": "ÐžÑ‚Ñ€Ð¸Ñ†Ð°Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹",
+    "common.status": "Ð¡Ñ‚Ð°Ñ‚ÑƒÑ",
+    "common.date": "Ð”Ð°Ñ‚Ð°",
+    "common.address": "ÐÐ´Ñ€ÐµÑ",
+    "common.position": "Ð”Ð¾Ð»Ð¶Ð½Ð¾ÑÑ‚ÑŒ",
+    "common.step": "Ð­Ñ‚Ð°Ð¿",
+    "common.region": "Ð ÐµÐ³Ð¸Ð¾Ð½",
+    "common.district": "Ð Ð°Ð¹Ð¾Ð½ (Ð³Ð¾Ñ€Ð¾Ð´)",
+    "common.organizationType": "Ð¢Ð¸Ð¿ Ð¾Ñ€Ð³Ð°Ð½Ð¸Ð·Ð°Ñ†Ð¸Ð¸",
+    "common.organization": "ÐžÑ€Ð³Ð°Ð½Ð¸Ð·Ð°Ñ†Ð¸Ñ",
+    "common.startDate": "Ð”Ð°Ñ‚Ð° Ð½Ð°Ñ‡Ð°Ð»Ð°",
+    "common.endDate": "Ð”Ð°Ñ‚Ð° Ð¾ÐºÐ¾Ð½Ñ‡Ð°Ð½Ð¸Ñ",
+    "common.diagnosis": "Ð”Ð¸Ð°Ð³Ð½Ð¾Ð·",
+    "common.disabilityGroup": "Ð“Ñ€ÑƒÐ¿Ð¿Ð° Ð¸Ð½Ð²Ð°Ð»Ð¸Ð´Ð½Ð¾ÑÑ‚Ð¸",
+    "common.gender": "ÐŸÐ¾Ð»",
+    "common.age": "Ð’Ð¾Ð·Ñ€Ð°ÑÑ‚",
+    "common.apply": "ÐŸÑ€Ð¸Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ",
+    "common.reset": "Ð¡Ð±Ñ€Ð¾ÑÐ¸Ñ‚ÑŒ",
+    "common.all": "Ð’ÑÐµ",
+    "common.close": "Ð—Ð°ÐºÑ€Ñ‹Ñ‚ÑŒ",
+    "common.mainMenu": "Ð“Ð»Ð°Ð²Ð½Ð¾Ðµ Ð¼ÐµÐ½ÑŽ",
+    "gender.male": "ÐœÑƒÐ¶ÑÐºÐ¾Ð¹",
+    "gender.female": "Ð–ÐµÐ½ÑÐºÐ¸Ð¹",
+    "header.administrator": "ÐÐ´Ð¼Ð¸Ð½Ð¸ÑÑ‚Ñ€Ð°Ñ‚Ð¾Ñ€",
+    "header.profile": "ÐŸÑ€Ð¾Ñ„Ð¸Ð»ÑŒ",
+    "header.settings": "ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ¸",
+    "header.logout": "Ð’Ñ‹Ñ…Ð¾Ð´",
+    "header.monitoring": "ÐŸÐ°Ð½ÐµÐ»ÑŒ Ð¼Ð¾Ð½Ð¸Ñ‚Ð¾Ñ€Ð¸Ð½Ð³Ð°",
+    "header.reportsCenter": "Ð¦ÐµÐ½Ñ‚Ñ€ Ð¾Ñ‚Ñ‡Ñ‘Ñ‚Ð¾Ð²",
+    "applications.searchPlaceholder": "ID, Ð¤.Ð˜.Ðž. Ð¸Ð»Ð¸ ÐŸÐ˜ÐÐ¤Ð›",
+    "applications.actions": "Ð”ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ",
+    "applications.application": "Ð—Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ðµ",
+    "applications.applicant": "ÐŸÐ¾Ð»ÑƒÑ‡Ð°Ñ‚ÐµÐ»ÑŒ ÑƒÑÐ»ÑƒÐ³Ð¸",
+    "applications.address": "ÐÐ´Ñ€ÐµÑ",
+    "applications.export": "Ð­ÐºÑÐ¿Ð¾Ñ€Ñ‚",
+    "applications.new": "ÐÐ¾Ð²Ð¾Ðµ Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ðµ",
+    "empty.notFound": "Ð”Ð°Ð½Ð½Ñ‹Ðµ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹",
+    "empty.noData": "ÐŸÐ¾ÐºÐ° Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ð¹ Ð½ÐµÑ‚",
+    "date.placeholder": "Ð’Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ð´Ð°Ñ‚Ñƒ",
+    "report.download": "Ð¡ÐºÐ°Ñ‡Ð°Ñ‚ÑŒ Ð¾Ñ‚Ñ‡Ñ‘Ñ‚",
+    "report.totalPersons": "ÐžÐ±Ñ‰ÐµÐµ Ñ‡Ð¸ÑÐ»Ð¾ Ð›Ð¡Ð˜",
+    "report.byDiagnosis": "ÐŸÐ¾ Ð´Ð¸Ð°Ð³Ð½Ð¾Ð·Ð°Ð¼",
+    "report.byDisability": "Ð“Ñ€ÑƒÐ¿Ð¿Ð° Ð¸Ð½Ð²Ð°Ð»Ð¸Ð´Ð½Ð¾ÑÑ‚Ð¸",
+    "report.scope.back": "ÐÐ°Ð·Ð°Ð´",
+    "report.summary": "Ð˜Ñ‚Ð¾Ð³Ð¾ Ð¿Ð¾ Ñ€ÐµÑÐ¿ÑƒÐ±Ð»Ð¸ÐºÐµ",
+    "selection.count": "ÐšÐ¾Ð»-Ð²Ð¾",
+    "selection.sum": "Ð¡ÑƒÐ¼Ð¼Ð°",
+    "selection.avg": "Ð¡Ñ€ÐµÐ´Ð½ÐµÐµ",
+    "selection.min": "ÐœÐ¸Ð½",
+    "selection.max": "ÐœÐ°ÐºÑ",
+    "detail.title": "Ð”ÐµÑ‚Ð°Ð»Ð¸ Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ñ",
+    "detail.loading": "Ð—Ð°Ð³Ñ€ÑƒÐ·ÐºÐ° Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ñ...",
+    "detail.accept": "ÐŸÑ€Ð¸Ð½ÑÑ‚ÑŒ",
+    "detail.reject": "ÐžÑ‚ÐºÐ»Ð¾Ð½Ð¸Ñ‚ÑŒ",
+    "detail.application": "Ð”Ð°Ð½Ð½Ñ‹Ðµ Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ñ",
+    "detail.receiver": "ÐŸÑ€Ð¸Ð½ÑÐ²ÑˆÐ¸Ð¹ ÑÐ¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº",
+    "detail.representative": "Ð—Ð°ÐºÐ¾Ð½Ð½Ñ‹Ð¹ Ð¿Ñ€ÐµÐ´ÑÑ‚Ð°Ð²Ð¸Ñ‚ÐµÐ»ÑŒ",
+    "detail.applicant": "ÐŸÐ¾Ð»ÑƒÑ‡Ð°Ñ‚ÐµÐ»ÑŒ ÑƒÑÐ»ÑƒÐ³Ð¸",
+    "detail.medicalDocuments": "ÐœÐµÐ´Ð¸Ñ†Ð¸Ð½ÑÐºÐ¸Ðµ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ñ‹",
+    "detail.result": "Ð ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚",
+    "detail.representativeLevel": "Ð¡Ñ‚ÐµÐ¿ÐµÐ½ÑŒ Ð¿Ñ€ÐµÐ´ÑÑ‚Ð°Ð²Ð¸Ñ‚ÐµÐ»ÑŒÑÑ‚Ð²Ð°",
+    "detail.phone": "Ð¢ÐµÐ»ÐµÑ„Ð¾Ð½",
+    "detail.birthDate": "Ð”Ð°Ñ‚Ð° Ñ€Ð¾Ð¶Ð´ÐµÐ½Ð¸Ñ",
+    "detail.diagnosis": "Ð”Ð¸Ð°Ð³Ð½Ð¾Ð·",
+    "detail.address": "ÐÐ´Ñ€ÐµÑ",
+    "detail.organizationName": "ÐÐ°Ð·Ð²Ð°Ð½Ð¸Ðµ Ð¾Ñ€Ð³Ð°Ð½Ð¸Ð·Ð°Ñ†Ð¸Ð¸",
+    "detail.goToAct": "ÐŸÐµÑ€ÐµÐ¹Ñ‚Ð¸ Ðº Ð°ÐºÑ‚Ñƒ",
+    "detail.goToDecision": "ÐŸÐµÑ€ÐµÐ¹Ñ‚Ð¸ Ðº Ñ€ÐµÑˆÐµÐ½Ð¸ÑŽ",
+    "detail.disabilityHistory": "Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ Ð¸Ð½Ð²Ð°Ð»Ð¸Ð´Ð½Ð¾ÑÑ‚Ð¸",
+    "detail.conclusionHistory": "Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ Ð·Ð°ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¹",
+    "detail.applicationsHistory": "Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ð¹",
+    "detail.documentHistory": "Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð¾Ð²",
+    "detail.assignedDate": "Ð”Ð°Ñ‚Ð° Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ",
+    "detail.validUntil": "Ð¡Ñ€Ð¾Ðº Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ",
+    "detail.educationInstitutionType": "Ð¢Ð¸Ð¿ Ð¾Ð±Ñ€Ð°Ð·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒÐ½Ð¾Ð³Ð¾ ÑƒÑ‡Ñ€ÐµÐ¶Ð´ÐµÐ½Ð¸Ñ",
+    "detail.actor": "Ð˜ÑÐ¿Ð¾Ð»Ð½Ð¸Ñ‚ÐµÐ»ÑŒ",
+    "empty.notReady": "Ñ€Ð°Ð·Ð´ÐµÐ» Ð¿Ð¾ÐºÐ° Ð½Ðµ Ð¿Ð¾Ð´Ð³Ð¾Ñ‚Ð¾Ð²Ð»ÐµÐ½.",
+    "common.records": "Ð·Ð°Ð¿Ð¸ÑÐµÐ¹",
+    "common.loading": "Ð—Ð°Ð³Ñ€ÑƒÐ·ÐºÐ°...",
+    "common.downloaded": "Ð—Ð°Ð³Ñ€ÑƒÐ¶ÐµÐ½Ð¾",
+    "common.fileReady": "Ð¤Ð°Ð¹Ð» Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ñ Ð³Ð¾Ñ‚Ð¾Ð².",
+    "detail.notFoundTitle": "Ð—Ð°ÑÐ²Ð»ÐµÐ½Ð¸Ðµ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ð¾",
+    "detail.notFoundDescription": "Ð´Ð°Ð½Ð½Ñ‹Ðµ Ð¿Ð¾ Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð½Ð¾Ð¼Ñƒ Ð·Ð°ÑÐ²Ð»ÐµÐ½Ð¸ÑŽ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½Ñ‹.",
   },
   en: {
     "module.muruvvat": "Muruvvat module",
@@ -748,7 +943,7 @@ const translations = {
     "applications.searchPlaceholder": "ID, full name or PINFL",
     "applications.actions": "Actions",
     "applications.application": "Application",
-    "applications.applicant": "Applicant",
+    "applications.applicant": "Service recipient",
     "applications.address": "Address",
     "applications.export": "Export",
     "applications.new": "New application",
@@ -773,7 +968,7 @@ const translations = {
     "detail.application": "Application information",
     "detail.receiver": "Receiving officer",
     "detail.representative": "Legal representative",
-    "detail.applicant": "Applicant",
+    "detail.applicant": "Service recipient",
     "detail.medicalDocuments": "Medical documents",
     "detail.result": "Result",
     "detail.representativeLevel": "Representation level",
@@ -792,6 +987,9 @@ const translations = {
     "detail.validUntil": "Valid until",
     "detail.educationInstitutionType": "Education institution type",
     "detail.actor": "Performed by",
+    "detail.downloadAll": "Download all",
+    "detail.pdfDocument": "PDF document",
+    "common.download": "Download",
     "empty.notReady": "section content is not ready yet.",
     "common.records": "records",
     "common.loading": "Loading...",
@@ -808,7 +1006,7 @@ function formatRecordCount(count) {
     return `${safeCount} ${tr("common.records", "records")}`;
   }
   if (currentLanguage === "ru") {
-    return `${safeCount} ${safeCount === 1 ? "запись" : safeCount < 5 ? "записи" : "записей"}`;
+    return `${safeCount} ${safeCount === 1 ? "Ð·Ð°Ð¿Ð¸ÑÑŒ" : safeCount < 5 ? "Ð·Ð°Ð¿Ð¸ÑÐ¸" : "Ð·Ð°Ð¿Ð¸ÑÐµÐ¹"}`;
   }
   return `${safeCount} ta yozuv`;
 }
@@ -818,7 +1016,7 @@ function formatPaginationInfo(from, to, total) {
     return `${from}-${to} / ${total} ${tr("common.records", "records")}`;
   }
   if (currentLanguage === "ru") {
-    return `${from}-${to} / ${total} записей`;
+    return `${from}-${to} / ${total} Ð·Ð°Ð¿Ð¸ÑÐµÐ¹`;
   }
   return `${from}-${to} / ${total} ta yozuv`;
 }
@@ -826,6 +1024,9 @@ function formatPaginationInfo(from, to, total) {
 function tr(key, fallback = "") {
   if (!key) {
     return fallback;
+  }
+  if (currentLanguage === "i18n") {
+    return key;
   }
   return translations[currentLanguage]?.[key]
     ?? translations.uz?.[key]
@@ -837,12 +1038,91 @@ function tl(literal) {
   return tr(literalKeyMap[literal], literal);
 }
 
+function translateValuePart(value) {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+
+  const mappedKey = literalKeyMap[trimmed];
+  if (mappedKey) {
+    return valueTranslations[currentLanguage]?.[mappedKey] ?? tr(mappedKey, trimmed);
+  }
+
+  const diagnosisMatch = trimmed.match(/^(.*)\s\(([^)]+)\)$/);
+  if (diagnosisMatch) {
+    const baseTranslated = translateValuePart(diagnosisMatch[1]);
+    return `${baseTranslated} (${diagnosisMatch[2]})`;
+  }
+
+  return trimmed;
+}
+
+function translateDisplayValue(value) {
+  if (typeof value !== "string") return value;
+  if (!value || value === "-" || /<[^>]+>/.test(value)) return value;
+  return value.split(",").map((part) => translateValuePart(part)).join(", ");
+}
+
+function getTranslatedDownloadLabel() {
+  const labels = {
+    uz: "Yuklab olish",
+    "uz-cyrl": "Юклаб олиш",
+    kaa: "Júklep alıw",
+    "kaa-cyrl": "Жүклеп алыў",
+    ru: "Скачать",
+    en: "Download",
+    i18n: "common.download",
+  };
+  return labels[currentLanguage] ?? labels.uz;
+}
+
+function getTranslatedDownloadAllLabel() {
+  const labels = {
+    uz: "Barchasini yuklab olish",
+    "uz-cyrl": "Барчасини юклаб олиш",
+    kaa: "Barshasın júklep alıw",
+    "kaa-cyrl": "Баршасын жүклеп алыў",
+    ru: "Скачать все",
+    en: "Download all",
+    i18n: "detail.downloadAll",
+  };
+  return labels[currentLanguage] ?? labels.uz;
+}
+
+function getTranslatedPdfDocumentLabel() {
+  const labels = {
+    uz: "PDF hujjat",
+    "uz-cyrl": "PDF ҳужжат",
+    kaa: "PDF hujjat",
+    "kaa-cyrl": "PDF ҳужжат",
+    ru: "PDF документ",
+    en: "PDF document",
+    i18n: "detail.pdfDocument",
+  };
+  return labels[currentLanguage] ?? labels.uz;
+}
+
 function translateRouteTitle(title) {
   const key = routeTitleKeys[title];
   if (!key) {
     return tl(title);
   }
   return tr(key, title);
+}
+
+function getRouteParts(title) {
+  if (!title) return [];
+  if (title.includes(" - ")) {
+    return title.split(" - ").map((part) => part.trim()).filter(Boolean);
+  }
+  if (title.includes(" / ")) {
+    return title.split(" / ").map((part) => part.trim()).filter(Boolean);
+  }
+  return [title.trim()].filter(Boolean);
+}
+
+function translateRouteParts(title) {
+  return getRouteParts(title).map((part) => tl(part));
 }
 
 function getSavedLanguagePreference() {
@@ -966,7 +1246,7 @@ function applyStaticTranslations() {
   const appTableHeads = document.querySelectorAll("#applicationsTable thead th");
   if (appTableHeads[0]) appTableHeads[0].textContent = tr("applications.actions", "Amallar");
   if (appTableHeads[1]) appTableHeads[1].textContent = tr("applications.application", "Ariza");
-  if (appTableHeads[2]) appTableHeads[2].textContent = tr("applications.applicant", "Arizachi");
+  if (appTableHeads[2]) appTableHeads[2].textContent = tr("applications.applicant", "Xizmat oluvchi");
   if (appTableHeads[3]) appTableHeads[3].textContent = tr("common.organization", "Tashkilot");
   if (appTableHeads[4]) appTableHeads[4].textContent = tr("applications.address", "Manzil");
   if (appTableHeads[5]) appTableHeads[5].textContent = tr("common.status", "Status");
@@ -1762,16 +2042,24 @@ function getStatusBadgeClass(status) {
 }
 
 function getApplicantAvatar(application) {
-  const femalePool = ["avatar-1.png", "avatar-3.png", "avatar-6.png"];
-  const malePool = ["avatar-2.png", "avatar-4.png", "avatar-5.png"];
-  const gender = String(application.gender || "").toLowerCase();
-  const avatarPool = gender === "ayol" ? femalePool : malePool;
-  const numericSeed = Number(String(application.id).replace(/\D/g, "")) || 0;
-  return avatarPool[numericSeed % avatarPool.length];
+  const version = "20260327c";
+  return String(application.gender || "").toLowerCase() === "ayol"
+    ? `person-girl.png?v=${version}`
+    : `person-boy.png?v=${version}`;
+}
+
+function getRepresentativeAvatar(gender) {
+  const version = "20260327c";
+  return String(gender || "").toLowerCase() === "ayol"
+    ? `person-woman.png?v=${version}`
+    : `person-man.png?v=${version}`;
 }
 
 function getReceiverAvatar(gender) {
-  return String(gender || "").toLowerCase() === "ayol" ? "operator-female.png" : "operator-male.png";
+  const version = "20260327c";
+  return String(gender || "").toLowerCase() === "ayol"
+    ? `person-operator-female.png?v=${version}`
+    : `person-operator-male.png?v=${version}`;
 }
 
 function getStatusBadgeVariant(status) {
@@ -1849,7 +2137,7 @@ function buildDetailFieldGrid(items) {
           (item) => `
             <div class="detail-field-list__item">
               <span>${item.label}</span>
-              <strong>${item.value || "-"}</strong>
+              <strong>${translateDisplayValue(item.value) || "-"}</strong>
             </div>
           `,
         )
@@ -1895,8 +2183,8 @@ function buildDetailRecordList(records) {
           (record) => `
             <article class="detail-record">
               <div class="detail-record__header">
-                <strong>${record.title}</strong>
-                ${record.meta ? `<span>${record.meta}</span>` : ""}
+                <strong>${translateDisplayValue(record.title)}</strong>
+                ${record.meta ? `<span>${translateDisplayValue(record.meta)}</span>` : ""}
               </div>
               <div class="detail-record__fields">
                 ${record.fields
@@ -1904,7 +2192,7 @@ function buildDetailRecordList(records) {
                     (field) => `
                       <div class="detail-record__field">
                         <span>${field.label}</span>
-                        <strong>${field.value || "-"}</strong>
+                        <strong>${translateDisplayValue(field.value) || "-"}</strong>
                       </div>
                     `,
                   )
@@ -1952,7 +2240,7 @@ function buildDetailAccordion(title, content, subtitle = "", isOpen = false) {
 }
 
 function buildDetailDocuments(items) {
-  const documentTitles = items.map((item) => item.title).join("|");
+  const documentTitles = items.map((item) => translateDisplayValue(item.title)).join("|");
   return `
     <div class="detail-documents">
       <div class="detail-documents__toolbar">
@@ -1960,12 +2248,12 @@ function buildDetailDocuments(items) {
           class="detail-document__download detail-document__download--bulk"
           type="button"
           data-document-download="tibbiy-hujjatlar-toplami.pdf"
-          data-document-title="Tibbiy hujjatlar to'plami"
+          data-document-title="${tr("detail.documentsBundle", "Tibbiy hujjatlar to'plami")}"
           data-document-bulk="true"
           data-document-lines="${documentTitles}"
         >
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Barchasini yuklab olish</span>
+          <span>${getTranslatedDownloadAllLabel()}</span>
         </button>
       </div>
       ${items
@@ -1976,12 +2264,12 @@ function buildDetailDocuments(items) {
                 <svg viewBox="0 0 24 24" fill="none"><path d="M8 3.5h5.5L18.5 8v11a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6.5 19v-14A1.5 1.5 0 0 1 8 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.5 3.5V8h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 15.5h7M8.5 12.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
               </span>
               <div class="detail-document__content">
-                <strong>${item.title}</strong>
-                <span>PDF hujjat</span>
+                <strong>${translateDisplayValue(item.title)}</strong>
+                <span>${getTranslatedPdfDocumentLabel()}</span>
               </div>
-              <button class="detail-document__download" type="button" data-document-download="${item.fileName}" data-document-title="${item.title}">
+              <button class="detail-document__download" type="button" data-document-download="${item.fileName}" data-document-title="${translateDisplayValue(item.title)}">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span>Yuklab olish</span>
+                <span>${getTranslatedDownloadLabel()}</span>
               </button>
             </article>
           `,
@@ -2093,6 +2381,82 @@ function triggerPdfDownload(fileName, title, lines = []) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function triggerFileDownload(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function sanitizeFileName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+}
+
+function getReportExportFileName() {
+  const dateLabel = sanitizeFileName(reportSnapshotDate?.value || formatDateLabel(formatDateValue(new Date())));
+  const scopeLabel = sanitizeFileName(reportScopePath?.textContent || currentCanonicalTitle || "disability-report");
+  return `${scopeLabel || "disability-report"}-${dateLabel || "snapshot"}.xls`;
+}
+
+function buildReportExportHtml() {
+  if (!reportTable) {
+    return "";
+  }
+
+  const tableClone = reportTable.cloneNode(true);
+  tableClone.querySelectorAll("[hidden]").forEach((element) => element.remove());
+
+  const scopeTitle = (reportScopePath?.textContent?.trim() || translateRouteTitle("Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot")).replace(/\s+/g, " ");
+  const snapshotLabel = reportSnapshotDate?.value?.trim() || formatDateLabel(formatDateValue(new Date()));
+
+  return `<!DOCTYPE html>
+<html lang="${languageMeta[currentLanguage]?.htmlLang ?? "uz"}">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; margin: 24px; color: #1d2a1f; }
+    h1 { margin: 0 0 8px; font-size: 22px; font-weight: 700; }
+    .report-meta { margin: 0 0 16px; font-size: 13px; color: #425443; }
+    table { border-collapse: collapse; width: 100%; min-width: 1200px; }
+    th, td { border: 1px solid #cfd9cf; padding: 8px 10px; font-size: 12px; line-height: 1.35; text-align: center; vertical-align: middle; }
+    thead th { background: #eef4ec; font-weight: 700; }
+    tbody td:first-child, thead th:first-child { text-align: left; min-width: 180px; }
+    .report-table__summary td { background: #edf6e7; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>${scopeTitle}</h1>
+  <div class="report-meta">${tr("report.snapshotDate", "Holat sanasi")}: ${snapshotLabel}</div>
+  ${tableClone.outerHTML}
+</body>
+</html>`;
+}
+
+function exportCurrentReportToExcel() {
+  const html = buildReportExportHtml();
+  if (!html) {
+    return false;
+  }
+
+  const blob = new Blob(["\uFEFF", html], {
+    type: "application/vnd.ms-excel;charset=utf-8;",
+  });
+  triggerFileDownload(blob, getReportExportFileName());
+  return true;
+}
+
 function getOrganizationType(name = "") {
   const normalized = name.toLowerCase();
   if (normalized.includes("(bolalar)")) {
@@ -2122,6 +2486,8 @@ function getApplicationById(applicationId) {
   const organizationCell = row.children[3]?.querySelector(".stacked-cell");
   const addressCell = row.children[4]?.querySelector(".stacked-cell");
   const statusLabel = row.querySelector(".status-badge")?.textContent?.trim() ?? "";
+  const rawStatus = (row.getAttribute("data-status") ?? statusLabel).trim();
+  const normalizedRawStatus = rawStatus.toLowerCase();
   const numericPart = Number(applicationId.replace(/\D/g, "")) || 0;
   const operator = [
     "Dilshoda Sharipovna Karimova",
@@ -2139,9 +2505,6 @@ function getApplicationById(applicationId) {
   const diagnosis = diagnosisCatalog[numericPart % diagnosisCatalog.length];
   const disabilityGroup = groupCatalog[numericPart % groupCatalog.length];
   const fullAddress = `${addressCell?.querySelector("strong")?.textContent?.trim() ?? "-"}, ${addressCell?.querySelector("span")?.textContent?.trim() ?? "-"}, Mustaqillik ko'chasi ${10 + (numericPart % 70)}-uy`;
-  const birthYear = 1968 + (numericPart % 28);
-  const birthMonth = String((numericPart % 12) + 1).padStart(2, "0");
-  const birthDay = String((numericPart % 27) + 1).padStart(2, "0");
   const receiver = {
     fullName: formatPersonName(operator),
     pinfl: `50${String(100000000000 + numericPart).slice(-12)}`,
@@ -2159,11 +2522,7 @@ function getApplicationById(applicationId) {
     address: fullAddress,
     phone: `+998 ${90 + (numericPart % 3)} ${String(1000000 + numericPart).slice(-7).replace(/(\d{3})(\d{2})(\d{2})/, "$1-$2-$3")}`,
     gender: representativeGender,
-    avatar: getApplicantAvatar({
-      applicantName: formatPersonName(representativeName),
-      id: `representative-${applicationId}`,
-      gender: representativeGender,
-    }),
+    avatar: getRepresentativeAvatar(representativeGender),
   };
   const institutions = {
     "toshkent shahri": {
@@ -2187,14 +2546,21 @@ function getApplicationById(applicationId) {
     name: "Muruvvat internat uyi",
     address: fullAddress,
   };
-  const actResult = statusLabel.toLowerCase() === "rad etilgan" ? "Salbiy" : "Ijobiy";
-  const decisionResult = statusLabel.toLowerCase() === "rad etilgan" ? "Rad etish" : "Qabul qilish";
-  const actStatus = statusLabel.toLowerCase() === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
-  const decisionStatus = statusLabel.toLowerCase() === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
+  const actResult = normalizedRawStatus === "rad etilgan" ? "Salbiy" : "Ijobiy";
+  const decisionResult = normalizedRawStatus === "rad etilgan" ? "Rad etish" : "Qabul qilish";
+  const actStatus = normalizedRawStatus === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
+  const decisionStatus = normalizedRawStatus === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
   const applicationDate = applicationCell?.querySelector("span")?.textContent?.trim() ?? "-";
   const day = Number(applicationDate.split(".")[0] || 1);
   const month = Number(applicationDate.split(".")[1] || 1);
   const year = Number(applicationDate.split(".")[2] || 2026);
+  const applicantAge = numericPart % 18;
+  const birthMonth = String((numericPart % 12) + 1).padStart(2, "0");
+  const birthDay = String((numericPart % 27) + 1).padStart(2, "0");
+  let birthYear = year - applicantAge;
+  if (Number(birthMonth) > month || (Number(birthMonth) === month && Number(birthDay) > day)) {
+    birthYear -= 1;
+  }
 
   const disabilityHistory = Array.from({ length: 3 }, (_, index) => {
     const historyDate = `${String(Math.max(1, day - index * 2)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year - index}`;
@@ -2219,7 +2585,7 @@ function getApplicationById(applicationId) {
   const applicationHistory = Array.from({ length: 3 }, (_, index) => ({
     id: `AR-${String(numericPart - index).padStart(6, "0")}`,
     date: `${String(Math.max(1, day - index * 3)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year - index}`,
-    status: index === 0 ? statusLabel : ["Yangi", "Jarayonda", "Qabul qilingan"][index % 3],
+    status: index === 0 ? rawStatus : ["Yangi", "Jarayonda", "Qabul qilingan"][index % 3],
   }));
 
   const documentLogs = [
@@ -2247,7 +2613,7 @@ function getApplicationById(applicationId) {
   return {
     id: applicationCell?.querySelector("strong")?.textContent?.trim() ?? applicationId,
     date: applicationDate,
-    status: statusLabel || "-",
+    status: rawStatus || "-",
     region: addressCell?.querySelector("strong")?.textContent?.trim() ?? "-",
     district: addressCell?.querySelector("span")?.textContent?.trim() ?? "-",
     receiver,
@@ -2283,7 +2649,7 @@ function getApplicationById(applicationId) {
     decision: {
       id: `QR-${numericPart + 900}`,
       date: `${String(Math.max(1, day)).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`,
-      result: statusLabel.toLowerCase() === "rad etilgan" ? "Salbiy" : "Ijobiy",
+      result: normalizedRawStatus === "rad etilgan" ? "Salbiy" : "Ijobiy",
       status: decisionStatus,
     },
     medicalDocuments,
@@ -2291,7 +2657,7 @@ function getApplicationById(applicationId) {
     conclusionHistory,
     applicationHistory,
     documentLogs,
-    status: statusLabel || "-",
+    status: rawStatus || "-",
   };
 }
 
@@ -2384,7 +2750,7 @@ async function openApplicationDetail(applicationId) {
           </div>`,
         )}
         ${buildDetailSection(
-          tr("detail.applicant", "Arizachi"),
+          tr("detail.applicant", "Xizmat oluvchi"),
           `<div class="detail-person-layout">
             ${buildDetailPersonCard(application.applicant, `<img class="detail-person-card__avatar" src="${application.applicant.avatar}" alt="${application.applicant.fullName} rasmi" />`)}
             ${buildDetailFieldGrid([
@@ -3341,8 +3707,7 @@ function syncPageHeading(title) {
   }
 
   currentCanonicalTitle = title;
-  const translatedTitle = translateRouteTitle(title);
-  const parts = translatedTitle.split(" / ");
+  const parts = translateRouteParts(title);
   pageTitle.textContent = parts[parts.length - 1];
   document.title = parts[parts.length - 1];
   if (pageBreadcrumb) {
@@ -3607,8 +3972,13 @@ reportExportButton?.addEventListener("click", async () => {
 
   setReportExportLoadingState(true);
   await sleep(200);
+  const exported = exportCurrentReportToExcel();
   setReportExportLoadingState(false);
-  showToast("Hisobot yuklandi", "Hisobot fayli tayyor bo'ldi.");
+  if (exported) {
+    showToast(tr("common.downloaded", "Yuklab olindi"), tr("report.download", "Hisobotni yuklab olish"));
+  } else {
+    showToast("Xatolik", "Hisobotni yuklab bo'lmadi.");
+  }
 });
 
 function syncRowsPerPageUi() {
@@ -4372,3 +4742,4 @@ window.addEventListener("resize", () => {
 });
 
 applyRouteFromHash();
+

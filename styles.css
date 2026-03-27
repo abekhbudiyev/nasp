@@ -1325,6 +1325,50 @@ body.theme-dark .login-hero__card {
   background: rgba(103, 154, 98, 0.03);
 }
 
+.stat-card--total {
+  --tone-bg: var(--status-total-bg);
+  --tone-text: var(--status-total-text);
+  --tone-border: var(--status-total-border);
+  --tone-icon-bg: var(--status-total-icon-bg);
+  --tone-icon-color: var(--status-total-icon-color);
+}
+
+.stat-card--new,
+.status-badge--new {
+  --tone-bg: var(--status-new-bg);
+  --tone-text: var(--status-new-text);
+  --tone-border: var(--status-new-border);
+  --tone-icon-bg: var(--status-new-icon-bg);
+  --tone-icon-color: var(--status-new-text);
+}
+
+.stat-card--process,
+.status-badge--process {
+  --tone-bg: var(--status-process-bg);
+  --tone-text: var(--status-process-text);
+  --tone-border: var(--status-process-border);
+  --tone-icon-bg: var(--status-process-icon-bg);
+  --tone-icon-color: var(--status-process-text);
+}
+
+.stat-card--accepted,
+.status-badge--accepted {
+  --tone-bg: var(--status-accepted-bg);
+  --tone-text: var(--status-accepted-text);
+  --tone-border: var(--status-accepted-border);
+  --tone-icon-bg: var(--status-accepted-icon-bg);
+  --tone-icon-color: var(--status-accepted-text);
+}
+
+.stat-card--rejected,
+.status-badge--rejected {
+  --tone-bg: var(--status-rejected-bg);
+  --tone-text: var(--status-rejected-text);
+  --tone-border: var(--status-rejected-border);
+  --tone-icon-bg: var(--status-rejected-icon-bg);
+  --tone-icon-color: var(--status-rejected-text);
+}
+
 .stat-card__top {
   display: flex;
   align-items: center;
@@ -1374,84 +1418,71 @@ body.theme-dark .login-hero__card {
 }
 
 .stat-card--total {
-  background: var(--status-total-bg);
-  border-color: var(--status-total-border);
+  background: var(--tone-bg);
+  border-color: var(--tone-border);
 }
 
 .stat-card--total .stat-card__icon,
 .stat-card--total .stat-card__value,
 .stat-card--total .stat-card__label,
 .stat-card--total .stat-card__share {
-  color: var(--status-total-text);
+  color: var(--tone-text);
 }
 
 .stat-card--total .stat-card__icon {
-  background: var(--status-total-icon-bg);
-  color: var(--status-total-icon-color);
-}
-
-.stat-card--new {
-  background: var(--status-new-bg);
-  border-color: var(--status-new-border);
-}
-
-.stat-card--new .stat-card__icon,
-.stat-card--new .stat-card__value,
-.stat-card--new .stat-card__label,
-.stat-card--new .stat-card__share {
-  color: var(--status-new-text);
-}
-
-.stat-card--new .stat-card__icon {
-  background: var(--status-new-icon-bg);
+  background: var(--tone-icon-bg);
+  color: var(--tone-icon-color);
 }
 
 .stat-card--process {
-  background: var(--status-process-bg);
-  border-color: var(--status-process-border);
+  background: var(--tone-bg);
+  border-color: var(--tone-border);
 }
 
 .stat-card--process .stat-card__icon,
 .stat-card--process .stat-card__value,
 .stat-card--process .stat-card__label,
 .stat-card--process .stat-card__share {
-  color: var(--status-process-text);
+  color: var(--tone-text);
 }
 
 .stat-card--process .stat-card__icon {
-  background: var(--status-process-icon-bg);
+  background: var(--tone-icon-bg);
+  color: var(--tone-icon-color);
 }
 
 .stat-card--accepted {
-  background: var(--status-accepted-bg);
-  border-color: var(--status-accepted-border);
+  background: var(--tone-bg);
+  border-color: var(--tone-border);
 }
 
 .stat-card--accepted .stat-card__icon,
 .stat-card--accepted .stat-card__value,
 .stat-card--accepted .stat-card__label,
 .stat-card--accepted .stat-card__share {
-  color: var(--status-accepted-text);
+  color: var(--tone-text);
 }
 
 .stat-card--accepted .stat-card__icon {
-  background: var(--status-accepted-icon-bg);
+  background: var(--tone-icon-bg);
+  color: var(--tone-icon-color);
 }
 
 .stat-card--rejected {
-  background: var(--status-rejected-bg);
-  border-color: var(--status-rejected-border);
+  background: var(--tone-bg);
+  border-color: var(--tone-border);
 }
 
 .stat-card--rejected .stat-card__icon,
 .stat-card--rejected .stat-card__value,
 .stat-card--rejected .stat-card__label,
 .stat-card--rejected .stat-card__share {
-  color: var(--status-rejected-text);
+  color: var(--tone-text);
 }
 
 .stat-card--rejected .stat-card__icon {
-  background: var(--status-rejected-icon-bg);
+  background: var(--tone-icon-bg);
+  color: var(--tone-icon-color);
 }
 
 .table-actions,
@@ -2333,33 +2364,9 @@ body.theme-dark .report-table__cell--selected {
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--badge-text, var(--ink));
-  background: var(--badge-bg, transparent);
-  border-color: var(--badge-border, transparent);
-}
-
-.status-badge--new {
-  --badge-text: var(--status-new-text);
-  --badge-bg: var(--status-new-bg);
-  --badge-border: var(--status-new-border);
-}
-
-.status-badge--process {
-  --badge-text: var(--status-process-text);
-  --badge-bg: var(--status-process-bg);
-  --badge-border: var(--status-process-border);
-}
-
-.status-badge--accepted {
-  --badge-text: var(--status-accepted-text);
-  --badge-bg: var(--status-accepted-bg);
-  --badge-border: var(--status-accepted-border);
-}
-
-.status-badge--rejected {
-  --badge-text: var(--status-rejected-text);
-  --badge-bg: var(--status-rejected-bg);
-  --badge-border: var(--status-rejected-border);
+  color: var(--tone-text, var(--ink));
+  background: var(--tone-bg, transparent);
+  border-color: var(--tone-border, transparent);
 }
 
 .table-menu,
@@ -3154,7 +3161,7 @@ body.theme-dark .content-loader {
 
 .detail-person-layout {
   display: grid;
-  grid-template-columns: 118px minmax(0, 1fr);
+  grid-template-columns: 132px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
@@ -3245,6 +3252,9 @@ body.theme-dark .content-loader {
   padding: 6px 12px;
   font-size: 0.8rem;
   font-weight: 600;
+  color: var(--tone-text, var(--ink)) !important;
+  background: var(--tone-bg, transparent) !important;
+  border-color: var(--tone-border, transparent) !important;
 }
 
 .detail-section {
@@ -3276,13 +3286,17 @@ body.theme-dark .content-loader {
 }
 
 .detail-person-card__avatar {
-  width: 118px;
+  width: 132px;
   aspect-ratio: 297 / 382;
   height: auto;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--brand-soft);
   object-fit: cover;
+  object-position: center 18%;
+  display: block;
+  overflow: hidden;
+  image-rendering: auto;
 }
 
 .detail-history-table {
@@ -3377,6 +3391,13 @@ body.theme-dark .content-loader {
 .detail-record__field strong {
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.detail-record__field .status-badge,
+.detail-block__card .status-badge {
+  color: var(--tone-text, var(--ink)) !important;
+  background: var(--tone-bg, transparent) !important;
+  border-color: var(--tone-border, transparent) !important;
 }
 
 .detail-section--applicant {
