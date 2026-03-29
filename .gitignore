@@ -1,0 +1,6 @@
+node_modules/
+dist/
+legacy/
+src/
+vuetify/
+mrv/
