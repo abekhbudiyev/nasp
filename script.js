@@ -128,8 +128,36 @@ const detailAcceptButton = document.getElementById("detailAcceptButton");
 const detailRejectButton = document.getElementById("detailRejectButton");
 const systemTheme = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 const themeStorageKey = "muruvvat-theme";
-const calendarMonthNames = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
-const calendarWeekdays = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+const calendarLocaleLabels = {
+  uz: {
+    months: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
+    weekdays: ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"],
+  },
+  "uz-cyrl": {
+    months: ["Январ", "Феврал", "Март", "Апрел", "Май", "Июн", "Июл", "Август", "Сентябр", "Октябр", "Ноябр", "Декабр"],
+    weekdays: ["Ду", "Се", "Чо", "Па", "Жу", "Ша", "Як"],
+  },
+  kaa: {
+    months: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
+    weekdays: ["Du", "Se", "Shar", "Pay", "Ju", "Sha", "Yak"],
+  },
+  "kaa-cyrl": {
+    months: ["Январ", "Феврал", "Март", "Апрел", "Май", "Июн", "Июл", "Август", "Сентябр", "Октябр", "Ноябр", "Декабр"],
+    weekdays: ["Дү", "Се", "Ша", "Па", "Жу", "Ше", "Як"],
+  },
+  ru: {
+    months: ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
+    weekdays: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+  },
+  en: {
+    months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    weekdays: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+  },
+  i18n: {
+    months: ["date.month.1", "date.month.2", "date.month.3", "date.month.4", "date.month.5", "date.month.6", "date.month.7", "date.month.8", "date.month.9", "date.month.10", "date.month.11", "date.month.12"],
+    weekdays: ["date.week.mo", "date.week.tu", "date.week.we", "date.week.th", "date.week.fr", "date.week.sa", "date.week.su"],
+  },
+};
 const tableState = { currentPage: 1, totalPages: 1, filteredRows: [] };
 const calendarState = { activeField: null, viewDate: null };
 const confirmState = { action: "", applicationId: "" };
@@ -184,32 +212,32 @@ const sidebarIconMap = {
 const modulesConfig = {
   muruvvat: {
     label: "Muruvvat moduli",
-    defaultHash: "/app/mrv",
+    defaultHash: "/mrv/home",
     routes: {
-      "/app/mrv": "Dashboard",
-      "/app/mrv/internat/queue": "Internat uylari - Navbat",
-      "/app/mrv/internat/registered": "Internat uylari - Ro'yxatga olinganlar",
-      "/app/mrv/internat/removed": "Internat uylari - Ro'yxatdan chiqqanlar",
-      "/app/mrv/applications/applicationList": "Arizalar - Arizalar ro'yxati",
-      "/app/mrv/applications/forms": "Arizalar - So'rovnomalar",
-      "/app/mrv/applications/acts": "Arizalar - Dalolatnomalar",
-      "/app/mrv/applications/decisions": "Arizalar - Qarorlar",
-      "/app/mrv/reports/applications": "Hisobotlar - Arizalar bo'yicha hisobot",
-      "/app/mrv/reports/institutions": "Hisobotlar - Internat uylari bo'yicha hisobot",
-      "/app/mrv/reports/disabilityinfo": "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot",
-      "/app/mrv/support": "Support - Support markazi",
-      "/app/mrv/guides": "Support - Qo'llanmalar",
+      "/mrv/home": "Home",
+      "/mrv": "Home",
+      "/mrv/dashboard": "Dashboard",
+      "/mrv/internat/queue": "Internat uylari - Navbat",
+      "/mrv/internat/registered": "Internat uylari - Ro'yxatga olinganlar",
+      "/mrv/internat/removed": "Internat uylari - Ro'yxatdan chiqqanlar",
+      "/mrv/applications/applicationList": "Arizalar - Arizalar ro'yxati",
+      "/mrv/applications/forms": "Arizalar - So'rovnomalar",
+      "/mrv/applications/acts": "Arizalar - Dalolatnomalar",
+      "/mrv/applications/decisions": "Arizalar - Qarorlar",
+      "/mrv/reports/applications": "Hisobotlar - Arizalar bo'yicha hisobot",
+      "/mrv/reports/institutions": "Hisobotlar - Internat uylari bo'yicha hisobot",
+      "/mrv/reports/disabilityinfo": "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot",
     },
     nav: [
-      { type: "link", label: "Dashboard", title: "Dashboard", hash: "/app/mrv", icon: "dashboard" },
+      { type: "link", label: "Dashboard", title: "Dashboard", hash: "#/mrv/dashboard", icon: "dashboard" },
       {
         type: "group",
         label: "Internat uylari",
         icon: "institutions",
         children: [
-          { label: "Navbat", title: "Internat uylari - Navbat", hash: "/app/mrv/internat/queue" },
-          { label: "Ro'yxatga olinganlar", title: "Internat uylari - Ro'yxatga olinganlar", hash: "/app/mrv/internat/registered" },
-          { label: "Ro'yxatdan chiqqanlar", title: "Internat uylari - Ro'yxatdan chiqqanlar", hash: "/app/mrv/internat/removed" },
+          { label: "Navbat", title: "Internat uylari - Navbat", hash: "#/mrv/internat/queue" },
+          { label: "Ro'yxatga olinganlar", title: "Internat uylari - Ro'yxatga olinganlar", hash: "#/mrv/internat/registered" },
+          { label: "Ro'yxatdan chiqqanlar", title: "Internat uylari - Ro'yxatdan chiqqanlar", hash: "#/mrv/internat/removed" },
         ],
       },
       {
@@ -218,10 +246,10 @@ const modulesConfig = {
         icon: "applications",
         defaultOpen: true,
         children: [
-          { label: "Arizalar ro'yxati", title: "Arizalar - Arizalar ro'yxati", hash: "/app/mrv/applications/applicationList" },
-          { label: "So'rovnomalar", title: "Arizalar - So'rovnomalar", hash: "/app/mrv/applications/forms" },
-          { label: "Dalolatnomalar", title: "Arizalar - Dalolatnomalar", hash: "/app/mrv/applications/acts" },
-          { label: "Qarorlar", title: "Arizalar - Qarorlar", hash: "/app/mrv/applications/decisions" },
+          { label: "Arizalar ro'yxati", title: "Arizalar - Arizalar ro'yxati", hash: "#/mrv/applications/applicationList" },
+          { label: "So'rovnomalar", title: "Arizalar - So'rovnomalar", hash: "#/mrv/applications/forms" },
+          { label: "Dalolatnomalar", title: "Arizalar - Dalolatnomalar", hash: "#/mrv/applications/acts" },
+          { label: "Qarorlar", title: "Arizalar - Qarorlar", hash: "#/mrv/applications/decisions" },
         ],
       },
       {
@@ -229,69 +257,41 @@ const modulesConfig = {
         label: "Hisobotlar",
         icon: "reports",
         children: [
-          { label: "Arizalar bo'yicha hisobot", title: "Hisobotlar - Arizalar bo'yicha hisobot", hash: "/app/mrv/reports/applications" },
-          { label: "Internat uylari bo'yicha hisobot", title: "Hisobotlar - Internat uylari bo'yicha hisobot", hash: "/app/mrv/reports/institutions" },
-          { label: "Nogironligi bo'lgan shaxslar soni bo'yicha hisobot", title: "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot", hash: "/app/mrv/reports/disabilityinfo" },
+          { label: "Arizalar bo'yicha hisobot", title: "Hisobotlar - Arizalar bo'yicha hisobot", hash: "#/mrv/reports/applications" },
+          { label: "Internat uylari bo'yicha hisobot", title: "Hisobotlar - Internat uylari bo'yicha hisobot", hash: "#/mrv/reports/institutions" },
+          { label: "Nogironligi bo'lgan shaxslar soni bo'yicha hisobot", title: "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot", hash: "#/mrv/reports/disabilityinfo" },
         ],
-      },
-      {
-        type: "link",
-        label: "Support markazi",
-        title: "Support - Support markazi",
-        hash: "/app/mrv/support",
-        icon: "info",
-      },
-      {
-        type: "link",
-        label: "Qo'llanmalar",
-        title: "Support - Qo'llanmalar",
-        hash: "/app/mrv/guides",
-        icon: "info",
       },
     ],
   },
   ptpk: {
     label: "PTPK moduli",
-    defaultHash: "/app/ptpk",
+    defaultHash: "/ptpk/home",
     routes: {
-      "/app/ptpk": "Dashboard",
-      "/app/ptpk/applications/applicationList": "Arizalar - Arizalar ro'yxati",
-      "/app/ptpk/applications/meetingPlans": "Arizalar - Yig'ilish rejalari",
-      "/app/ptpk/applications/minutes": "Arizalar - Bayonnomalar",
-      "/app/ptpk/applications/conclusions": "Arizalar - Xulosalar",
-      "/app/ptpk/reports": "Hisobotlar",
-      "/app/ptpk/support": "Support - Support markazi",
-      "/app/ptpk/guides": "Support - Qo'llanmalar",
+      "/ptpk/home": "Home",
+      "/ptpk": "Home",
+      "/ptpk/dashboard": "Dashboard",
+      "/ptpk/applications/applicationList": "Arizalar - Arizalar ro'yxati",
+      "/ptpk/applications/meetingPlans": "Arizalar - Yig'ilish rejalari",
+      "/ptpk/applications/minutes": "Arizalar - Bayonnomalar",
+      "/ptpk/applications/conclusions": "Arizalar - Xulosalar",
+      "/ptpk/reports": "Hisobotlar",
     },
     nav: [
-      { type: "link", label: "Dashboard", title: "Dashboard", hash: "/app/ptpk", icon: "dashboard" },
+      { type: "link", label: "Dashboard", title: "Dashboard", hash: "#/ptpk/dashboard", icon: "dashboard" },
       {
         type: "group",
         label: "Arizalar",
         icon: "applications",
         defaultOpen: true,
         children: [
-          { label: "Arizalar ro'yxati", title: "Arizalar - Arizalar ro'yxati", hash: "/app/ptpk/applications/applicationList" },
-          { label: "Yig'ilish rejalari", title: "Arizalar - Yig'ilish rejalari", hash: "/app/ptpk/applications/meetingPlans" },
-          { label: "Bayonnomalar", title: "Arizalar - Bayonnomalar", hash: "/app/ptpk/applications/minutes" },
-          { label: "Xulosalar", title: "Arizalar - Xulosalar", hash: "/app/ptpk/applications/conclusions" },
+          { label: "Arizalar ro'yxati", title: "Arizalar - Arizalar ro'yxati", hash: "#/ptpk/applications/applicationList" },
+          { label: "Yig'ilish rejalari", title: "Arizalar - Yig'ilish rejalari", hash: "#/ptpk/applications/meetingPlans" },
+          { label: "Bayonnomalar", title: "Arizalar - Bayonnomalar", hash: "#/ptpk/applications/minutes" },
+          { label: "Xulosalar", title: "Arizalar - Xulosalar", hash: "#/ptpk/applications/conclusions" },
         ],
       },
-      { type: "link", label: "Hisobotlar", title: "Hisobotlar", hash: "/app/ptpk/reports", icon: "reports" },
-      {
-        type: "link",
-        label: "Support markazi",
-        title: "Support - Support markazi",
-        hash: "/app/ptpk/support",
-        icon: "info",
-      },
-      {
-        type: "link",
-        label: "Qo'llanmalar",
-        title: "Support - Qo'llanmalar",
-        hash: "/app/ptpk/guides",
-        icon: "info",
-      },
+      { type: "link", label: "Hisobotlar", title: "Hisobotlar", hash: "#/ptpk/reports", icon: "reports" },
     ],
   },
 };
@@ -308,6 +308,7 @@ const languageMeta = {
 };
 
 const routeTitleKeys = {
+  Home: "page.home",
   Dashboard: "nav.dashboard",
   "Internat uylari - Navbat": "page.internatQueue",
   "Internat uylari - Ro'yxatga olinganlar": "page.internatRegistered",
@@ -322,8 +323,6 @@ const routeTitleKeys = {
   "Arizalar - Yig'ilish rejalari": "page.meetingPlans",
   "Arizalar - Bayonnomalar": "page.minutes",
   "Arizalar - Xulosalar": "page.conclusions",
-  "Support - Support markazi": "page.supportCenter",
-  "Support - Qo'llanmalar": "page.guides",
   Hisobotlar: "nav.reports",
 };
 
@@ -341,8 +340,7 @@ const literalKeyMap = {
   Dalolatnomalar: "nav.acts",
   Qarorlar: "nav.decisions",
   Hisobotlar: "nav.reports",
-  "Support markazi": "nav.supportCenter",
-  "Qo'llanmalar": "nav.guides",
+  Home: "page.home",
   "Arizalar bo'yicha hisobot": "nav.reportApplications",
   "Internat uylari bo'yicha hisobot": "nav.reportInstitutions",
   "Nogironligi bo'lgan shaxslar soni bo'yicha hisobot": "nav.reportDisability",
@@ -407,6 +405,13 @@ const literalKeyMap = {
   "Fuqaroni muomalaga layoqatsiz deb topish to'g'risida sudning hal qiluv qarori": "value.document.courtDecision",
   "Muomalaga layoqatsiz deb topilgan fuqaroga vasiy tayinlash to'g'risida tuman (shahar) hokimi qarori": "value.document.guardianDecision",
   "Psixologik-tibbiy-pedagogik komissiya xulosasi": "value.document.ptpkConclusion",
+  "Qabul qilish": "detail.accept",
+  "Rad etish": "detail.reject",
+  Kirish: "login.submit",
+  "Kirilmoqda...": "login.signingIn",
+  "Parolni tiklash": "login.resetPassword",
+  "Yuborilmoqda...": "common.submitting",
+  "Yuborish": "support.send",
 };
 
 const valueTranslations = {
@@ -1527,6 +1532,173 @@ Object.entries(valueTranslationOverrides).forEach(([lang, values]) => {
   valueTranslations[lang] = { ...(valueTranslations[lang] ?? {}), ...values };
 });
 
+const runtimeTranslationOverrides = {
+  "uz-cyrl": {
+    "login.signingIn": "Кирилмоқда...",
+    "login.welcomeTitle": "Хуш келибсиз",
+    "login.welcomeDescription": "{module}га муваффақиятли кирилди.",
+    "login.resetPasswordUnavailableTitle": "Паролни тиклаш",
+    "login.resetPasswordUnavailableDescription": "Демо режимда паролни тиклаш уланмаган. Администратор ёки OneID орқали киришдан фойдаланинг.",
+    "support.guideFallback": "Қўлланма",
+    "support.guideOpenedTitle": "{title} очилди",
+    "support.guideOpenedDescription": "{title} бўйича йўриқнома демо режимда янги ойнада очилишга тайёр ҳолатда кўрсатилди.",
+    "support.descriptionMissingTitle": "Тавсиф киритилмади",
+    "support.descriptionMissingDescription": "Мурожаат юбориш учун муаммо тавсифини ёзинг.",
+    "support.send": "Юбориш",
+    "support.sentTitle": "Мурожаат юборилди",
+    "support.sentDescription": "{ticket} рақамли support ticket яратилди. {channel} орқали қайта боғланилади.",
+    "applications.exportDoneTitle": "Экспорт якунланди",
+    "applications.exportDoneDescription": "Рўйхат файл кўринишида тайёрланди.",
+    "report.downloadFailedTitle": "Хатолик",
+    "report.downloadFailedDescription": "Ҳисоботни юклаб бўлмади.",
+    "detail.pdfDownloadedTitle": "PDF юклаб олинди",
+    "detail.pdfDownloadedDescription": "{title} файли тайёрланди.",
+    "common.continue": "Давом этиш",
+    "confirm.description": "{id} аризаси учун \"{action}\" амалини бажаришни тасдиқлайсизми?",
+    "action.completedTitle": "{action} муваффақиятли якунланди",
+    "action.completedDescription": "{id} аризаси бўйича амал муваффақиятли бажарилди.",
+    "action.failedTitle": "{action} амалга ошмади",
+    "action.failedDescription": "{id} аризасини {actionLower}да ERR-409 хатолиги кузатилди. Батафсил маълумот учун қўлланма ёки боғланиш бўлимига мурожаат қилинг.",
+    "calendar.today": "Бугун",
+    "calendar.prevMonth": "Олдинги ой",
+    "calendar.nextMonth": "Кейинги ой",
+    "calendar.prevYear": "Олдинги йил",
+    "calendar.nextYear": "Кейинги йил",
+  },
+  kaa: {
+    "login.signingIn": "Kirip atır...",
+    "login.welcomeTitle": "Xosh kelipsiz",
+    "login.welcomeDescription": "{module}ga tabıslı kirildi.",
+    "login.resetPasswordUnavailableTitle": "Paroldı qayta tiklew",
+    "login.resetPasswordUnavailableDescription": "Demo rejimde paroldı qayta tiklew joq. Administrator yamasa OneID arqalı kiriñ.",
+    "support.guideFallback": "Qollanba",
+    "support.guideOpenedTitle": "{title} ashıldı",
+    "support.guideOpenedDescription": "{title} boyınsha qollanba demo rejimde jaña aynada ashılıwğa tayar túrde kórsetildi.",
+    "support.descriptionMissingTitle": "Túsindirme kiritilmedi",
+    "support.descriptionMissingDescription": "Múrájat jiberiw ushın problema túsindirmesin jaziñ.",
+    "support.send": "Jiberiw",
+    "support.sentTitle": "Múrájat jiberildi",
+    "support.sentDescription": "{ticket} nomerli support ticket jaratıldı. {channel} arqalı qayta baylanıs jasaladı.",
+    "applications.exportDoneTitle": "Eksport juwmaqlanadı",
+    "applications.exportDoneDescription": "Dizim fayl kórinisinde tayarlandı.",
+    "report.downloadFailedTitle": "Qátelik",
+    "report.downloadFailedDescription": "Esabattı júklep bolmadı.",
+    "detail.pdfDownloadedTitle": "PDF júklep alındı",
+    "detail.pdfDownloadedDescription": "{title} faylı tayarlandı.",
+    "common.continue": "Dawam etiw",
+    "confirm.description": "{id} arızası ushın \"{action}\" ámelin tasdıqlaysız ba?",
+    "action.completedTitle": "{action} tabıslı juwmaqlanadı",
+    "action.completedDescription": "{id} arızası boyınsha ámel tabıslı bajarildi.",
+    "action.failedTitle": "{action} ámelge aspadı",
+    "action.failedDescription": "{id} arızasın {actionLower}da ERR-409 qáteligi júz berdi. Tolıq maǵlıwmat ushın qollanba yamasa baylanıs bólimine múrájat etiñ.",
+    "calendar.today": "Búgin",
+    "calendar.prevMonth": "Aldıńǵı ay",
+    "calendar.nextMonth": "Kelesi ay",
+    "calendar.prevYear": "Aldıńǵı jıl",
+    "calendar.nextYear": "Kelesi jıl",
+  },
+  "kaa-cyrl": {
+    "login.signingIn": "Кирип атыр...",
+    "login.welcomeTitle": "Хош келипсиз",
+    "login.welcomeDescription": "{module}ға табыслы кирилди.",
+    "login.resetPasswordUnavailableTitle": "Паролды қайта тиклеў",
+    "login.resetPasswordUnavailableDescription": "Демо режимде паролды қайта тиклеў жоқ. Администратор ямаса OneID арқалы кириң.",
+    "support.guideFallback": "Қолланба",
+    "support.guideOpenedTitle": "{title} ашылды",
+    "support.guideOpenedDescription": "{title} бойынша қолланба демо режимде жаңа айнада ашылыўға таяр түрде көрсетилди.",
+    "support.descriptionMissingTitle": "Түсиндирме киритилмеди",
+    "support.descriptionMissingDescription": "Мүражат жибериў ушын проблема түсиндирмесин жазың.",
+    "support.send": "Жибериў",
+    "support.sentTitle": "Мүражат жиберилди",
+    "support.sentDescription": "{ticket} номерли support ticket жаратылды. {channel} арқалы қайта байланыс жасалады.",
+    "applications.exportDoneTitle": "Экспорт жуўмақланады",
+    "applications.exportDoneDescription": "Дизим файл көрinisинде таярланды.",
+    "report.downloadFailedTitle": "Қәтелик",
+    "report.downloadFailedDescription": "Есабатты жүклеп болмады.",
+    "detail.pdfDownloadedTitle": "PDF жүклеп алынды",
+    "detail.pdfDownloadedDescription": "{title} файлы таярланды.",
+    "common.continue": "Дәўам етиў",
+    "confirm.description": "{id} арызасы ушын \"{action}\" әмелин тасдықлайсыз ба?",
+    "action.completedTitle": "{action} табыслы жуўмақланады",
+    "action.completedDescription": "{id} арызасы бойынша әмел табыслы бажарилди.",
+    "action.failedTitle": "{action} әмелге аспады",
+    "action.failedDescription": "{id} арызасын {actionLower}да ERR-409 қәтелиги жүз берди. Толық мағлыўмат ушын қолланба ямаса байланыс бөлимине мүражат етиң.",
+    "calendar.today": "Бүгүн",
+    "calendar.prevMonth": "Алдыңғы ай",
+    "calendar.nextMonth": "Келеси ай",
+    "calendar.prevYear": "Алдыңғы жыл",
+    "calendar.nextYear": "Келеси жыл",
+  },
+  en: {
+    "login.signingIn": "Signing in...",
+    "login.welcomeTitle": "Welcome",
+    "login.welcomeDescription": "Successfully signed in to {module}.",
+    "login.resetPasswordUnavailableTitle": "Reset password",
+    "login.resetPasswordUnavailableDescription": "Password reset is not available in demo mode. Use administrator login or OneID.",
+    "support.guideFallback": "Guide",
+    "support.guideOpenedTitle": "{title} opened",
+    "support.guideOpenedDescription": "The guide for {title} is ready to open in a new window in demo mode.",
+  "support.descriptionMissingTitle": "Description missing",
+  "support.descriptionMissingDescription": "Enter the issue description to submit a request.",
+  "support.send": "Send",
+  "support.sentTitle": "Request submitted",
+  "support.sentDescription": "Support ticket {ticket} was created. A reply will be sent via {channel}.",
+    "applications.exportDoneTitle": "Export completed",
+    "applications.exportDoneDescription": "The list was prepared as a file.",
+    "report.downloadFailedTitle": "Error",
+    "report.downloadFailedDescription": "Failed to download the report.",
+  "detail.pdfDownloadedTitle": "PDF downloaded",
+  "detail.pdfDownloadedDescription": "{title} file is ready.",
+  "common.continue": "Continue",
+  "calendar.today": "Today",
+  "calendar.prevMonth": "Previous month",
+  "calendar.nextMonth": "Next month",
+  "calendar.prevYear": "Previous year",
+  "calendar.nextYear": "Next year",
+    "confirm.description": "Do you confirm the {action} action for application {id}?",
+    "action.completedTitle": "{action} completed successfully",
+    "action.completedDescription": "The action for application {id} was completed successfully.",
+    "action.failedTitle": "{action} failed",
+    "action.failedDescription": "ERR-409 occurred while trying to {actionLower} application {id}. Check the guide or contact support.",
+  },
+  ru: {
+    "login.signingIn": "Вход...",
+    "login.welcomeTitle": "Добро пожаловать",
+    "login.welcomeDescription": "Успешный вход в {module}.",
+    "login.resetPasswordUnavailableTitle": "Восстановление пароля",
+    "login.resetPasswordUnavailableDescription": "В демо-режиме восстановление пароля недоступно. Используйте вход администратора или OneID.",
+    "support.guideFallback": "Инструкция",
+    "support.guideOpenedTitle": "Открыто: {title}",
+    "support.guideOpenedDescription": "Инструкция по разделу {title} готова к открытию в новом окне в демо-режиме.",
+  "support.descriptionMissingTitle": "Описание не введено",
+  "support.descriptionMissingDescription": "Введите описание проблемы для отправки обращения.",
+  "support.send": "Отправить",
+  "support.sentTitle": "Обращение отправлено",
+  "support.sentDescription": "Создан тикет поддержки {ticket}. Обратная связь будет направлена через {channel}.",
+    "applications.exportDoneTitle": "Экспорт завершён",
+    "applications.exportDoneDescription": "Список подготовлен в виде файла.",
+    "report.downloadFailedTitle": "Ошибка",
+    "report.downloadFailedDescription": "Не удалось скачать отчёт.",
+  "detail.pdfDownloadedTitle": "PDF скачан",
+  "detail.pdfDownloadedDescription": "Файл {title} готов.",
+  "common.continue": "Продолжить",
+  "calendar.today": "Сегодня",
+  "calendar.prevMonth": "Предыдущий месяц",
+  "calendar.nextMonth": "Следующий месяц",
+  "calendar.prevYear": "Предыдущий год",
+  "calendar.nextYear": "Следующий год",
+    "confirm.description": "Подтвердите действие «{action}» для заявления {id}.",
+    "action.completedTitle": "Действие «{action}» успешно выполнено",
+    "action.completedDescription": "Операция по заявлению {id} выполнена успешно.",
+    "action.failedTitle": "Не удалось выполнить действие «{action}»",
+    "action.failedDescription": "При попытке {actionLower} заявление {id} возникла ошибка ERR-409. Проверьте инструкцию или обратитесь в поддержку.",
+  },
+};
+
+Object.entries(runtimeTranslationOverrides).forEach(([lang, values]) => {
+  translations[lang] = { ...(translations[lang] ?? {}), ...values };
+});
+
 languageMeta["uz-cyrl"] = { ...languageMeta["uz-cyrl"], short: "ЎЗ", label: "Ўзбек" };
 languageMeta["kaa-cyrl"] = { ...languageMeta["kaa-cyrl"], short: "ҚҚ", label: "Қорақалпоқ" };
 languageMeta.ru = { ...languageMeta.ru, short: "RU", label: "Русский" };
@@ -1631,6 +1803,36 @@ const uzTranslationDefaults = {
   "login.oneidTitle": "OneID orqali kirish",
   "login.oneidText": "Yagona identifikatsiya tizimi bilan xavfsiz autentifikatsiya",
   "login.demo": "Demo kirish:",
+  "login.signingIn": "Kirilmoqda...",
+  "login.welcomeTitle": "Xush kelibsiz",
+  "login.welcomeDescription": "{module}ga muvaffaqiyatli kirildi.",
+  "login.resetPasswordUnavailableTitle": "Parolni tiklash",
+  "login.resetPasswordUnavailableDescription": "Demo rejimda parolni tiklash ulanmagan. Administrator yoki OneID orqali kirishdan foydalaning.",
+  "support.guideFallback": "Qo'llanma",
+  "support.guideOpenedTitle": "{title} ochildi",
+  "support.guideOpenedDescription": "{title} bo'yicha yo'riqnoma demo rejimda yangi oynada ochilishga tayyor holatda ko'rsatildi.",
+  "support.descriptionMissingTitle": "Tavsif kiritilmadi",
+  "support.descriptionMissingDescription": "Murojaat yuborish uchun muammo tavsifini yozing.",
+  "support.send": "Yuborish",
+  "support.sentTitle": "Murojaat yuborildi",
+  "support.sentDescription": "{ticket} raqamli support ticket yaratildi. {channel} orqali qayta bog'laniladi.",
+  "applications.exportDoneTitle": "Eksport yakunlandi",
+  "applications.exportDoneDescription": "Ro'yxat fayl ko'rinishida tayyorlandi.",
+  "report.downloadFailedTitle": "Xatolik",
+  "report.downloadFailedDescription": "Hisobotni yuklab bo'lmadi.",
+  "detail.pdfDownloadedTitle": "PDF yuklab olindi",
+  "detail.pdfDownloadedDescription": "{title} fayli tayyorlandi.",
+  "common.continue": "Davom etish",
+  "confirm.description": "{id} arizasi uchun \"{action}\" amalini bajarishni tasdiqlaysizmi?",
+  "action.completedTitle": "{action} muvaffaqiyatli yakunlandi",
+  "action.completedDescription": "{id} arizasi bo'yicha amal muvaffaqiyatli bajarildi.",
+  "action.failedTitle": "{action} amalga oshmadi",
+  "action.failedDescription": "{id} arizasini {actionLower}da ERR-409 xatoligi kuzatildi. Batafsil ma'lumot uchun qo'llanma yoki bog'lanish bo'limiga murojaat qiling.",
+  "calendar.today": "Bugun",
+  "calendar.prevMonth": "Oldingi oy",
+  "calendar.nextMonth": "Keyingi oy",
+  "calendar.prevYear": "Oldingi yil",
+  "calendar.nextYear": "Keyingi yil",
 };
 
 const uzValueTranslationDefaults = buildReverseMap(literalKeyMap, (key) => String(key).startsWith("value."));
@@ -1686,6 +1888,9 @@ function formatRecordCount(count) {
   if (currentLanguage === "ru") {
     return `${safeCount} ${safeCount === 1 ? "запись" : safeCount < 5 ? "записи" : "записей"}`;
   }
+  if (currentLanguage === "i18n") {
+    return `${safeCount} common.records`;
+  }
   return `${safeCount} ta yozuv`;
 }
 
@@ -1695,6 +1900,9 @@ function formatPaginationInfo(from, to, total) {
   }
   if (currentLanguage === "ru") {
     return `${from}-${to} / ${total} записей`;
+  }
+  if (currentLanguage === "i18n") {
+    return `${from}-${to} / ${total} common.records`;
   }
   return `${from}-${to} / ${total} ta yozuv`;
 }
@@ -1868,8 +2076,6 @@ function applyStaticTranslations() {
   const appMenu = document.querySelector('[data-menu-toggle="applications"]')?.nextElementSibling?.querySelectorAll(".header-dropdown__item");
   if (appMenu?.[0]) appMenu[0].textContent = tr("module.muruvvat", "Muruvvat moduli");
   if (appMenu?.[1]) appMenu[1].textContent = tr("module.ptpk", "PTPK moduli");
-  if (appMenu?.[2]) appMenu[2].textContent = tr("header.monitoring", "Monitoring paneli");
-  if (appMenu?.[3]) appMenu[3].textContent = tr("header.reportsCenter", "Hisobotlar markazi");
   const accountMeta = document.querySelector(".header-account__meta span");
   if (accountMeta) accountMeta.textContent = tr("header.administrator", "Administrator");
   const accountMenu = document.querySelector('[data-menu-toggle="account"]')?.nextElementSibling?.querySelectorAll(".header-dropdown__item");
@@ -1953,6 +2159,12 @@ function applyStaticTranslations() {
   if (detailModalLoading?.querySelector("span:last-child")) detailModalLoading.querySelector("span:last-child").textContent = tr("detail.loading", "Ariza ma'lumotlari yuklanmoqda...");
   if (detailAcceptButton) detailAcceptButton.textContent = tr("detail.accept", "Qabul qilish");
   if (detailRejectButton) detailRejectButton.textContent = tr("detail.reject", "Rad etish");
+  document.querySelectorAll('[data-process-action="accept"] span').forEach((label) => {
+    label.textContent = tr("detail.accept", "Qabul qilish");
+  });
+  document.querySelectorAll('[data-process-action="reject"] span').forEach((label) => {
+    label.textContent = tr("detail.reject", "Rad etish");
+  });
   const reportSelectionLabels = document.querySelectorAll(".report-selection__stat span");
   if (reportSelectionLabels[0]) reportSelectionLabels[0].textContent = tr("selection.count", "Soni");
   if (reportSelectionLabels[1]) reportSelectionLabels[1].textContent = tr("selection.sum", "Yig'indi");
@@ -1986,28 +2198,28 @@ calendarPopover.hidden = true;
 calendarPopover.innerHTML = `
   <div class="calendar-popover__header">
     <div class="calendar-popover__nav-group">
-      <button class="calendar-popover__nav" type="button" data-calendar-nav-year="-1" aria-label="Oldingi yil">
+      <button class="calendar-popover__nav" type="button" data-calendar-nav-year="-1" aria-label="${tr("calendar.prevYear", "Oldingi yil")}">
         <svg viewBox="0 0 24 24" fill="none"><path d="m16.5 6-6 6 6 6M11.5 6l-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button class="calendar-popover__nav" type="button" data-calendar-nav="-1" aria-label="Oldingi oy">
+      <button class="calendar-popover__nav" type="button" data-calendar-nav="-1" aria-label="${tr("calendar.prevMonth", "Oldingi oy")}">
         <svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
     <div class="calendar-popover__title" id="calendarTitle"></div>
     <div class="calendar-popover__nav-group">
-      <button class="calendar-popover__nav" type="button" data-calendar-nav="1" aria-label="Keyingi oy">
+      <button class="calendar-popover__nav" type="button" data-calendar-nav="1" aria-label="${tr("calendar.nextMonth", "Keyingi oy")}">
         <svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button class="calendar-popover__nav" type="button" data-calendar-nav-year="1" aria-label="Keyingi yil">
+      <button class="calendar-popover__nav" type="button" data-calendar-nav-year="1" aria-label="${tr("calendar.nextYear", "Keyingi yil")}">
         <svg viewBox="0 0 24 24" fill="none"><path d="m7.5 6 6 6-6 6M12.5 6l6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
   </div>
-  <div class="calendar-popover__weekdays">${calendarWeekdays.map((day) => `<span class="calendar-popover__weekday">${day}</span>`).join("")}</div>
+  <div class="calendar-popover__weekdays">${(calendarLocaleLabels[currentLanguage]?.weekdays ?? calendarLocaleLabels.uz.weekdays).map((day) => `<span class="calendar-popover__weekday">${day}</span>`).join("")}</div>
   <div class="calendar-popover__grid" id="calendarGrid"></div>
   <div class="calendar-popover__footer">
-    <button type="button" id="calendarClear">Tozalash</button>
-    <button type="button" id="calendarToday">Bugun</button>
+    <button type="button" id="calendarClear">${tr("common.reset", "Tozalash")}</button>
+    <button type="button" id="calendarToday">${tr("calendar.today", "Bugun")}</button>
   </div>
 `;
 document.body.append(calendarPopover);
@@ -2118,16 +2330,45 @@ function escapeHtml(value) {
 }
 
 function normalizeRoutePath(pathValue) {
-  if (!pathValue || pathValue === "/") {
-    return "/app";
+  if (!pathValue || pathValue === "#" || pathValue === "/") {
+    return "/";
   }
 
-  return pathValue.replace(/\/+$/, "") || "/app";
+  let normalized = String(pathValue).trim().replace(/^#/, "");
+  if (!normalized.startsWith("/")) {
+    normalized = `/${normalized}`;
+  }
+
+  normalized = normalized.replace(/^\/app(?=\/|$)/, "") || "/";
+  normalized = normalized.replace(/\/+$/, "") || "/";
+
+  const legacyAliases = {
+    "/applications": "/mrv/applications/applicationList",
+    "/reports/disabilityinfo": "/mrv/reports/disabilityinfo",
+  };
+
+  if (normalized === "/mrv") {
+    return "/mrv/home";
+  }
+
+  if (normalized === "/ptpk") {
+    return "/ptpk/home";
+  }
+
+  return legacyAliases[normalized] ?? normalized;
+}
+
+function getCurrentRoutePath() {
+  if (window.location.hash) {
+    return normalizeRoutePath(window.location.hash);
+  }
+
+  return normalizeRoutePath(window.location.pathname);
 }
 
 function getModuleKeyFromHash(hashValue) {
   const normalizedPath = normalizeRoutePath(hashValue);
-  return normalizedPath.startsWith("/app/ptpk") ? "ptpk" : "muruvvat";
+  return normalizedPath.startsWith("/ptpk") ? "ptpk" : "muruvvat";
 }
 
 function getModuleConfig(moduleKey = currentModule) {
@@ -2640,7 +2881,8 @@ function renderCalendar() {
   const monthEnd = new Date(year, month + 1, 0);
   const leadingDays = (monthStart.getDay() + 6) % 7;
 
-  calendarTitle.textContent = `${calendarMonthNames[month]} ${year}`;
+  const localizedMonths = calendarLocaleLabels[currentLanguage]?.months ?? calendarLocaleLabels.uz.months;
+  calendarTitle.textContent = `${localizedMonths[month]} ${year}`;
   calendarGrid.innerHTML = "";
 
   for (let index = 0; index < leadingDays; index += 1) {
@@ -2691,15 +2933,24 @@ function setDateFieldValue(field, value) {
   applyTableFilters();
 }
 
+function getActionLabel(action) {
+  return tr(action === "accept" ? "detail.accept" : "detail.reject", action === "accept" ? "Qabul qilish" : "Rad etish");
+}
+
 function openConfirmModal(action, applicationId) {
   confirmState.action = action;
   confirmState.applicationId = applicationId;
-  confirmModal?.classList.toggle("confirm-modal--accept", action === "Qabul qilish");
+  const actionLabel = getActionLabel(action);
+  confirmModal?.classList.toggle("confirm-modal--accept", action === "accept");
   if (confirmModalDescription) {
-    confirmModalDescription.textContent = `${applicationId} arizasi uchun "${action}" amalini bajarishni tasdiqlaysizmi?`;
+    confirmModalDescription.textContent = tformat(
+      "confirm.description",
+      `${applicationId} arizasi uchun "${actionLabel}" amalini bajarishni tasdiqlaysizmi?`,
+      { id: applicationId, action: actionLabel },
+    );
   }
   if (confirmModalApprove) {
-    confirmModalApprove.textContent = action;
+    confirmModalApprove.textContent = actionLabel;
   }
   confirmModal?.removeAttribute("hidden");
   window.requestAnimationFrame(() => {
@@ -2712,7 +2963,7 @@ function closeConfirmModal() {
   confirmModal?.classList.remove("confirm-modal--accept");
   if (confirmModalApprove) {
     confirmModalApprove.disabled = false;
-    confirmModalApprove.innerHTML = confirmState.action || "Davom etish";
+    confirmModalApprove.innerHTML = confirmState.action ? getActionLabel(confirmState.action) : tr("common.continue", "Davom etish");
   }
   confirmModalCancel?.removeAttribute("disabled");
   confirmState.action = "";
@@ -3239,7 +3490,6 @@ function getApplicationById(applicationId) {
     address: fullAddress,
   };
   const actResult = normalizedRawStatus === "rad etilgan" ? "Salbiy" : "Ijobiy";
-  const decisionResult = normalizedRawStatus === "rad etilgan" ? "Rad etish" : "Qabul qilish";
   const actStatus = normalizedRawStatus === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
   const decisionStatus = normalizedRawStatus === "jarayonda" ? "Jarayonda" : "Tasdiqlangan";
   const applicationDate = applicationCell?.querySelector("span")?.textContent?.trim() ?? "-";
@@ -3586,19 +3836,19 @@ function enhanceProcessRowActions() {
     const approveButton = document.createElement("button");
     approveButton.type = "button";
     approveButton.className = "row-menu__item row-menu__item--accent";
-    approveButton.dataset.processAction = "Qabul qilish";
-    approveButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5l4 4 8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Qabul qilish</span>';
+    approveButton.dataset.processAction = "accept";
+    approveButton.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5l4 4 8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${tr("detail.accept", "Qabul qilish")}</span>`;
     approveButton.addEventListener("click", () => {
-      openConfirmModal("Qabul qilish", applicationId);
+      openConfirmModal("accept", applicationId);
     });
 
     const rejectButton = document.createElement("button");
     rejectButton.type = "button";
     rejectButton.className = "row-menu__item row-menu__item--danger";
-    rejectButton.dataset.processAction = "Rad etish";
-    rejectButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Rad etish</span>';
+    rejectButton.dataset.processAction = "reject";
+    rejectButton.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>${tr("detail.reject", "Rad etish")}</span>`;
     rejectButton.addEventListener("click", () => {
-      openConfirmModal("Rad etish", applicationId);
+      openConfirmModal("reject", applicationId);
     });
 
     const editButton = dropdown.querySelector(".row-menu__item:nth-child(2)");
@@ -3748,10 +3998,16 @@ function showApplicationsView() {
   sidebar?.removeAttribute("hidden");
   applicationsListView?.removeAttribute("hidden");
   modulesView?.setAttribute("hidden", "");
-  supportView?.setAttribute("hidden", "");
   disabilityReportView?.setAttribute("hidden", "");
   emptyContentView?.setAttribute("hidden", "");
   contentLoader?.setAttribute("hidden", "");
+}
+
+function tformat(key, fallback = "", replacements = {}) {
+  const template = tr(key, fallback);
+  return Object.entries(replacements).reduce((message, [token, value]) => {
+    return message.replaceAll(`{${token}}`, value ?? "");
+  }, template);
 }
 
 function showDisabilityReportView() {
@@ -3759,20 +4015,8 @@ function showDisabilityReportView() {
   sidebar?.removeAttribute("hidden");
   applicationsListView?.setAttribute("hidden", "");
   modulesView?.setAttribute("hidden", "");
-  supportView?.setAttribute("hidden", "");
   disabilityReportView?.removeAttribute("hidden");
   emptyContentView?.setAttribute("hidden", "");
-  contentLoader?.setAttribute("hidden", "");
-}
-
-function showSupportView() {
-  document.body.classList.remove("route-modules");
-  sidebar?.removeAttribute("hidden");
-  modulesView?.setAttribute("hidden", "");
-  applicationsListView?.setAttribute("hidden", "");
-  disabilityReportView?.setAttribute("hidden", "");
-  emptyContentView?.setAttribute("hidden", "");
-  supportView?.removeAttribute("hidden");
   contentLoader?.setAttribute("hidden", "");
 }
 
@@ -3781,24 +4025,16 @@ function showModulesView() {
   sidebar?.setAttribute("hidden", "");
   modulesView?.removeAttribute("hidden");
   applicationsListView?.setAttribute("hidden", "");
-  supportView?.setAttribute("hidden", "");
   disabilityReportView?.setAttribute("hidden", "");
   emptyContentView?.setAttribute("hidden", "");
   contentLoader?.setAttribute("hidden", "");
 }
 
 function showEmptyView(title) {
-  const normalizedTitle = title.trim().toLowerCase();
-  if (normalizedTitle.includes("support") || normalizedTitle.includes("qo'llanma")) {
-    showSupportView();
-    return;
-  }
-
   document.body.classList.remove("route-modules");
   sidebar?.removeAttribute("hidden");
   modulesView?.setAttribute("hidden", "");
   applicationsListView?.setAttribute("hidden", "");
-  supportView?.setAttribute("hidden", "");
   disabilityReportView?.setAttribute("hidden", "");
   contentLoader?.setAttribute("hidden", "");
   emptyContentView?.removeAttribute("hidden");
@@ -3806,23 +4042,25 @@ function showEmptyView(title) {
     emptyViewTitle.textContent = translateRouteTitle(title);
   }
   if (emptyViewDescription) {
-    const translatedTitle = translateRouteTitle(title);
-    emptyViewDescription.textContent = `"${translatedTitle}" ${tr("empty.notReady", "bo'limi uchun kontent hali tayyorlanmagan.")}`;
+    if (title === "Home") {
+      emptyViewDescription.textContent = "";
+      emptyViewDescription.setAttribute("hidden", "");
+    } else {
+      const translatedTitle = translateRouteTitle(title);
+      emptyViewDescription.textContent = `"${translatedTitle}" ${tr("empty.notReady", "bo'limi uchun kontent hali tayyorlanmagan.")}`;
+      emptyViewDescription.removeAttribute("hidden");
+    }
   }
 }
 
 async function navigateToView(title) {
   const normalizedTitle = title.trim();
-  const normalizedLower = normalizedTitle.toLowerCase();
   const isModulesHub = normalizedTitle === "Modullar";
+  const isHomeView = normalizedTitle === "Home";
   const isApplicationsList = normalizedTitle === "Arizalar - Arizalar ro'yxati";
   const isDisabilityReport = normalizedTitle === "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot";
-  const isSupportCenter =
-    normalizedTitle.startsWith("Support -") ||
-    normalizedLower.includes("support markazi") ||
-    normalizedLower.includes("qo'llanma");
 
-  if (!isModulesHub && !isApplicationsList && !isDisabilityReport && !isSupportCenter) {
+  if (!isModulesHub && !isHomeView && !isApplicationsList && !isDisabilityReport) {
     showEmptyView(normalizedTitle.split(" - ").pop() ?? normalizedTitle);
     return;
   }
@@ -3830,7 +4068,6 @@ async function navigateToView(title) {
   emptyContentView?.setAttribute("hidden", "");
   modulesView?.setAttribute("hidden", "");
   applicationsListView?.setAttribute("hidden", "");
-  supportView?.setAttribute("hidden", "");
   disabilityReportView?.setAttribute("hidden", "");
   contentLoader?.removeAttribute("hidden");
   await sleep(200);
@@ -3840,9 +4077,8 @@ async function navigateToView(title) {
     return;
   }
 
-  if (isSupportCenter) {
-    showSupportView();
-    supportCategory?.focus();
+  if (isHomeView) {
+    showEmptyView("Home");
     return;
   }
 
@@ -4228,10 +4464,10 @@ function updateReportFilterControls() {
 }
 
 function syncInitialRouteView() {
-  const currentPath = normalizeRoutePath(window.location.pathname);
+  const currentPath = getCurrentRoutePath();
   const routeTitle = getTitleFromHash(currentPath);
 
-  if (currentPath === "/app") {
+  if (currentPath === "/") {
     showModulesView();
     return;
   }
@@ -4304,22 +4540,27 @@ if (loginForm && loginUsername && loginPassword && loginSubmit) {
 
     loginError?.setAttribute("hidden", "");
     loginSubmit.disabled = true;
-    loginSubmit.innerHTML = '<span class="login-submit__spinner" aria-hidden="true"></span><span>Kirilmoqda...</span>';
+    loginSubmit.innerHTML = `<span class="login-submit__spinner" aria-hidden="true"></span><span>${tr("login.signingIn", "Kirilmoqda...")}</span>`;
 
       await sleep(200);
 
     if (username === "admin" && password === "muruvvat123") {
       loginSubmit.disabled = false;
-      loginSubmit.textContent = "Kirish";
+      loginSubmit.textContent = tr("login.submit", "Kirish");
       showAppView();
       syncInitialRouteView();
       applyRouteFromHash();
-      showToast("Xush kelibsiz", `${getModuleConfig(getModuleKeyFromHash(window.location.pathname)).label}ga muvaffaqiyatli kirildi.`);
+      showToast(
+        tr("login.welcomeTitle", "Xush kelibsiz"),
+        tformat("login.welcomeDescription", `${getModuleConfig(getModuleKeyFromHash(getCurrentRoutePath())).label}ga muvaffaqiyatli kirildi.`, {
+          module: getModuleConfig(getModuleKeyFromHash(getCurrentRoutePath())).label,
+        }),
+      );
       return;
     }
 
     loginSubmit.disabled = false;
-    loginSubmit.textContent = "Kirish";
+    loginSubmit.textContent = tr("login.submit", "Kirish");
     loginError?.removeAttribute("hidden");
   });
 }
@@ -4341,14 +4582,14 @@ loginPassword?.addEventListener("blur", () => {
 
 forgotPasswordButton?.addEventListener("click", () => {
   showToast(
-    "Parolni tiklash",
-    "Demo rejimda parolni tiklash ulanmagan. Administrator yoki OneID orqali kirishdan foydalaning.",
+    tr("login.resetPasswordUnavailableTitle", "Parolni tiklash"),
+    tr("login.resetPasswordUnavailableDescription", "Demo rejimda parolni tiklash ulanmagan. Administrator yoki OneID orqali kirishdan foydalaning."),
   );
 });
 
 supportGuides.forEach((guide) => {
   guide.addEventListener("click", () => {
-    const title = guide.getAttribute("data-guide-title") ?? "Qo'llanma";
+    const title = guide.getAttribute("data-guide-title") ?? tr("support.guideFallback", "Qo'llanma");
     const guideData = supportGuideMap[title];
 
     if (guideData) {
@@ -4364,8 +4605,8 @@ supportGuides.forEach((guide) => {
     }
 
     showToast(
-      `${title} ochildi`,
-      `${title} bo'yicha yo'riqnoma demo rejimda yangi oynada ochilishga tayyor holatda ko'rsatildi.`,
+      tformat("support.guideOpenedTitle", `${title} ochildi`, { title }),
+      tformat("support.guideOpenedDescription", `${title} bo'yicha yo'riqnoma demo rejimda yangi oynada ochilishga tayyor holatda ko'rsatildi.`, { title }),
     );
   });
 });
@@ -4379,13 +4620,17 @@ supportForm?.addEventListener("submit", async (event) => {
 
   const message = supportMessage.value.trim();
   if (!message) {
-    showToast("Tavsif kiritilmadi", "Murojaat yuborish uchun muammo tavsifini yozing.", "error");
+    showToast(
+      tr("support.descriptionMissingTitle", "Tavsif kiritilmadi"),
+      tr("support.descriptionMissingDescription", "Murojaat yuborish uchun muammo tavsifini yozing."),
+      "error",
+    );
     supportMessage.focus();
     return;
   }
 
   supportSubmit.disabled = true;
-  supportSubmit.innerHTML = '<span class="confirm-modal__button-spinner" aria-hidden="true"></span><span>Yuborilmoqda...</span>';
+  supportSubmit.innerHTML = `<span class="confirm-modal__button-spinner" aria-hidden="true"></span><span>${tr("common.submitting", "Yuborilmoqda...")}</span>`;
   await sleep(1000);
 
   const ticketId = `SUP-${supportTicketCounter}`;
@@ -4400,10 +4645,13 @@ supportForm?.addEventListener("submit", async (event) => {
 
   supportForm.reset();
   supportSubmit.disabled = false;
-  supportSubmit.textContent = "Yuborish";
+  supportSubmit.textContent = tr("support.send", "Yuborish");
   showToast(
-    "Murojaat yuborildi",
-    `${ticketId} raqamli support ticket yaratildi. ${supportContactMethod.value} orqali qayta bog'laniladi.`,
+    tr("support.sentTitle", "Murojaat yuborildi"),
+    tformat("support.sentDescription", `${ticketId} raqamli support ticket yaratildi. ${supportContactMethod.value} orqali qayta bog'laniladi.`, {
+      ticket: ticketId,
+      channel: translateDisplayValue(supportContactMethod.value),
+    }),
   );
 });
 
@@ -4411,7 +4659,7 @@ logoutButton?.addEventListener("click", () => {
   showLoginView();
   loginUsername && (loginUsername.value = "");
   loginPassword && (loginPassword.value = "");
-  loginSubmit && (loginSubmit.textContent = "Kirish");
+  loginSubmit && (loginSubmit.textContent = tr("login.submit", "Kirish"));
 });
 
 if (menuToggle && sidebar) {
@@ -4639,8 +4887,9 @@ sidebarNav?.addEventListener("click", async (event) => {
 
   if (title) {
     const nextHash = getHashForTitle(title);
-    if (nextHash && window.location.pathname !== nextHash) {
-      window.history.pushState({}, "", nextHash);
+    const nextLocation = nextHash ? `#${nextHash}` : "";
+    if (nextHash && window.location.hash !== nextLocation) {
+      window.location.hash = nextHash;
       await applyRouteFromHash();
       return;
     }
@@ -4811,7 +5060,10 @@ exportButton?.addEventListener("click", async () => {
   setExportLoadingState(true);
   await sleep(1000);
   setExportLoadingState(false);
-  showToast("Eksport yakunlandi", "Ro'yxat fayl ko'rinishida tayyorlandi.");
+  showToast(
+    tr("applications.exportDoneTitle", "Eksport yakunlandi"),
+    tr("applications.exportDoneDescription", "Ro'yxat fayl ko'rinishida tayyorlandi."),
+  );
 });
 
 reportExportButton?.addEventListener("click", async () => {
@@ -4826,7 +5078,10 @@ reportExportButton?.addEventListener("click", async () => {
   if (exported) {
     showToast(tr("common.downloaded", "Yuklab olindi"), tr("report.download", "Hisobotni yuklab olish"));
   } else {
-    showToast("Xatolik", "Hisobotni yuklab bo'lmadi.");
+    showToast(
+      tr("report.downloadFailedTitle", "Xatolik"),
+      tr("report.downloadFailedDescription", "Hisobotni yuklab bo'lmadi."),
+    );
   }
 });
 
@@ -5370,7 +5625,10 @@ detailContent?.addEventListener("click", (event) => {
       .map((line) => line.trim())
       .filter(Boolean);
     triggerPdfDownload(fileName, title, documentLines);
-    showToast("PDF yuklab olindi", `${title} fayli tayyorlandi.`);
+    showToast(
+      tr("detail.pdfDownloadedTitle", "PDF yuklab olindi"),
+      tformat("detail.pdfDownloadedDescription", `${title} fayli tayyorlandi.`, { title }),
+    );
     return;
   }
 
@@ -5390,7 +5648,7 @@ detailAcceptButton?.addEventListener("click", () => {
   if (!applicationId) {
     return;
   }
-  openConfirmModal("Qabul qilish", applicationId);
+  openConfirmModal("accept", applicationId);
 });
 
 detailRejectButton?.addEventListener("click", () => {
@@ -5398,7 +5656,7 @@ detailRejectButton?.addEventListener("click", () => {
   if (!applicationId) {
     return;
   }
-  openConfirmModal("Rad etish", applicationId);
+  openConfirmModal("reject", applicationId);
 });
 
 confirmModalApprove?.addEventListener("click", () => {
@@ -5407,25 +5665,30 @@ confirmModalApprove?.addEventListener("click", () => {
   }
 
   const { action, applicationId } = confirmState;
+  const actionLabel = getActionLabel(action);
   confirmModalApprove.disabled = true;
-  confirmModalApprove.innerHTML = '<span class="confirm-modal__button-spinner" aria-hidden="true"></span><span>Yuborilmoqda...</span>';
+  confirmModalApprove.innerHTML = `<span class="confirm-modal__button-spinner" aria-hidden="true"></span><span>${tr("common.submitting", "Yuborilmoqda...")}</span>`;
   confirmModalCancel?.setAttribute("disabled", "true");
 
   window.setTimeout(() => {
     closeConfirmModal();
     closeDetailModal();
     if (applicationId === "AR-000123") {
-      updateApplicationRowStatus(applicationId, action === "Qabul qilish" ? "qabul qilingan" : "rad etilgan");
+      updateApplicationRowStatus(applicationId, action === "accept" ? "qabul qilingan" : "rad etilgan");
       showToast(
-        `${action} muvaffaqiyatli yakunlandi`,
-        `${applicationId} arizasi bo'yicha amal muvaffaqiyatli bajarildi.`,
+        tformat("action.completedTitle", `${actionLabel} muvaffaqiyatli yakunlandi`, { action: actionLabel }),
+        tformat("action.completedDescription", `${applicationId} arizasi bo'yicha amal muvaffaqiyatli bajarildi.`, { id: applicationId, action: actionLabel }),
       );
       return;
     }
 
     showToast(
-      `${action} amalga oshmadi`,
-      `${applicationId} arizasini ${action.toLowerCase()}da ERR-409 xatoligi kuzatildi. Batafsil ma'lumot uchun qo'llanma yoki bog'lanish bo'limiga murojaat qiling.`,
+      tformat("action.failedTitle", `${actionLabel} amalga oshmadi`, { action: actionLabel }),
+      tformat("action.failedDescription", `${applicationId} arizasini ${actionLabel.toLowerCase()}da ERR-409 xatoligi kuzatildi. Batafsil ma'lumot uchun qo'llanma yoki bog'lanish bo'limiga murojaat qiling.`, {
+        id: applicationId,
+        action: actionLabel,
+        actionLower: actionLabel.toLowerCase(),
+      }),
       "error",
     );
   }, 1000);
@@ -5554,12 +5817,9 @@ enhanceProcessRowActions();
 enhanceApplicationViewActions();
 
 async function applyRouteFromHash() {
-  const currentPath = normalizeRoutePath(window.location.pathname);
-  if (window.location.pathname !== currentPath) {
-    window.history.replaceState({}, "", currentPath);
-  }
+  const currentPath = getCurrentRoutePath();
 
-  if (currentPath === "/app") {
+  if (currentPath === "/") {
     currentCanonicalTitle = "Modullar";
     syncPageHeading("Modullar");
     showModulesView();
@@ -5569,13 +5829,10 @@ async function applyRouteFromHash() {
   const moduleKey = getModuleKeyFromHash(currentPath);
   const moduleConfig = getModuleConfig(moduleKey);
   const routeTitle = getTitleFromHash(currentPath);
-  const effectiveRouteTitle =
-    currentPath === "/app/mrv" || currentPath === "/app/ptpk"
-      ? "Arizalar - Arizalar ro'yxati"
-      : routeTitle;
+  const effectiveRouteTitle = routeTitle;
 
   if (!effectiveRouteTitle) {
-    const defaultTitle = getTitleFromHash(moduleConfig.defaultHash) || "Arizalar - Arizalar ro'yxati";
+    const defaultTitle = getTitleFromHash(moduleConfig.defaultHash) || "Home";
     renderSidebar(moduleKey, defaultTitle);
     syncPageHeading(defaultTitle);
     const targetLink = document.querySelector(`[data-page-title="${defaultTitle}"]`);
@@ -5593,6 +5850,10 @@ async function applyRouteFromHash() {
 }
 
 window.addEventListener("popstate", () => {
+  applyRouteFromHash();
+});
+
+window.addEventListener("hashchange", () => {
   applyRouteFromHash();
 });
 
