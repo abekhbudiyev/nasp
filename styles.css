@@ -1,4 +1,5 @@
 :root {
+  --app-font-family: "Noto Sans", sans-serif;
   --brand: #679a62;
   --brand-soft: #eef4ed;
   --ink: #1f2620;
@@ -84,10 +85,22 @@ body {
 }
 
 body {
-  font-family: "Noto Sans", sans-serif;
+  font-family: var(--app-font-family);
   color: var(--ink);
   background: var(--page-bg);
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+body[data-font="noto"] {
+  --app-font-family: "Noto Sans", sans-serif;
+}
+
+body[data-font="inter"] {
+  --app-font-family: "Inter", sans-serif;
+}
+
+body[data-font="roboto"] {
+  --app-font-family: "Roboto", sans-serif;
 }
 
 * {
@@ -597,6 +610,8 @@ body.theme-dark .login-hero__card {
   margin: 0;
   border: 1px solid rgba(103, 154, 98, 0.2);
   border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
 }
 
 .brand__mark svg {
@@ -608,6 +623,17 @@ body.theme-dark .login-hero__card {
   width: 18px;
   height: 18px;
   object-fit: contain;
+}
+
+.brand__mark:hover {
+  border-color: rgba(103, 154, 98, 0.36);
+  background: var(--surface-hover, rgba(103, 154, 98, 0.08));
+}
+
+.brand__mark:focus-visible {
+  outline: none;
+  border-color: rgba(103, 154, 98, 0.42);
+  box-shadow: 0 0 0 3px rgba(103, 154, 98, 0.14);
 }
 
 .brand__title,
@@ -1980,11 +2006,18 @@ body.theme-dark .login-hero__card {
   white-space: nowrap;
 }
 
+.table-pagination__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .table-pagination__right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   flex: 1 1 auto;
+  margin-left: auto;
   gap: 6px;
 }
 
@@ -3177,6 +3210,37 @@ body.theme-dark .report-table__cell--selected {
   font-weight: 600;
 }
 
+.module-card__status {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 160, 55, 0.32);
+  background: rgba(255, 244, 214, 0.9);
+  color: #9a6a11;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.module-card--disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.module-card--disabled:hover {
+  transform: none;
+  box-shadow: 0 12px 24px rgba(26, 35, 27, 0.08);
+  border-color: var(--line);
+}
+
+.theme-dark .module-card__status {
+  border-color: rgba(214, 160, 55, 0.36);
+  background: rgba(82, 67, 22, 0.6);
+  color: #ffd569;
+}
+
 .support-form {
   display: grid;
   gap: 14px;
@@ -3980,11 +4044,60 @@ body.theme-dark .content-loader {
   line-height: 1.35;
 }
 
+.detail-field-list__item .status-badge,
 .detail-record__field .status-badge,
 .detail-block__card .status-badge {
   color: var(--tone-text, var(--ink)) !important;
   background: var(--tone-bg, transparent) !important;
   border-color: var(--tone-border, transparent) !important;
+}
+
+.detail-field-list__item .status-badge--process,
+.detail-record__field .status-badge--process,
+.detail-block__card .status-badge--process {
+  color: #b86b00 !important;
+  background: #ffefbf !important;
+  border-color: #f2bd42 !important;
+}
+
+.detail-field-list__item .status-badge--accepted,
+.detail-record__field .status-badge--accepted,
+.detail-block__card .status-badge--accepted {
+  color: #008468 !important;
+  background: #d7fbef !important;
+  border-color: #59d8b0 !important;
+}
+
+.detail-field-list__item .status-badge--rejected,
+.detail-record__field .status-badge--rejected,
+.detail-block__card .status-badge--rejected {
+  color: #d24646 !important;
+  background: #ffe2e2 !important;
+  border-color: #f3a4a4 !important;
+}
+
+body.theme-dark .detail-field-list__item .status-badge--process,
+body.theme-dark .detail-record__field .status-badge--process,
+body.theme-dark .detail-block__card .status-badge--process {
+  color: #ffc247 !important;
+  background: #43370d !important;
+  border-color: #8e7227 !important;
+}
+
+body.theme-dark .detail-field-list__item .status-badge--accepted,
+body.theme-dark .detail-record__field .status-badge--accepted,
+body.theme-dark .detail-block__card .status-badge--accepted {
+  color: #64ebc8 !important;
+  background: #0f3b33 !important;
+  border-color: #1d7d68 !important;
+}
+
+body.theme-dark .detail-field-list__item .status-badge--rejected,
+body.theme-dark .detail-record__field .status-badge--rejected,
+body.theme-dark .detail-block__card .status-badge--rejected {
+  color: #ff9b9b !important;
+  background: #412020 !important;
+  border-color: #8f4f4f !important;
 }
 
 .detail-section--applicant {
@@ -4631,6 +4744,10 @@ body.theme-dark .detail-summary-chip {
   .table-pagination {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .table-pagination__left {
+    width: 100%;
   }
 
   .table-pagination__info {

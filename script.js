@@ -3112,6 +3112,29 @@ function getApplicantAvatar(application) {
     : `/person-boy.png?v=${version}`;
 }
 
+function inferGenderFromPersonName(fullName) {
+  const normalized = String(fullName || "").toLowerCase();
+  if (
+    normalized.includes(" qizi ") ||
+    normalized.endsWith(" qizi") ||
+    normalized.includes(" қизи ") ||
+    normalized.endsWith(" қизи")
+  ) {
+    return "Ayol";
+  }
+  if (
+    normalized.includes(" o'g'li ") ||
+    normalized.endsWith(" o'g'li") ||
+    normalized.includes(" og'li ") ||
+    normalized.endsWith(" og'li") ||
+    normalized.includes(" ўғли ") ||
+    normalized.endsWith(" ўғли")
+  ) {
+    return "Erkak";
+  }
+  return "Erkak";
+}
+
 function getRepresentativeAvatar(gender) {
   const version = "20260327c";
   return String(gender || "").toLowerCase() === "ayol"
@@ -3673,6 +3696,9 @@ function getApplicationById(applicationId) {
     fileName: `tibbiy-hujjat-${numericPart}-${index + 1}.pdf`,
   }));
 
+  const applicantFullName = formatPersonName(applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-");
+  const applicantGender = inferGenderFromPersonName(applicantFullName);
+
   return {
     id: applicationCell?.querySelector("strong")?.textContent?.trim() ?? applicationId,
     date: applicationDate,
@@ -3682,17 +3708,17 @@ function getApplicationById(applicationId) {
     receiver,
     representative,
     applicant: {
-      fullName: formatPersonName(applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-"),
+      fullName: applicantFullName,
       pinfl: applicantCell?.querySelector("span")?.textContent?.trim() ?? "-",
       birthDate: `${birthDay}.${birthMonth}.${birthYear}`,
-      gender: numericPart % 2 === 0 ? "Erkak" : "Ayol",
+      gender: applicantGender,
       disabilityGroup,
       diagnosis: `${diagnosis.label} (${diagnosis.code})`,
       address: fullAddress,
       avatar: getApplicantAvatar({
-        applicantName: formatPersonName(applicantCell?.querySelector("strong")?.textContent?.trim() ?? "-"),
+        applicantName: applicantFullName,
         id: applicationId,
-        gender: numericPart % 2 === 0 ? "Erkak" : "Ayol",
+        gender: applicantGender,
       }),
       meta: [],
     },
@@ -4027,24 +4053,21 @@ function renderPagination(totalPages) {
   const pages = [];
   const { currentPage } = tableState;
 
-  if (tableState.totalPages <= 5) {
-    for (let page = 1; page <= tableState.totalPages; page += 1) {
-      pages.push(page);
-    }
-  } else {
+  if (tableState.totalPages <= 1) {
     pages.push(1);
-    if (currentPage > 3) {
-      pages.push("ellipsis-start");
-    }
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(tableState.totalPages - 1, currentPage + 1);
-    for (let page = start; page <= end; page += 1) {
+  } else {
+    const pageSet = new Set([1, tableState.totalPages, currentPage - 1, currentPage, currentPage + 1]);
+    const numericPages = Array.from(pageSet)
+      .filter((page) => page >= 1 && page <= tableState.totalPages)
+      .sort((left, right) => left - right);
+
+    numericPages.forEach((page, index) => {
       pages.push(page);
-    }
-    if (currentPage < tableState.totalPages - 2) {
-      pages.push("ellipsis-end");
-    }
-    pages.push(tableState.totalPages);
+      const nextPage = numericPages[index + 1];
+      if (nextPage && nextPage - page > 1) {
+        pages.push(`ellipsis-${page}`);
+      }
+    });
   }
 
   pages.forEach((item) => {
