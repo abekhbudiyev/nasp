@@ -18,6 +18,8 @@ const moduleTitle = document.getElementById("moduleTitle");
 const sidebarHomeButton = document.getElementById("sidebarHomeButton");
 const languageCurrent = document.getElementById("languageCurrent");
 const languageItems = document.querySelectorAll("[data-language-code]");
+const fontCurrent = document.getElementById("fontCurrent");
+const fontItems = document.querySelectorAll("[data-font-code]");
 const themeToggle = document.getElementById("themeToggle");
 const themeToggleIcon = themeToggle?.querySelector("svg");
 const menuToggles = document.querySelectorAll("[data-menu-toggle]");
@@ -43,11 +45,11 @@ const totalApplicationsShare = document.getElementById("totalApplicationsShare")
 const processApplicationsShare = document.getElementById("processApplicationsShare");
 const acceptedApplicationsShare = document.getElementById("acceptedApplicationsShare");
 const rejectedApplicationsShare = document.getElementById("rejectedApplicationsShare");
-const applicationRows = document.querySelectorAll("#applicationsTable tbody tr");
+let applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr"));
 const filterToggle = document.getElementById("filterToggle");
 const filterMenu = document.getElementById("filterMenu");
 const filterMenuClose = document.getElementById("filterMenuClose");
-const rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+let rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
 const rowsPerPageMenu = document.getElementById("rowsPerPageMenu");
 const rowsPerPageTrigger = document.getElementById("rowsPerPageTrigger");
 const rowsPerPageLabel = document.getElementById("rowsPerPageLabel");
@@ -129,6 +131,7 @@ const detailAcceptButton = document.getElementById("detailAcceptButton");
 const detailRejectButton = document.getElementById("detailRejectButton");
 const systemTheme = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 const themeStorageKey = "muruvvat-theme";
+const fontStorageKey = "mrv-font";
 const calendarLocaleLabels = {
   uz: {
     months: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
@@ -165,6 +168,7 @@ const confirmState = { action: "", applicationId: "" };
 let supportTicketCounter = 1025;
 let currentModule = "muruvvat";
 let currentLanguage = "uz";
+let currentFont = "noto";
 let currentCanonicalTitle = "";
 let currentDetailApplicationId = "";
 const supportGuideMap = {
@@ -298,6 +302,11 @@ const modulesConfig = {
 };
 
 const languageStorageKey = "mrv-language";
+const fontMeta = {
+  inter: { short: "Inter" },
+  noto: { short: "Noto" },
+  roboto: { short: "Roboto" },
+};
 const languageMeta = {
   uz: { short: "UZ", htmlLang: "uz", label: "O'zbek" },
   "uz-cyrl": { short: "ЎЗ", htmlLang: "uz-Cyrl", label: "Ўзбек" },
@@ -2021,6 +2030,10 @@ function getSavedLanguagePreference() {
   return window.localStorage.getItem(languageStorageKey) || "uz";
 }
 
+function getSavedFontPreference() {
+  return window.localStorage.getItem(fontStorageKey) || "noto";
+}
+
 function updateLanguageMenuUi() {
   const meta = languageMeta[currentLanguage] ?? languageMeta.uz;
   if (languageCurrent) {
@@ -2032,8 +2045,20 @@ function updateLanguageMenuUi() {
   });
 }
 
+function updateFontMenuUi() {
+  const meta = fontMeta[currentFont] ?? fontMeta.noto;
+  if (fontCurrent) {
+    fontCurrent.textContent = meta.short;
+  }
+  document.body.setAttribute("data-font", currentFont);
+  fontItems.forEach((button) => {
+    button.classList.toggle("header-dropdown__item--active", button.getAttribute("data-font-code") === currentFont);
+  });
+}
+
 function applyStaticTranslations() {
   updateLanguageMenuUi();
+  updateFontMenuUi();
 
   if (!appShell?.hasAttribute("hidden")) {
     document.title = currentModule === "ptpk" ? "PTPK" : "MRV";
@@ -2197,6 +2222,12 @@ function applyLanguage(languageCode) {
   }
 }
 
+function applyFont(fontCode) {
+  currentFont = fontMeta[fontCode] ? fontCode : "noto";
+  window.localStorage.setItem(fontStorageKey, currentFont);
+  updateFontMenuUi();
+}
+
 const calendarPopover = document.createElement("div");
 calendarPopover.className = "calendar-popover";
 calendarPopover.id = "calendarPopover";
@@ -2245,6 +2276,9 @@ function showLoginView() {
   appShell?.setAttribute("hidden", "");
   loginError?.setAttribute("hidden", "");
   syncDocumentTitleForAuth();
+  if (window.location.hash !== "#/auth") {
+    window.location.hash = "/auth";
+  }
 }
 
 function showAppView() {
@@ -2338,7 +2372,7 @@ function escapeHtml(value) {
 
 function normalizeRoutePath(pathValue) {
   if (!pathValue || pathValue === "#" || pathValue === "/") {
-    return "/";
+    return "/auth";
   }
 
   let normalized = String(pathValue).trim().replace(/^#/, "");
@@ -2350,6 +2384,8 @@ function normalizeRoutePath(pathValue) {
   normalized = normalized.replace(/\/+$/, "") || "/";
 
   const legacyAliases = {
+    "/auth": "/auth",
+    "/apps": "/apps",
     "/applications": "/mrv/applications/applicationList",
     "/reports/disabilityinfo": "/mrv/reports/disabilityinfo",
   };
@@ -2549,6 +2585,84 @@ const applicationRowMetadata = {
   "AR-000113": { step: "yangi" },
   "AR-000112": { step: "komissiya-rad-etgan" },
 };
+
+const supplementalApplicationRows = [
+  { id: "AR-000111", date: "04.03.2026", fullName: "DILAFRUZ SHAVKAT QIZI ORTIQOVA", pinfl: "41204050607081", organization: "Nukus Muruvvat (ayollar)", organizationRegion: "Qoraqalpog'iston R.", regionValue: "qoraqalpog'iston viloyati", regionLabel: "Qoraqalpog'iston R.", district: "Nukus shahri", status: "Jarayonda", step: "ishchi-guruhi-korib-chiqmoqda" },
+  { id: "AR-000110", date: "04.03.2026", fullName: "AKMALJON UMID O'G'LI SOBIROV", pinfl: "30909101112131", organization: "Chimboy Muruvvat (erkaklar)", organizationRegion: "Qoraqalpog'iston R.", regionValue: "qoraqalpog'iston viloyati", regionLabel: "Qoraqalpog'iston R.", district: "Chimboy tumani", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000109", date: "03.03.2026", fullName: "MUHAYYO BAXTIYOR QIZI NOSIROVA", pinfl: "49808070605041", organization: "Chuma Muruvvat (ayollar)", organizationRegion: "Andijon", regionValue: "andijon viloyati", regionLabel: "Andijon", district: "Andijon shahri", status: "Jarayonda", step: "yangi" },
+  { id: "AR-000108", date: "03.03.2026", fullName: "MURODJON ILHOM O'G'LI YULDASHEV", pinfl: "30202030405061", organization: "Bo'taqora Muruvvat (erkaklar)", organizationRegion: "Andijon", regionValue: "andijon viloyati", regionLabel: "Andijon", district: "Asaka tumani", status: "Rad etilgan", step: "ishchi-guruhi-rad-etgan" },
+  { id: "AR-000107", date: "02.03.2026", fullName: "DILNOZA SHERALI QIZI KAMILOVA", pinfl: "51701020304050", organization: "Buxoro Muruvvat (bolalar)", organizationRegion: "Buxoro", regionValue: "buxoro viloyati", regionLabel: "Buxoro", district: "Buxoro shahri", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000106", date: "02.03.2026", fullName: "BOBUR TEMUR O'G'LI NAZAROV", pinfl: "31011121314151", organization: "Buxoro Muruvvat (ayollar)", organizationRegion: "Buxoro", regionValue: "buxoro viloyati", regionLabel: "Buxoro", district: "Qorako'l tumani", status: "Jarayonda", step: "komissiya-korib-chiqmoqda" },
+  { id: "AR-000105", date: "01.03.2026", fullName: "GULCHEHRA ORZUBEK QIZI JURAYEVA", pinfl: "50612131415161", organization: "Jizzax Muruvvat (ayollar)", organizationRegion: "Jizzax", regionValue: "jizzax viloyati", regionLabel: "Jizzax", district: "Jizzax shahri", status: "Rad etilgan", step: "komissiya-rad-etgan" },
+  { id: "AR-000104", date: "01.03.2026", fullName: "ASILBEK JAHONGIR O'G'LI TOJIBOYEV", pinfl: "30303040506071", organization: "Zomin Muruvvat (ayollar)", organizationRegion: "Jizzax", regionValue: "jizzax viloyati", regionLabel: "Jizzax", district: "Zomin tumani", status: "Jarayonda", step: "ishchi-guruhi-qabul-qilgan" },
+  { id: "AR-000103", date: "28.02.2026", fullName: "MUNISA ULUG'BEK QIZI RUZIYEVA", pinfl: "62101010101011", organization: "Shahrisabz Muruvvat (ayollar)", organizationRegion: "Qashqadaryo", regionValue: "qashqadaryo viloyati", regionLabel: "Qashqadaryo", district: "Shahrisabz shahri", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000102", date: "28.02.2026", fullName: "OTABEK SOBIR O'G'LI EGAMOV", pinfl: "31404040404042", organization: "Qarshi Muruvvat (bolalar)", organizationRegion: "Qashqadaryo", regionValue: "qashqadaryo viloyati", regionLabel: "Qashqadaryo", district: "Qarshi shahri", status: "Jarayonda", step: "ishchi-guruhi-korib-chiqmoqda" },
+  { id: "AR-000101", date: "27.02.2026", fullName: "NILUFAR AKMAL QIZI SHODIYEVA", pinfl: "42305060708091", organization: "Nurota Muruvvat (erkaklar)", organizationRegion: "Navoiy", regionValue: "navoiy viloyati", regionLabel: "Navoiy", district: "Nurota tumani", status: "Jarayonda", step: "yangi" },
+  { id: "AR-000100", date: "27.02.2026", fullName: "SARVAR MIRZOBEK O'G'LI ERGASHEV", pinfl: "31907080910112", organization: "Pop Muruvvat (erkaklar)", organizationRegion: "Namangan", regionValue: "namangan viloyati", regionLabel: "Namangan", district: "Pop tumani", status: "Rad etilgan", step: "komissiya-rad-etgan" },
+  { id: "AR-000099", date: "26.02.2026", fullName: "MADINABONU RAVSHAN QIZI TURAYEVA", pinfl: "50808091011121", organization: "Urgut Muruvvat (erkaklar)", organizationRegion: "Samarqand", regionValue: "samarqand viloyati", regionLabel: "Samarqand", district: "Urgut tumani", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000098", date: "26.02.2026", fullName: "HUSAN BOBUR O'G'LI VALIYEV", pinfl: "31111100908076", organization: "Urgut Muruvvat (ayollar)", organizationRegion: "Samarqand", regionValue: "samarqand viloyati", regionLabel: "Samarqand", district: "Urgut tumani", status: "Jarayonda", step: "komissiya-korib-chiqmoqda" },
+  { id: "AR-000097", date: "25.02.2026", fullName: "SHAHNOZA DILSHOD QIZI NOSIROVA", pinfl: "52412131415161", organization: "Sirdaryo Muruvvat (ayollar)", organizationRegion: "Sirdaryo", regionValue: "sirdaryo viloyati", regionLabel: "Sirdaryo", district: "Guliston shahri", status: "Jarayonda", step: "ishchi-guruhi-qabul-qilgan" },
+  { id: "AR-000096", date: "25.02.2026", fullName: "DAVRON SHERZOD O'G'LI JO'RAYEV", pinfl: "30710111213141", organization: "Yangiyer Muruvvat (ayollar)", organizationRegion: "Sirdaryo", regionValue: "sirdaryo viloyati", regionLabel: "Sirdaryo", district: "Yangiyer shahri", status: "Rad etilgan", step: "ishchi-guruhi-rad-etgan" },
+  { id: "AR-000095", date: "24.02.2026", fullName: "MUSLIMA BAXTIYOR QIZI QODIROVA", pinfl: "61411121314151", organization: "Farhod Muruvvat (ayollar)", organizationRegion: "Surxondaryo", regionValue: "surxondaryo viloyati", regionLabel: "Surxondaryo", district: "Termiz shahri", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000094", date: "24.02.2026", fullName: "JAHONGIR ASROR O'G'LI OCHILOV", pinfl: "31605040302010", organization: "Denov Muruvvat (erkaklar)", organizationRegion: "Surxondaryo", regionValue: "surxondaryo viloyati", regionLabel: "Surxondaryo", district: "Denov tumani", status: "Jarayonda", step: "ishchi-guruhi-korib-chiqmoqda" },
+  { id: "AR-000093", date: "23.02.2026", fullName: "MEHRINISO OTABEK QIZI JUMAYEVA", pinfl: "50501020304051", organization: "Qumqo'rg'on Muruvvat (bolalar)", organizationRegion: "Surxondaryo", regionValue: "surxondaryo viloyati", regionLabel: "Surxondaryo", district: "Qumqo'rg'on tumani", status: "Jarayonda", step: "yangi" },
+  { id: "AR-000092", date: "23.02.2026", fullName: "FARRUX RUSTAM O'G'LI ABDULLAYEV", pinfl: "30207060504031", organization: "Ohangaron Muruvvat (erkaklar)", organizationRegion: "Toshkent viloyati", regionValue: "toshkent viloyati", regionLabel: "Toshkent viloyati", district: "Ohangaron tumani", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000091", date: "22.02.2026", fullName: "ODINA SHAVKAT QIZI ASQAROVA", pinfl: "51102030405061", organization: "Qo'qon Muruvvat (erkaklar)", organizationRegion: "Farg'ona", regionValue: "farg'ona viloyati", regionLabel: "Farg'ona", district: "Qo'qon shahri", status: "Rad etilgan", step: "komissiya-rad-etgan" },
+  { id: "AR-000090", date: "22.02.2026", fullName: "ISKANDAR UMID O'G'LI MAHMUDOV", pinfl: "31314151617181", organization: "Qudash Muruvvat (ayollar)", organizationRegion: "Farg'ona", regionValue: "farg'ona viloyati", regionLabel: "Farg'ona", district: "Rishton tumani", status: "Jarayonda", step: "komissiya-korib-chiqmoqda" },
+  { id: "AR-000089", date: "21.02.2026", fullName: "NAFOSAT ILHOM QIZI TOSHPO'LATOVA", pinfl: "62001020304052", organization: "Farg'ona Muruvvat (bolalar)", organizationRegion: "Farg'ona", regionValue: "farg'ona viloyati", regionLabel: "Farg'ona", district: "Marg'ilon shahri", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000088", date: "21.02.2026", fullName: "ULUG'BEK ANVAR O'G'LI AZIMOV", pinfl: "31802030405061", organization: "Xiva Muruvvat (erkaklar)", organizationRegion: "Xorazm", regionValue: "xorazm viloyati", regionLabel: "Xorazm", district: "Xiva shahri", status: "Jarayonda", step: "ishchi-guruhi-qabul-qilgan" },
+  { id: "AR-000087", date: "20.02.2026", fullName: "ZIYODA RUSTAM QIZI HAMROYEVA", pinfl: "50703040506071", organization: "Nukus Muruvvat (ayollar)", organizationRegion: "Qoraqalpog'iston R.", regionValue: "qoraqalpog'iston viloyati", regionLabel: "Qoraqalpog'iston R.", district: "Amudaryo tumani", status: "Jarayonda", step: "ishchi-guruhi-korib-chiqmoqda" },
+  { id: "AR-000086", date: "20.02.2026", fullName: "MIRAZIZ JAMSHID O'G'LI ALIMOV", pinfl: "30001020304050", organization: "Chimboy Muruvvat (erkaklar)", organizationRegion: "Qoraqalpog'iston R.", regionValue: "qoraqalpog'iston viloyati", regionLabel: "Qoraqalpog'iston R.", district: "Mo'ynoq tumani", status: "Rad etilgan", step: "ishchi-guruhi-rad-etgan" },
+  { id: "AR-000085", date: "19.02.2026", fullName: "GULRUX SHERALI QIZI QARSHIYEVA", pinfl: "50305060708092", organization: "Chuma Muruvvat (ayollar)", organizationRegion: "Andijon", regionValue: "andijon viloyati", regionLabel: "Andijon", district: "Baliqchi tumani", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000084", date: "19.02.2026", fullName: "BEHZOD AKROM O'G'LI SHOYUSUPOV", pinfl: "31506070809101", organization: "Bo'taqora Muruvvat (erkaklar)", organizationRegion: "Andijon", regionValue: "andijon viloyati", regionLabel: "Andijon", district: "Shahrixon tumani", status: "Jarayonda", step: "komissiya-korib-chiqmoqda" },
+  { id: "AR-000083", date: "18.02.2026", fullName: "MAFTUNA ISROIL QIZI JALILOVA", pinfl: "62207080910112", organization: "Buxoro Muruvvat (bolalar)", organizationRegion: "Buxoro", regionValue: "buxoro viloyati", regionLabel: "Buxoro", district: "Kogon shahri", status: "Jarayonda", step: "yangi" },
+  { id: "AR-000082", date: "18.02.2026", fullName: "OTABEK NODIR O'G'LI YULDOSHOV", pinfl: "30608091011121", organization: "Qorako'l Muruvvat (erkaklar)", organizationRegion: "Buxoro", regionValue: "buxoro viloyati", regionLabel: "Buxoro", district: "G'ijduvon tumani", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000081", date: "17.02.2026", fullName: "ROBIYA BUNYOD QIZI AKBAROVA", pinfl: "50909101112131", organization: "Jizzax Muruvvat (ayollar)", organizationRegion: "Jizzax", regionValue: "jizzax viloyati", regionLabel: "Jizzax", district: "G'allaorol tumani", status: "Rad etilgan", step: "komissiya-rad-etgan" },
+  { id: "AR-000080", date: "17.02.2026", fullName: "SAMANDAR RAVSHAN O'G'LI QOCHQOROV", pinfl: "30110111213141", organization: "Zomin Muruvvat (ayollar)", organizationRegion: "Jizzax", regionValue: "jizzax viloyati", regionLabel: "Jizzax", district: "Zarbdor tumani", status: "Jarayonda", step: "ishchi-guruhi-qabul-qilgan" },
+  { id: "AR-000079", date: "16.02.2026", fullName: "MUBINA OTABEK QIZI ABDIYEVA", pinfl: "61412131415161", organization: "Shahrisabz Muruvvat (ayollar)", organizationRegion: "Qashqadaryo", regionValue: "qashqadaryo viloyati", regionLabel: "Qashqadaryo", district: "Kitob tumani", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000078", date: "16.02.2026", fullName: "AZAMAT SHUKUR O'G'LI MAMATOV", pinfl: "30403020100192", organization: "Qarshi Muruvvat (bolalar)", organizationRegion: "Qashqadaryo", regionValue: "qashqadaryo viloyati", regionLabel: "Qashqadaryo", district: "Koson tumani", status: "Jarayonda", step: "ishchi-guruhi-korib-chiqmoqda" },
+  { id: "AR-000077", date: "15.02.2026", fullName: "SHAHNOZA AKBAR QIZI IMOMOVA", pinfl: "52001020304056", organization: "Nurota Muruvvat (erkaklar)", organizationRegion: "Navoiy", regionValue: "navoiy viloyati", regionLabel: "Navoiy", district: "Karmana tumani", status: "Rad etilgan", step: "ishchi-guruhi-rad-etgan" },
+  { id: "AR-000076", date: "15.02.2026", fullName: "MIRJALOL OYBEK O'G'LI ERGASHEV", pinfl: "30311121314151", organization: "Pop Muruvvat (erkaklar)", organizationRegion: "Namangan", regionValue: "namangan viloyati", regionLabel: "Namangan", district: "Chortoq tumani", status: "Qabul qilingan", step: "komissiya-qabul-qilgan" },
+  { id: "AR-000075", date: "14.02.2026", fullName: "SABINA BAXTIYOR QIZI JALOLOVA", pinfl: "51112131415162", organization: "Yangiyer Muruvvat (ayollar)", organizationRegion: "Sirdaryo", regionValue: "sirdaryo viloyati", regionLabel: "Sirdaryo", district: "Sardoba tumani", status: "Jarayonda", step: "yangi" },
+];
+
+supplementalApplicationRows.forEach((item) => {
+  applicationRowMetadata[item.id] = { step: item.step };
+});
+
+const applicationRowMenuMarkup = `<div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div>`;
+
+function buildSupplementalApplicationRow(item) {
+  const statusClass = item.status === "Qabul qilingan"
+    ? "status-badge--accepted"
+    : item.status === "Rad etilgan"
+      ? "status-badge--rejected"
+      : "status-badge--process";
+  const searchValue = `${item.id} ${item.fullName} ${item.pinfl} ${item.regionLabel.toUpperCase()} ${item.district.toUpperCase()} ${item.organization.toUpperCase()}`;
+  return `
+    <tr data-status="${item.status.toLowerCase()}" data-region="${item.regionValue}" data-search="${searchValue}">
+      <td class="actions-cell">${applicationRowMenuMarkup}</td>
+      <td><div class="stacked-cell stacked-cell--application"><strong>${item.id}</strong><span>${item.date}</span></div></td>
+      <td><div class="stacked-cell"><strong>${item.fullName}</strong><span>${item.pinfl}</span></div></td>
+      <td><div class="stacked-cell"><strong>${item.organization}</strong><span>${item.organizationRegion}</span></div></td>
+      <td><div class="stacked-cell"><strong>${item.regionLabel}</strong><span>${item.district}</span></div></td>
+      <td><span class="status-badge ${statusClass}">${item.status}</span></td>
+    </tr>
+  `;
+}
+
+function ensureApplicationRowsSeeded() {
+  const tbody = document.querySelector("#applicationsTable tbody");
+  const emptyRow = document.getElementById("tableEmptyRow");
+  if (!tbody || !emptyRow || tbody.dataset.seeded === "true") {
+    return;
+  }
+
+  emptyRow.insertAdjacentHTML("beforebegin", supplementalApplicationRows.map(buildSupplementalApplicationRow).join(""));
+  tbody.dataset.seeded = "true";
+  applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr:not(.table-empty)"));
+  rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+}
 
 const reportColumnKeys = [
   "jami",
@@ -4526,6 +4640,7 @@ function initializeTheme() {
 
 function initializeLanguage() {
   currentLanguage = languageMeta[getSavedLanguagePreference()] ? getSavedLanguagePreference() : "uz";
+  currentFont = fontMeta[getSavedFontPreference()] ? getSavedFontPreference() : "noto";
   applyStaticTranslations();
 }
 
@@ -4545,10 +4660,7 @@ if (loginForm && loginUsername && loginPassword && loginSubmit) {
       loginSubmit.disabled = false;
       loginSubmit.textContent = tr("login.submit", "Kirish");
       showAppView();
-      if (window.location.hash) {
-        window.location.hash = "";
-      }
-      applyRouteFromHash();
+      window.location.hash = "/apps";
       showToast(
         tr("login.welcomeTitle", "Xush kelibsiz"),
         tformat("login.welcomeDescription", "Tizimga muvaffaqiyatli kirildi.", {
@@ -5230,6 +5342,16 @@ languageItems.forEach((button) => {
   });
 });
 
+fontItems.forEach((button) => {
+  button.addEventListener("click", () => {
+    const nextFont = button.getAttribute("data-font-code") || "noto";
+    applyFont(nextFont);
+    button.closest(".header-menu")?.classList.remove("header-menu--open");
+    const toggle = button.closest(".header-menu")?.querySelector("[data-menu-toggle]");
+    toggle?.setAttribute("aria-expanded", "false");
+  });
+});
+
 applyFilters?.addEventListener("click", () => {
   applicationAppliedFilters = { ...getApplicationFilterValues() };
   updateApplicationFilterControls();
@@ -5578,38 +5700,48 @@ calendarToday?.addEventListener("click", () => {
   closeCalendar();
 });
 
-rowMenuToggles.forEach((toggle) => {
-  toggle.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const menu = toggle.closest(".row-menu");
-    if (!menu) {
+function bindRowMenuToggles() {
+  rowMenuToggles.forEach((toggle) => {
+    if (toggle.dataset.bound === "true") {
       return;
     }
 
-    const isOpen = menu.classList.contains("row-menu--open");
-    document.querySelectorAll(".row-menu").forEach((item) => {
-      item.classList.remove("row-menu--open");
-      const button = item.querySelector(".row-menu__toggle");
-      if (button) {
-        button.setAttribute("aria-expanded", "false");
+    toggle.dataset.bound = "true";
+
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const menu = toggle.closest(".row-menu");
+      if (!menu) {
+        return;
+      }
+
+      const isOpen = menu.classList.contains("row-menu--open");
+      document.querySelectorAll(".row-menu").forEach((item) => {
+        item.classList.remove("row-menu--open");
+        const button = item.querySelector(".row-menu__toggle");
+        if (button) {
+          button.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      menu.classList.toggle("row-menu--open", !isOpen);
+      toggle.setAttribute("aria-expanded", String(!isOpen));
+      if (!isOpen) {
+        menu.querySelector(".row-menu__item")?.focus();
       }
     });
 
-    menu.classList.toggle("row-menu--open", !isOpen);
-    toggle.setAttribute("aria-expanded", String(!isOpen));
-    if (!isOpen) {
-      menu.querySelector(".row-menu__item")?.focus();
-    }
+    toggle.addEventListener("keydown", (event) => {
+      if (!["Enter", " ", "ArrowDown"].includes(event.key)) {
+        return;
+      }
+      event.preventDefault();
+      toggle.click();
+    });
   });
+}
 
-  toggle.addEventListener("keydown", (event) => {
-    if (!["Enter", " ", "ArrowDown"].includes(event.key)) {
-      return;
-    }
-    event.preventDefault();
-    toggle.click();
-  });
-});
+bindRowMenuToggles();
 
 confirmModal?.addEventListener("click", (event) => {
   const target = event.target;
@@ -5817,9 +5949,15 @@ document.addEventListener("keydown", (event) => {
 
 initializeTheme();
 initializeLanguage();
-showAppView();
+if (getCurrentRoutePath() === "/auth") {
+  showLoginView();
+} else {
+  showAppView();
+}
 syncInitialRouteView();
 syncPasswordToggleUi();
+ensureApplicationRowsSeeded();
+bindRowMenuToggles();
 enrichApplicationRows();
 setCustomSelectOptions(
   regionFilter,
@@ -5845,9 +5983,15 @@ enhanceApplicationViewActions();
 async function applyRouteFromHash() {
   const currentPath = getCurrentRoutePath();
 
-  if (currentPath === "/") {
+  if (currentPath === "/auth") {
+    showLoginView();
+    return;
+  }
+
+  if (currentPath === "/apps") {
     currentCanonicalTitle = "Modullar";
     syncPageHeading("Modullar");
+    showAppView();
     showModulesView();
     return;
   }

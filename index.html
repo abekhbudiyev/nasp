@@ -8,7 +8,7 @@
   <link rel="shortcut icon" href="/muruvvat-logo-cropped.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -147,6 +147,16 @@
               <button class="header-dropdown__item" type="button" data-language-code="i18n">i18n keys</button>
             </div>
           </div>
+          <div class="header-menu">
+            <button class="header-tool" type="button" aria-label="Shrift" aria-expanded="false" data-menu-toggle="font">
+                    <span id="fontCurrent">Noto</span>
+            </button>
+            <div class="header-dropdown">
+                      <button class="header-dropdown__item" type="button" data-font-code="inter">Inter</button>
+                      <button class="header-dropdown__item" type="button" data-font-code="roboto">Roboto</button>
+                      <button class="header-dropdown__item" type="button" data-font-code="noto">Noto Sans</button>
+            </div>
+          </div>
           <button class="header-tool header-tool--theme" type="button" id="themeToggle" aria-label="Night mode" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none"><path d="M14.5 4.5a7 7 0 1 0 5 12 7.5 7.5 0 1 1-5-12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
           </button>
@@ -185,6 +195,18 @@
               <strong>PTPK moduli</strong>
               <p>Komissiya yig'ilishlari, bayonnomalar va xulosalar uchun modul.</p>
             </a>
+            <div class="module-card module-card--disabled" aria-disabled="true">
+              <span class="module-card__badge">INS</span>
+              <strong>Inson moduli</strong>
+              <p>Shaxsga oid jarayonlar va xizmatlar uchun modul.</p>
+              <span class="module-card__status">Ishlab chiqish jarayonida</span>
+            </div>
+            <div class="module-card module-card--disabled" aria-disabled="true">
+              <span class="module-card__badge">EIS</span>
+              <strong>Erta aralashuv moduli</strong>
+              <p>Erta aralashuv bilan bog'liq ishchi jarayonlar uchun modul.</p>
+              <span class="module-card__status">Ishlab chiqish jarayonida</span>
+            </div>
           </div>
         </section>
 
@@ -571,8 +593,7 @@
             </table>
           </div>
           <div class="table-pagination">
-            <div class="table-pagination__info" id="paginationInfo">1-12 / 12 ta yozuv</div>
-            <div class="table-pagination__right">
+            <div class="table-pagination__left">
               <div class="pagination-select" id="rowsPerPageMenu">
                 <button class="pagination-select__trigger" id="rowsPerPageTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Bir sahifadagi yozuvlar soni">
                   <span id="rowsPerPageLabel">10 ta</span>
@@ -590,6 +611,9 @@
                   <option value="100">100 ta</option>
                 </select>
               </div>
+            </div>
+            <div class="table-pagination__info" id="paginationInfo">1-12 / 12 ta yozuv</div>
+            <div class="table-pagination__right">
               <button class="pagination__button pagination__button--icon" id="paginationPrev" type="button" disabled aria-label="Oldingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <div class="pagination" id="paginationPages" aria-label="Sahifalar"></div>
               <button class="pagination__button pagination__button--icon" id="paginationNext" type="button" aria-label="Keyingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
