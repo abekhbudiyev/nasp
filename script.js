@@ -15,6 +15,7 @@ const sidebarCollapse = document.getElementById("sidebarCollapse");
 const pageBreadcrumb = document.getElementById("pageBreadcrumb");
 const pageTitle = document.getElementById("pageTitle");
 const moduleTitle = document.getElementById("moduleTitle");
+const sidebarHomeButton = document.getElementById("sidebarHomeButton");
 const languageCurrent = document.getElementById("languageCurrent");
 const languageItems = document.querySelectorAll("[data-language-code]");
 const themeToggle = document.getElementById("themeToggle");
@@ -1782,11 +1783,12 @@ const uzTranslationDefaults = {
   "empty.notReady": "bo'limi uchun kontent hali tayyorlanmagan.",
   "result.positive": "Ijobiy",
   "result.negative": "Salbiy",
-  "login.heroTitle": "Internat uylariga joylashtirish jarayonini yagona oynada boshqaring.",
-  "login.heroText": "Arizalar, qarorlar, so'rovnomalar va monitoring holatini bitta tizimda yuritish uchun tizimga kiring.",
-  "login.statProcessed": "Qayta ishlangan arizalar",
-  "login.statControl": "Markazlashgan nazorat",
-  "login.statIntegration": "Barcha bo'limlar bilan integratsiya",
+  "login.systemName": "IHMA boshqaruv tizimi",
+  "login.heroTitle": "Ijtimoiy himoya axborot tizimlarini yagona oynada boshqaring.",
+  "login.heroText": "Arizalar, hisobotlar va ishchi jarayonlarni markazlashgan platformada boshqarish uchun tizimga kiring.",
+  "login.statProcessed": "Yagona boshqaruv muhiti",
+  "login.statControl": "Markazlashgan boshqaruv",
+  "login.statIntegration": "Hududiy integratsiya",
   "login.systemAccess": "Tizimga kirish",
   "login.signIn": "Tizimga kiring",
   "login.signInText": "Login va parol orqali ishchi kabinetga o'ting.",
@@ -2033,20 +2035,24 @@ function updateLanguageMenuUi() {
 function applyStaticTranslations() {
   updateLanguageMenuUi();
 
-  document.title = currentModule === "ptpk" ? tr("module.ptpk", "PTPK moduli") : tr("module.muruvvat", "Muruvvat moduli");
+  if (!appShell?.hasAttribute("hidden")) {
+    document.title = currentModule === "ptpk" ? "PTPK" : "MRV";
+  } else {
+    syncDocumentTitleForAuth();
+  }
 
   const loginHeroBadge = document.querySelector(".login-hero__badge");
-  if (loginHeroBadge) loginHeroBadge.textContent = tr("module.muruvvat", "Muruvvat moduli");
+  if (loginHeroBadge) loginHeroBadge.textContent = tr("login.systemName", "IHMA boshqaruv tizimi");
   const loginHeroTitle = document.querySelector(".login-hero__title");
-  if (loginHeroTitle) loginHeroTitle.textContent = tr("login.heroTitle", "Internat uylariga joylashtirish jarayonini yagona oynada boshqaring.");
+  if (loginHeroTitle) loginHeroTitle.textContent = tr("login.heroTitle", "Ijtimoiy himoya axborot tizimlarini yagona oynada boshqaring.");
   const loginHeroText = document.querySelector(".login-hero__text");
-  if (loginHeroText) loginHeroText.textContent = tr("login.heroText", "Arizalar, qarorlar, so'rovnomalar va monitoring holatini bitta tizimda yuritish uchun tizimga kiring.");
+  if (loginHeroText) loginHeroText.textContent = tr("login.heroText", "Arizalar, hisobotlar va ishchi jarayonlarni markazlashgan platformada boshqarish uchun tizimga kiring.");
   const loginStatLabels = document.querySelectorAll(".login-hero__card span");
-  if (loginStatLabels[0]) loginStatLabels[0].textContent = tr("login.statProcessed", "Qayta ishlangan arizalar");
-  if (loginStatLabels[1]) loginStatLabels[1].textContent = tr("login.statControl", "Markazlashgan nazorat");
-  if (loginStatLabels[2]) loginStatLabels[2].textContent = tr("login.statIntegration", "Barcha bo'limlar bilan integratsiya");
+  if (loginStatLabels[0]) loginStatLabels[0].textContent = tr("login.statProcessed", "Yagona boshqaruv muhiti");
+  if (loginStatLabels[1]) loginStatLabels[1].textContent = tr("login.statControl", "Markazlashgan boshqaruv");
+  if (loginStatLabels[2]) loginStatLabels[2].textContent = tr("login.statIntegration", "Hududiy integratsiya");
   const loginBrandTitle = document.querySelector(".login-card__brand strong");
-  if (loginBrandTitle) loginBrandTitle.textContent = tr("module.muruvvat", "Muruvvat moduli");
+  if (loginBrandTitle) loginBrandTitle.textContent = tr("login.systemName", "IHMA boshqaruv tizimi");
   const loginBrandSub = document.querySelector(".login-card__brand div span");
   if (loginBrandSub) loginBrandSub.textContent = tr("login.systemAccess", "Tizimga kirish");
   const loginHeading = document.querySelector(".login-card__heading h2");
@@ -2238,6 +2244,7 @@ function showLoginView() {
   loginView?.removeAttribute("hidden");
   appShell?.setAttribute("hidden", "");
   loginError?.setAttribute("hidden", "");
+  syncDocumentTitleForAuth();
 }
 
 function showAppView() {
@@ -4463,31 +4470,21 @@ function updateReportFilterControls() {
   }
 }
 
-function syncInitialRouteView() {
+async function syncInitialRouteView() {
   const currentPath = getCurrentRoutePath();
   const routeTitle = getTitleFromHash(currentPath);
 
   if (currentPath === "/") {
-    showModulesView();
-    return;
-  }
-
-  if (routeTitle === "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot") {
-    showDisabilityReportView();
-    return;
-  }
-
-  if (routeTitle === "Arizalar - Arizalar ro'yxati") {
-    showApplicationsView();
+    await applyRouteFromHash();
     return;
   }
 
   if (routeTitle) {
-    showEmptyView(routeTitle.split(" - ").pop() ?? routeTitle);
+    await navigateToView(routeTitle);
     return;
   }
 
-  showApplicationsView();
+  await applyRouteFromHash();
 }
 
 function applyReportFilters() {
@@ -4548,12 +4545,14 @@ if (loginForm && loginUsername && loginPassword && loginSubmit) {
       loginSubmit.disabled = false;
       loginSubmit.textContent = tr("login.submit", "Kirish");
       showAppView();
-      syncInitialRouteView();
+      if (window.location.hash) {
+        window.location.hash = "";
+      }
       applyRouteFromHash();
       showToast(
         tr("login.welcomeTitle", "Xush kelibsiz"),
-        tformat("login.welcomeDescription", `${getModuleConfig(getModuleKeyFromHash(getCurrentRoutePath())).label}ga muvaffaqiyatli kirildi.`, {
-          module: getModuleConfig(getModuleKeyFromHash(getCurrentRoutePath())).label,
+        tformat("login.welcomeDescription", "Tizimga muvaffaqiyatli kirildi.", {
+          module: tl("Asosiy menyu"),
         }),
       );
       return;
@@ -4805,10 +4804,23 @@ function syncPageHeading(title) {
   currentCanonicalTitle = title;
   const parts = translateRouteParts(title);
   pageTitle.textContent = parts[parts.length - 1];
-  document.title = parts[parts.length - 1];
+  if (title === "Modullar") {
+    document.title = "Modullar";
+    if (pageBreadcrumb) {
+      pageBreadcrumb.textContent = tl("Asosiy menyu");
+    }
+    return;
+  }
+  const moduleShortName = currentModule === "ptpk" ? "PTPK" : "MRV";
+  const pageName = parts[parts.length - 1];
+  document.title = pageName === "Home" ? moduleShortName : `${moduleShortName} - ${pageName}`;
   if (pageBreadcrumb) {
     pageBreadcrumb.textContent = parts.length > 1 ? parts.join(" / ") : tl("Asosiy menyu");
   }
+}
+
+function syncDocumentTitleForAuth() {
+  document.title = "Auth";
 }
 
 function syncActiveNavigation(link) {
@@ -5064,6 +5076,20 @@ exportButton?.addEventListener("click", async () => {
     tr("applications.exportDoneTitle", "Eksport yakunlandi"),
     tr("applications.exportDoneDescription", "Ro'yxat fayl ko'rinishida tayyorlandi."),
   );
+});
+
+sidebarHomeButton?.addEventListener("click", async () => {
+  if (loginView && !loginView.hasAttribute("hidden")) {
+    return;
+  }
+
+  const defaultHash = `#${getModuleConfig(currentModule).defaultHash}`;
+  if (window.location.hash !== defaultHash) {
+    window.location.hash = defaultHash;
+    return;
+  }
+
+  await applyRouteFromHash();
 });
 
 reportExportButton?.addEventListener("click", async () => {
