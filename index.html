@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IHMA boshqaruv tizimi</title>
+  <title>NASP boshqaruv tizimi</title>
   <link rel="icon" type="image/svg+xml" href="/muruvvat-logo-cropped.svg">
   <link rel="shortcut icon" href="/muruvvat-logo-cropped.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +14,7 @@
 <body>
   <main class="login-shell" id="loginView">
     <section class="login-hero">
-      <div class="login-hero__badge">IHMA boshqaruv tizimi</div>
+      <div class="login-hero__badge">NASP boshqaruv tizimi</div>
       <h1 class="login-hero__title">Ko'p modulli axborot tizimlarini yagona oynada boshqaring.</h1>
       <p class="login-hero__text">Modullar, arizalar, hisobotlar va ishchi jarayonlarni bitta platformada boshqarish uchun tizimga kiring.</p>
       <div class="login-hero__stats">
@@ -40,7 +40,7 @@
             <img src="/muruvvat-logo-cropped.svg" alt="" />
           </span>
           <div>
-            <strong>IHMA boshqaruv tizimi</strong>
+            <strong>NASP boshqaruv tizimi</strong>
             <span>Tizimga kirish</span>
           </div>
         </div>
@@ -131,6 +131,7 @@
             <div class="header-dropdown">
               <a class="header-dropdown__item" href="#/mrv/home">Muruvvat moduli</a>
               <a class="header-dropdown__item" href="#/ptpk/home">PTPK moduli</a>
+              <a class="header-dropdown__item" href="#/cabinet/home">Shaxsiy kabinet</a>
             </div>
           </div>
           <div class="header-menu">
@@ -195,6 +196,11 @@
               <strong>PTPK moduli</strong>
               <p>Komissiya yig'ilishlari, bayonnomalar va xulosalar uchun modul.</p>
             </a>
+            <a class="module-card" href="#/cabinet/home" data-module-path="/cabinet/home">
+              <span class="module-card__badge">SK</span>
+              <strong>Shaxsiy kabinet</strong>
+              <p>Ijtimoiy navigator va foydalanuvchi uchun shaxsiy yo'nalishlar moduli.</p>
+            </a>
             <div class="module-card module-card--disabled" aria-disabled="true">
               <span class="module-card__badge">INS</span>
               <strong>Inson moduli</strong>
@@ -206,6 +212,116 @@
               <strong>Erta aralashuv moduli</strong>
               <p>Erta aralashuv bilan bog'liq ishchi jarayonlar uchun modul.</p>
               <span class="module-card__status">Ishlab chiqish jarayonida</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="navigator-view" id="cabinetNavigatorView" hidden>
+          <article class="navigator-hero">
+            <div class="navigator-hero__content">
+              <span class="navigator-hero__eyebrow">Shaxsiy kabinet</span>
+              <h3>Ijtimoiy navigator</h3>
+              <p>Xizmatlar, murojaatlar va foydalanuvchi uchun kerakli keyingi qadamlarni bir joydan boshqarish uchun boshlang'ich sahifa.</p>
+            </div>
+            <div class="navigator-hero__chips">
+              <span class="navigator-chip">Faol</span>
+              <span class="navigator-chip navigator-chip--soft">Boshlang'ich ko'rinish</span>
+            </div>
+          </article>
+
+          <div class="navigator-layout">
+            <aside class="navigator-profile">
+              <div class="navigator-profile__avatar">AB</div>
+              <div class="navigator-profile__main">
+                <span class="navigator-profile__eyebrow">Profil</span>
+                <strong>Asilbek Bekhbudiyev</strong>
+                <p>Shaxsiy kabinet foydalanuvchisi</p>
+              </div>
+              <div class="navigator-profile__meta">
+                <div class="navigator-profile__row"><span>Status</span><strong>Faol</strong></div>
+                <div class="navigator-profile__row"><span>Hudud</span><strong>Toshkent shahri</strong></div>
+                <div class="navigator-profile__row"><span>Oxirgi kirish</span><strong>Bugun, 09:42</strong></div>
+              </div>
+              <div class="navigator-progress">
+                <span class="navigator-progress__label">Profil tayyorligi</span>
+                <div class="navigator-progress__bar"><span style="width: 72%"></span></div>
+                <span class="navigator-progress__value">72%</span>
+              </div>
+            </aside>
+
+            <div class="navigator-main">
+              <section class="navigator-stats">
+                <article class="navigator-stat">
+                  <span>Faol yo'nalish</span>
+                  <strong>03</strong>
+                  <small>Yakunlanmagan tavsiya</small>
+                </article>
+                <article class="navigator-stat">
+                  <span>Ko'rib chiqilmoqda</span>
+                  <strong>07</strong>
+                  <small>Jarayondagi murojaat</small>
+                </article>
+                <article class="navigator-stat">
+                  <span>Xizmatlar</span>
+                  <strong>12</strong>
+                  <small>Mos xizmat topildi</small>
+                </article>
+              </section>
+
+              <div class="navigator-grid">
+                <article class="navigator-card navigator-card--accent">
+                  <span class="navigator-card__label">Asosiy yo'nalish</span>
+                  <strong>Mening ijtimoiy navigatorim</strong>
+                  <p>Hududiy xizmatlar, foydali yo'nalishlar va holatlarni shu bo'limda jamlash mumkin.</p>
+                  <ul class="navigator-inline-list">
+                    <li>Hududiy xizmatlar</li>
+                    <li>Foydali tavsiyalar</li>
+                    <li>Keyingi qadamlar</li>
+                  </ul>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Tezkor amallar</span>
+                  <div class="navigator-actions">
+                    <button class="navigator-action" type="button">Murojaat yaratish</button>
+                    <button class="navigator-action" type="button">Holatni tekshirish</button>
+                    <button class="navigator-action" type="button">Xizmat topish</button>
+                    <button class="navigator-action" type="button">Ma'lumotni yangilash</button>
+                  </div>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Tavsiya etilgan yo'nalishlar</span>
+                  <ul class="navigator-list">
+                    <li><strong>Bolalar xizmatlari</strong><span>Yoshga mos xizmat va yo'nalishlar</span></li>
+                    <li><strong>Tibbiy yordam</strong><span>Hujjatlar va xulosalar bo'yicha keyingi qadamlar</span></li>
+                    <li><strong>Hududiy markazlar</strong><span>Eng yaqin bo'lim va aloqa nuqtalari</span></li>
+                  </ul>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Mening holatim</span>
+                  <div class="navigator-checklist">
+                    <div class="navigator-checklist__item is-done"><strong>Profil tekshirildi</strong><span>Asosiy ma'lumotlar to'ldirilgan</span></div>
+                    <div class="navigator-checklist__item is-active"><strong>Hududiy xizmat tanlanmoqda</strong><span>Eng mos xizmatlar saralanmoqda</span></div>
+                    <div class="navigator-checklist__item"><strong>Qo'shimcha hujjat kutilmoqda</strong><span>Keyingi bosqich uchun tayyor turadi</span></div>
+                  </div>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Faol holatlar</span>
+                  <ul class="navigator-feed">
+                    <li><span>Shaxsiy tavsiyalar yangilandi</span><small>Bugun, 09:20</small></li>
+                    <li><span>Hududiy xizmatlar qayta tekshirildi</span><small>Bugun, 08:45</small></li>
+                    <li><span>Profil ma'lumotlari sinxronlandi</span><small>Kecha, 17:10</small></li>
+                  </ul>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Izoh</span>
+                  <p class="navigator-note">Bu sahifa boshlang'ich skelet ko'rinishida tayyorlandi. Keyingi bosqichda profil, xizmatlar, murojaatlar va tavsiyalar shu bloklar asosida bosqichma-bosqich kengaytiriladi.</p>
+                </article>
+              </div>
             </div>
           </div>
         </section>
