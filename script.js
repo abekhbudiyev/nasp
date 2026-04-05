@@ -2953,6 +2953,19 @@ function normalizeRoutePath(pathValue) {
     normalized = `/${normalized}`;
   }
 
+  const basePath = (() => {
+    try {
+      const pathname = new URL(document.baseURI).pathname.replace(/\/+$/, "");
+      return pathname === "/" ? "" : pathname;
+    } catch {
+      return "";
+    }
+  })();
+
+  if (basePath && (normalized === basePath || normalized.startsWith(`${basePath}/`))) {
+    normalized = normalized.slice(basePath.length) || "/";
+  }
+
   normalized = normalized.replace(/^\/app(?=\/|$)/, "") || "/";
   normalized = normalized.replace(/\/+$/, "") || "/";
 
