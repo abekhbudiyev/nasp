@@ -243,17 +243,19 @@
             <div class="navigator-hero__content">
               <span class="navigator-hero__eyebrow">Shaxsiy kabinet</span>
               <h3>Ijtimoiy navigator</h3>
-              <p>Xizmatlar, murojaatlar va foydalanuvchi uchun kerakli keyingi qadamlarni bir joydan boshqarish uchun boshlang'ich sahifa.</p>
+              <p>Xizmatlar, murojaatlar, tavsiyalar va foydalanuvchi uchun eng yaqin keyingi qadamlarni bir joydan boshqarish uchun ishchi panel.</p>
             </div>
             <div class="navigator-hero__chips">
               <span class="navigator-chip">Faol</span>
-              <span class="navigator-chip navigator-chip--soft">Boshlang'ich ko'rinish</span>
+              <span class="navigator-chip navigator-chip--soft">3 ta ustuvor vazifa</span>
             </div>
           </article>
 
           <div class="navigator-layout">
             <aside class="navigator-profile">
-              <div class="navigator-profile__avatar">AB</div>
+              <div class="navigator-profile__avatar navigator-profile__avatar--image">
+                <img src="person-boy.png" alt="Foydalanuvchi rasmi">
+              </div>
               <div class="navigator-profile__main">
                 <span class="navigator-profile__eyebrow">Profil</span>
                 <strong>Asilbek Bekhbudiyev</strong>
@@ -268,6 +270,20 @@
                 <span class="navigator-progress__label">Profil tayyorligi</span>
                 <div class="navigator-progress__bar"><span style="width: 72%"></span></div>
                 <span class="navigator-progress__value">72%</span>
+              </div>
+              <div class="navigator-metrics">
+                <article class="navigator-metric">
+                  <strong>4 ta</strong>
+                  <span>Faol murojaat</span>
+                </article>
+                <article class="navigator-metric">
+                  <strong>2 ta</strong>
+                  <span>Yaqin xizmat</span>
+                </article>
+                <article class="navigator-metric">
+                  <strong>1 ta</strong>
+                  <span>Yangi xabar</span>
+                </article>
               </div>
             </aside>
 
@@ -290,6 +306,23 @@
                 </article>
               </section>
 
+              <section class="navigator-priority">
+                <article class="navigator-priority__card navigator-priority__card--accent">
+                  <span class="navigator-card__label">Bugungi ustuvor vazifa</span>
+                  <strong>Hududiy markaz bilan bog'lanish</strong>
+                  <p>Mirzo Ulug'bek tumani bo'yicha birlamchi qabul uchun navbat ochilgan. Bugun 17:00 gacha tasdiqlash tavsiya etiladi.</p>
+                  <div class="navigator-priority__actions">
+                    <button class="navigator-action navigator-action--solid" type="button" data-navigator-action="check-status">Holatni tekshirish</button>
+                    <button class="navigator-action" type="button" data-navigator-action="support">Supportga yozish</button>
+                  </div>
+                </article>
+                <article class="navigator-priority__card">
+                  <span class="navigator-card__label">Yaqin tadbir</span>
+                  <strong>Profil ma'lumotlarini yangilash</strong>
+                  <p>JSHSHIR va aloqa ma'lumotlari 6 oy oldin yangilangan. Tavsiyalar sifatini oshirish uchun ma'lumotni yangilash tavsiya qilinadi.</p>
+                </article>
+              </section>
+
               <div class="navigator-grid">
                 <article class="navigator-card navigator-card--accent">
                   <span class="navigator-card__label">Asosiy yo'nalish</span>
@@ -305,20 +338,38 @@
                 <article class="navigator-card">
                   <span class="navigator-card__label">Tezkor amallar</span>
                   <div class="navigator-actions">
-                    <button class="navigator-action" type="button">Murojaat yaratish</button>
-                    <button class="navigator-action" type="button">Holatni tekshirish</button>
-                    <button class="navigator-action" type="button">Xizmat topish</button>
-                    <button class="navigator-action" type="button">Ma'lumotni yangilash</button>
+                    <button class="navigator-action" type="button" data-navigator-action="create-application">Murojaat yaratish</button>
+                    <button class="navigator-action" type="button" data-navigator-action="check-status">Holatni tekshirish</button>
+                    <button class="navigator-action" type="button" data-navigator-action="find-service">Xizmat topish</button>
+                    <button class="navigator-action" type="button" data-navigator-action="update-profile">Ma'lumotni yangilash</button>
                   </div>
                 </article>
 
                 <article class="navigator-card">
-                  <span class="navigator-card__label">Tavsiya etilgan yo'nalishlar</span>
-                  <ul class="navigator-list">
-                    <li><strong>Bolalar xizmatlari</strong><span>Yoshga mos xizmat va yo'nalishlar</span></li>
-                    <li><strong>Tibbiy yordam</strong><span>Hujjatlar va xulosalar bo'yicha keyingi qadamlar</span></li>
-                    <li><strong>Hududiy markazlar</strong><span>Eng yaqin bo'lim va aloqa nuqtalari</span></li>
-                  </ul>
+                  <span class="navigator-card__label">Mos xizmatlar</span>
+                  <div class="navigator-service-list">
+                    <article class="navigator-service">
+                      <div>
+                        <strong>Hududiy muruvvat markazi</strong>
+                        <p>2.4 km uzoqlikda, ish vaqti 09:00 - 18:00</p>
+                      </div>
+                      <span class="navigator-chip">Yaqin</span>
+                    </article>
+                    <article class="navigator-service">
+                      <div>
+                        <strong>Tibbiy-ijtimoiy ko'rik</strong>
+                        <p>Qo'shimcha hujjat asosida onlayn navbat olish mumkin</p>
+                      </div>
+                      <span class="navigator-chip navigator-chip--soft">Tavsiya</span>
+                    </article>
+                    <article class="navigator-service">
+                      <div>
+                        <strong>Reabilitatsiya bo'yicha maslahat</strong>
+                        <p>Masofaviy murojaat va support kanali ochiq</p>
+                      </div>
+                      <span class="navigator-chip navigator-chip--soft">Masofaviy</span>
+                    </article>
+                  </div>
                 </article>
 
                 <article class="navigator-card">
@@ -340,8 +391,35 @@
                 </article>
 
                 <article class="navigator-card">
+                  <span class="navigator-card__label">Yaqin aloqa nuqtalari</span>
+                  <ul class="navigator-list">
+                    <li><strong>Call-markaz</strong><span>1140 • Ish vaqti: 09:00 - 18:00</span></li>
+                    <li><strong>Telegram support</strong><span>@nasp_support • Tezkor savollar uchun</span></li>
+                    <li><strong>Hududiy koordinator</strong><span>Toshkent shahri, Mirzo Ulug'bek tumani</span></li>
+                  </ul>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Keyingi qadamlar</span>
+                  <div class="navigator-roadmap">
+                    <article class="navigator-roadmap__item is-done">
+                      <strong>Profil tekshiruvi yakunlandi</strong>
+                      <span>Asosiy ma'lumotlar tizim bilan sinxronlandi</span>
+                    </article>
+                    <article class="navigator-roadmap__item is-active">
+                      <strong>Hududiy xizmat tanlash</strong>
+                      <span>Eng mos bo'lim va xizmatlar avtomatik saralanmoqda</span>
+                    </article>
+                    <article class="navigator-roadmap__item">
+                      <strong>Murojaat yuborish</strong>
+                      <span>Tanlangan xizmat asosida yangi murojaat yaratish mumkin</span>
+                    </article>
+                  </div>
+                </article>
+
+                <article class="navigator-card">
                   <span class="navigator-card__label">Izoh</span>
-                  <p class="navigator-note">Bu sahifa boshlang'ich skelet ko'rinishida tayyorlandi. Keyingi bosqichda profil, xizmatlar, murojaatlar va tavsiyalar shu bloklar asosida bosqichma-bosqich kengaytiriladi.</p>
+                  <p class="navigator-note">Ijtimoiy navigator foydalanuvchiga qaysi xizmatga murojaat qilish, qaysi hujjatlar tayyorlash va qaysi bo'lim bilan bog'lanishni tez topishga yordam beradigan yagona ishchi oynadir.</p>
                 </article>
               </div>
             </div>

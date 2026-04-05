@@ -130,9 +130,22 @@ const detailContent = document.getElementById("detailContent");
 const detailActions = document.getElementById("detailActions");
 const detailAcceptButton = document.getElementById("detailAcceptButton");
 const detailRejectButton = document.getElementById("detailRejectButton");
+const applicationsTableBody = document.querySelector("#applicationsTable tbody");
 const systemTheme = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 const themeStorageKey = "muruvvat-theme";
 const fontStorageKey = "mrv-font";
+const authStorageKey = "nasp-auth-state";
+const rememberedUsernameStorageKey = "nasp-remembered-username";
+const routeIntentStorageKey = "nasp-route-intent";
+const lastVisitedRouteStorageKey = "nasp-last-route";
+const apiBaseUrl = (() => {
+  const port = window.location.port;
+  const isFrontendDevServer = port === "8000";
+  const origin = isFrontendDevServer
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : window.location.origin;
+  return `${origin}/api`;
+})();
 const calendarLocaleLabels = {
   uz: {
     months: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
@@ -163,9 +176,22 @@ const calendarLocaleLabels = {
     weekdays: ["date.week.mo", "date.week.tu", "date.week.we", "date.week.th", "date.week.fr", "date.week.sa", "date.week.su"],
   },
 };
-const tableState = { currentPage: 1, totalPages: 1, filteredRows: [] };
+const tableState = {
+  currentPage: 1,
+  totalPages: 1,
+  filteredRows: [],
+  totalItems: 0,
+  serverPagination: false,
+  serverStats: null,
+};
 const calendarState = { activeField: null, viewDate: null };
 const confirmState = { action: "", applicationId: "" };
+const applicationFilterCatalog = {
+  districtsByRegion: {},
+  districtLoadingPromises: {},
+  organizationsByType: {},
+  organizationLoadingPromises: {},
+};
 let supportTicketCounter = 1025;
 let currentModule = "muruvvat";
 let currentLanguage = "uz";
@@ -2844,6 +2870,69 @@ function sleep(ms) {
   });
 }
 
+function getStoredAuthState() {
+  return window.localStorage.getItem(authStorageKey) || window.sessionStorage.getItem(authStorageKey);
+}
+
+function isAuthenticated() {
+  return getStoredAuthState() === "authenticated";
+}
+
+function persistAuthState(shouldRemember = false) {
+  window.sessionStorage.removeItem(authStorageKey);
+  window.localStorage.removeItem(authStorageKey);
+  const storage = shouldRemember ? window.localStorage : window.sessionStorage;
+  storage.setItem(authStorageKey, "authenticated");
+}
+
+function clearAuthState() {
+  window.sessionStorage.removeItem(authStorageKey);
+  window.localStorage.removeItem(authStorageKey);
+}
+
+function rememberUsername(value) {
+  const normalizedValue = String(value ?? "").trim();
+  if (normalizedValue) {
+    window.localStorage.setItem(rememberedUsernameStorageKey, normalizedValue);
+    return;
+  }
+
+  window.localStorage.removeItem(rememberedUsernameStorageKey);
+}
+
+function getRememberedUsername() {
+  return window.localStorage.getItem(rememberedUsernameStorageKey) || "";
+}
+
+function storeRouteIntent(path) {
+  const normalizedPath = normalizeRoutePath(path);
+  if (normalizedPath !== "/auth") {
+    window.sessionStorage.setItem(routeIntentStorageKey, normalizedPath);
+  }
+}
+
+function consumeRouteIntent() {
+  const storedPath = window.sessionStorage.getItem(routeIntentStorageKey);
+  window.sessionStorage.removeItem(routeIntentStorageKey);
+  return storedPath ? normalizeRoutePath(storedPath) : "";
+}
+
+function storeLastVisitedRoute(path) {
+  const normalizedPath = normalizeRoutePath(path);
+  if (normalizedPath !== "/auth" && normalizedPath !== "/apps") {
+    window.localStorage.setItem(lastVisitedRouteStorageKey, normalizedPath);
+  }
+}
+
+function getLastVisitedRoute() {
+  const storedPath = window.localStorage.getItem(lastVisitedRouteStorageKey);
+  return storedPath ? normalizeRoutePath(storedPath) : "";
+}
+
+function resolvePostLoginRoute() {
+  return consumeRouteIntent() || getLastVisitedRoute() || "/apps";
+}
+
 function showLoginView() {
   loginView?.removeAttribute("hidden");
   appShell?.setAttribute("hidden", "");
@@ -3155,19 +3244,62 @@ let applicationAppliedFilters = { ...applicationDefaultFilters };
 let reportAppliedFilters = { ...reportDefaultFilters };
 
 const applicationStepLabels = {
-  yangi: "Yangi",
-  "ishchi-guruhi-korib-chiqmoqda": "Ishchi guruhi tomonidan ko'rib chiqilmoqda",
-  "ishchi-guruhi-qabul-qilgan": "Ishchi guruhi tomonidan qabul qilingan",
-  "komissiya-korib-chiqmoqda": "Komissiya tomonidan ko'rib chiqilmoqda",
-  "ishchi-guruhi-rad-etgan": "Ishchi guruhi tomonidan rad etilgan",
-  "komissiya-rad-etgan": "Komissiya tomonidan rad etilgan",
-  "komissiya-qabul-qilgan": "Qabul qilingan",
+  "112": "Yaratildi",
+  "131": "Ishchi guruh tomonidan ko'rib chiqilmoqda",
+  "132": "Ishchi guruh tomonidan bekor qilindi",
+  "133": "Ishchi guruh tomonidan qabul qilindi",
+  "134": "Komissiya tomonidan ko'rib chiqilmoqda",
+  "136": "Komissiya ko'rib chiqdi",
+  "171": "Navbatga tushdi",
+  "172": "Ro'yxatga olindi",
 };
 
 const applicationOrganizationTypeLabels = {
+  "25": "Erkaklar",
+  "26": "Ayollar",
+  "27": "Bolalar",
   bolalar: "Bolalar",
   erkaklar: "Erkaklar",
   ayollar: "Ayollar",
+};
+
+const applicationStaticFilterOptions = {
+  statuses: [
+    { value: "jarayonda", label: "Jarayonda" },
+    { value: "qabul qilingan", label: "Qabul qilingan" },
+    { value: "rad etilgan", label: "Rad etilgan" },
+  ],
+  regions: [
+    { value: "6", label: "Qoraqalpog'iston R." },
+    { value: "3", label: "Andijon" },
+    { value: "4", label: "Buxoro" },
+    { value: "5", label: "Jizzax" },
+    { value: "7", label: "Qashqadaryo" },
+    { value: "8", label: "Navoiy" },
+    { value: "9", label: "Namangan" },
+    { value: "10", label: "Samarqand" },
+    { value: "12", label: "Sirdaryo" },
+    { value: "11", label: "Surxondaryo" },
+    { value: "2", label: "Toshkent viloyati" },
+    { value: "13", label: "Farg'ona" },
+    { value: "14", label: "Xorazm" },
+    { value: "1", label: "Toshkent shahri" },
+  ],
+  steps: [
+    { value: "112", label: "Yaratildi" },
+    { value: "131", label: "Ishchi guruh tomonidan ko'rib chiqilmoqda" },
+    { value: "132", label: "Ishchi guruh tomonidan bekor qilindi" },
+    { value: "133", label: "Ishchi guruh tomonidan qabul qilindi" },
+    { value: "134", label: "Komissiya tomonidan ko'rib chiqilmoqda" },
+    { value: "136", label: "Komissiya ko'rib chiqdi" },
+    { value: "171", label: "Navbatga tushdi" },
+    { value: "172", label: "Ro'yxatga olindi" },
+  ],
+  organizationTypes: [
+    { value: "25", label: "Erkaklar" },
+    { value: "26", label: "Ayollar" },
+    { value: "27", label: "Bolalar" },
+  ],
 };
 
 const applicationRowMetadata = {
@@ -3232,31 +3364,96 @@ supplementalApplicationRows.forEach((item) => {
 
 const applicationRowMenuMarkup = `<div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div>`;
 
-function buildSupplementalApplicationRow(item) {
-  const statusClass = item.status === "Qabul qilingan"
+function deriveApplicationStatusLabel(stepName = "") {
+  const normalized = String(stepName).trim().toLowerCase();
+
+  if (
+    normalized === "ishchi guruh tomonidan bekor qilindi"
+    || normalized === "komissiya ko'rib chiqdi"
+  ) {
+    return "Rad etilgan";
+  }
+  if (normalized === "navbatga tushdi" || normalized === "ro'yxatga olindi") {
+    return "Qabul qilingan";
+  }
+
+  return "Jarayonda";
+}
+
+function normalizeApplicationStepValue(stepValue = "", stepName = "") {
+  const normalizedValue = String(stepValue || "").trim();
+  if (applicationStepLabels[normalizedValue]) {
+    return normalizedValue;
+  }
+
+  const normalizedName = String(stepName || stepValue).trim().toLowerCase();
+  if (normalizedName === "yangi" || normalizedName === "yaratildi") return "112";
+  if (normalizedName === "ishchi-guruhi-korib-chiqmoqda" || normalizedName === "ishchi guruh tomonidan ko'rib chiqilmoqda") return "131";
+  if (normalizedName === "ishchi-guruhi-rad-etgan" || normalizedName === "ishchi guruh tomonidan bekor qilindi") return "132";
+  if (normalizedName === "ishchi-guruhi-qabul-qilgan" || normalizedName === "ishchi guruh tomonidan qabul qilindi") return "133";
+  if (normalizedName === "komissiya-korib-chiqmoqda" || normalizedName === "komissiya tomonidan ko'rib chiqilmoqda" || normalizedName === "komissiya tomonidan tomonidan ko'rib chiqilmoqda") return "134";
+  if (normalizedName === "komissiya-rad-etgan" || normalizedName === "komissiya ko'rib chiqdi") return "136";
+  if (normalizedName === "komissiya-qabul-qilgan" || normalizedName === "navbatga tushdi") return "171";
+  if (normalizedName === "ro'yxatga olindi") return "172";
+  return "112";
+}
+
+function getApplicationStepValueFromName(stepName = "") {
+  return normalizeApplicationStepValue("", stepName);
+}
+
+function buildApplicationTableRow(item) {
+  const statusLabel = item.status || deriveApplicationStatusLabel(item.appStep);
+  const statusClass = statusLabel === "Qabul qilingan"
     ? "status-badge--accepted"
-    : item.status === "Rad etilgan"
+    : statusLabel === "Rad etilgan"
       ? "status-badge--rejected"
       : "status-badge--process";
-  const organizationLabel = translateDisplayValue(item.organization);
-  const organizationRegionLabel = translateDisplayValue(item.organizationRegion);
-  const regionLabel = translateDisplayValue(item.regionLabel);
-  const districtLabel = translateDisplayValue(item.district);
-  const searchValue = `${item.id} ${item.fullName} ${item.pinfl} ${item.regionLabel.toUpperCase()} ${item.district.toUpperCase()} ${item.organization.toUpperCase()}`;
+  const organizationLabel = item.organization || "-";
+  const organizationRegionLabel = item.organizationRegion || "-";
+  const regionLabel = item.regionLabel || "-";
+  const districtLabel = item.district || "-";
+  const stepValue = normalizeApplicationStepValue(item.step || item.appStepId || "", item.appStep);
+  const regionValue = String(item.regionId || item.regionValue || regionLabel).trim();
+  const districtValue = String(item.districtId || districtLabel).trim();
+  const organizationValue = String(item.organizationId || organizationLabel).trim();
+  const organizationTypeValue = String(item.organizationTypeId || "").trim();
+  const searchValue = [
+    item.id,
+    item.fullName,
+    item.pinfl,
+    regionLabel,
+    districtLabel,
+    organizationLabel,
+    organizationRegionLabel,
+    item.appStep,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toUpperCase();
+
+  applicationRowMetadata[item.id] = { step: stepValue };
+
   return `
-    <tr data-status="${item.status.toLowerCase()}" data-region="${item.regionValue}" data-search="${searchValue}"
-        data-organization-raw="${escapeHtml(item.organization)}"
-        data-organization-region-raw="${escapeHtml(item.organizationRegion)}"
-        data-region-label-raw="${escapeHtml(item.regionLabel)}"
-        data-district-raw="${escapeHtml(item.district)}">
+    <tr data-status="${statusLabel.toLowerCase()}" data-region="${escapeHtml(regionValue)}" data-step="${escapeHtml(stepValue)}"
+        data-district="${escapeHtml(districtValue)}" data-organization-type="${escapeHtml(organizationTypeValue)}"
+        data-organization="${escapeHtml(organizationValue)}" data-search="${escapeHtml(searchValue)}"
+        data-organization-raw="${escapeHtml(organizationLabel)}"
+        data-organization-region-raw="${escapeHtml(organizationRegionLabel)}"
+        data-region-label-raw="${escapeHtml(regionLabel)}"
+        data-district-raw="${escapeHtml(districtLabel)}">
       <td class="actions-cell">${applicationRowMenuMarkup}</td>
-      <td><div class="stacked-cell stacked-cell--application"><strong>${item.id}</strong><span>${item.date}</span></div></td>
-      <td><div class="stacked-cell"><strong>${item.fullName}</strong><span>${item.pinfl}</span></div></td>
-      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(item.organization)}">${organizationLabel}</strong><span data-raw-value="${escapeHtml(item.organizationRegion)}">${organizationRegionLabel}</span></div></td>
-      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(item.regionLabel)}">${regionLabel}</strong><span data-raw-value="${escapeHtml(item.district)}">${districtLabel}</span></div></td>
-      <td><span class="status-badge ${statusClass}">${item.status}</span></td>
+      <td><div class="stacked-cell stacked-cell--application"><strong>${escapeHtml(item.id)}</strong><span>${escapeHtml(item.date || "-")}</span></div></td>
+      <td><div class="stacked-cell"><strong>${escapeHtml(item.fullName || "-")}</strong><span>${escapeHtml(item.pinfl || "-")}</span></div></td>
+      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(organizationLabel)}">${translateDisplayValue(organizationLabel)}</strong><span data-raw-value="${escapeHtml(organizationRegionLabel)}">${translateDisplayValue(organizationRegionLabel)}</span></div></td>
+      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(regionLabel)}">${translateDisplayValue(regionLabel)}</strong><span data-raw-value="${escapeHtml(districtLabel)}">${translateDisplayValue(districtLabel)}</span></div></td>
+      <td><span class="status-badge ${statusClass}">${escapeHtml(statusLabel)}</span></td>
     </tr>
   `;
+}
+
+function buildSupplementalApplicationRow(item) {
+  return buildApplicationTableRow(item);
 }
 
 function ensureApplicationRowsSeeded() {
@@ -3270,6 +3467,76 @@ function ensureApplicationRowsSeeded() {
   tbody.dataset.seeded = "true";
   applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr:not(.table-empty)"));
   rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+}
+
+async function loadApplicationsFromApi({ hideUntilResolved = false } = {}) {
+  if (!applicationsTableBody) {
+    return;
+  }
+
+  if (hideUntilResolved) {
+    applicationsListView?.setAttribute("hidden", "");
+  }
+  contentLoader?.removeAttribute("hidden");
+
+  try {
+    const pageSize = Number(rowsPerPage?.value ?? "10");
+    const response = await fetch(`${apiBaseUrl}/mrv/applications?${buildApplicationsApiQuery()}`, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const emptyRow = document.getElementById("tableEmptyRow");
+    tableState.serverPagination = true;
+    tableState.totalItems = Number(payload.totalCount || items.length || 0);
+    tableState.totalPages = Math.max(1, Number(payload.totalPages || 1));
+    tableState.serverStats = payload.stats || null;
+
+    Array.from(applicationsTableBody.querySelectorAll("tr:not(.table-empty)")).forEach((row) => row.remove());
+
+    if (items.length > 0 && emptyRow) {
+      emptyRow.insertAdjacentHTML("beforebegin", items.map(buildApplicationTableRow).join(""));
+      applicationsTableBody.dataset.seeded = "api";
+      applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr:not(.table-empty)"));
+      rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+      updateApplicationFilterOptionSets();
+      updateApplicationFilterControls();
+      bindRowMenuToggles();
+      applyTableFilters();
+      showApplicationsView();
+      return;
+    }
+
+    applicationsTableBody.dataset.seeded = "api";
+    applicationRows = [];
+    rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+    updateApplicationFilterOptionSets();
+    updateApplicationFilterControls();
+    applyTableFilters();
+    showApplicationsView();
+  } catch (error) {
+    console.error("Failed to load applications from API:", error);
+    tableState.serverPagination = false;
+    tableState.serverStats = null;
+    ensureApplicationRowsSeeded();
+    enrichApplicationRows();
+    updateApplicationFilterOptionSets();
+    updateApplicationFilterControls();
+    applyTableFilters();
+    showApplicationsView();
+    showToast(
+      "API ulanmagan",
+      "Oracle API ishlamadi, demo arizalar ko'rsatildi.",
+      "error",
+    );
+  }
 }
 
 const reportColumnKeys = [
@@ -4856,8 +5123,7 @@ async function navigateToView(title) {
   }
 
   if (isApplicationsList) {
-    showApplicationsView();
-    applyTableFilters();
+    await loadApplicationsFromApi({ hideUntilResolved: true });
     return;
   }
 
@@ -4868,6 +5134,42 @@ async function navigateToView(title) {
 
   showDisabilityReportView();
 }
+
+cabinetNavigatorView?.addEventListener("click", async (event) => {
+  const actionButton = event.target.closest("[data-navigator-action]");
+  if (!(actionButton instanceof HTMLElement)) {
+    return;
+  }
+
+  const action = actionButton.getAttribute("data-navigator-action");
+  if (!action) {
+    return;
+  }
+
+  if (action === "create-application") {
+    window.location.hash = "/mrv/applications/applicationList";
+    await applyRouteFromHash();
+    showToast("Arizalar ro'yxati ochildi", "Yangi murojaat yaratish uchun tegishli bo'limga o'tdingiz.");
+    return;
+  }
+
+  if (action === "support") {
+    showToast("Support tavsiya qilindi", "Call-markaz yoki Telegram support orqali tezkor bog'lanish mumkin.");
+    return;
+  }
+
+  if (action === "check-status") {
+    showToast("Holat yangilandi", "So'nggi murojaatlar va xizmat holatlari qayta tekshirildi.");
+    return;
+  }
+
+  if (action === "find-service") {
+    showToast("Xizmatlar yangilandi", "Hududingiz bo'yicha eng yaqin xizmatlar ro'yxati yangilandi.");
+    return;
+  }
+
+  showToast("Profil yangilash", "Ma'lumotlarni yangilash funksiyasi keyingi bosqichda kengaytiriladi.");
+});
 
 function formatSupportTimestamp() {
   const now = new Date();
@@ -4918,9 +5220,13 @@ function getReportFilterValues() {
   };
 }
 
+function getCatalogLabel(items, value, fallback = "") {
+  const match = items.find((item) => String(item.value) === String(value));
+  return match?.label ?? fallback;
+}
+
 function getApplicationRegionLabel(value) {
-  const row = Array.from(applicationRows).find((item) => (item.getAttribute("data-region") ?? "") === value);
-  return row?.querySelector("td:nth-child(5) strong")?.textContent?.trim() ?? value;
+  return getCatalogLabel(getCurrentRegionOptions(), value, value);
 }
 
 function getApplicationStepLabel(value) {
@@ -4930,19 +5236,93 @@ function getApplicationStepLabel(value) {
 function getDefaultStepForStatus(status) {
   const normalized = status.toLowerCase();
   if (normalized === "jarayonda") {
-    return "komissiya-korib-chiqmoqda";
+    return "134";
   }
   if (normalized === "qabul qilingan") {
-    return "komissiya-qabul-qilgan";
+    return "171";
   }
   if (normalized === "rad etilgan") {
-    return "komissiya-rad-etgan";
+    return "136";
   }
   return "";
 }
 
 function getApplicationOrganizationTypeLabel(value) {
   return tl(applicationOrganizationTypeLabels[value] ?? value);
+}
+
+function getFallbackDistrictOptionsFromRows(regionValue) {
+  const seen = new Map();
+
+  Array.from(applicationRows)
+    .filter((row) => String(row.getAttribute("data-region") ?? "") === String(regionValue))
+    .forEach((row) => {
+      const value = String(row.getAttribute("data-district") ?? "").trim();
+      if (!value || value === "all" || seen.has(value)) {
+        return;
+      }
+
+      const label = row.getAttribute("data-district-raw")
+        ?? row.querySelector("td:nth-child(5) span")?.textContent?.trim()
+        ?? value;
+
+      seen.set(value, { value, label, regionId: String(regionValue) });
+    });
+
+  return Array.from(seen.values());
+}
+
+function getFallbackOrganizationOptionsFromRows(organizationTypeValue) {
+  const seen = new Map();
+
+  Array.from(applicationRows)
+    .filter((row) => String(row.getAttribute("data-organization-type") ?? "") === String(organizationTypeValue))
+    .forEach((row) => {
+      const value = String(row.getAttribute("data-organization") ?? "").trim();
+      if (!value || value === "all" || seen.has(value)) {
+        return;
+      }
+
+      const label = row.getAttribute("data-organization-raw")
+        ?? row.querySelector("td:nth-child(4) strong")?.textContent?.trim()
+        ?? value;
+
+      seen.set(value, { value, label, organizationTypeId: String(organizationTypeValue) });
+    });
+
+  return Array.from(seen.values());
+}
+
+function getCurrentRegionOptions() {
+  return applicationStaticFilterOptions.regions;
+}
+
+function getCurrentDistrictOptions(regionValue) {
+  if (!regionValue || regionValue === "all") {
+    return [];
+  }
+
+  return applicationFilterCatalog.districtsByRegion[String(regionValue)]
+    ?? getFallbackDistrictOptionsFromRows(regionValue);
+}
+
+function getCurrentOrganizationOptions(organizationTypeValue) {
+  if (!organizationTypeValue || organizationTypeValue === "all") {
+    return [];
+  }
+
+  return applicationFilterCatalog.organizationsByType[String(organizationTypeValue)]
+    ?? getFallbackOrganizationOptionsFromRows(organizationTypeValue);
+}
+
+function getApplicationDistrictLabel(value) {
+  const currentRegionValue = regionFilter?.value ?? applicationAppliedFilters.region;
+  return getCatalogLabel(getCurrentDistrictOptions(currentRegionValue), value, value);
+}
+
+function getApplicationOrganizationLabel(value) {
+  const currentOrganizationTypeValue = organizationTypeFilter?.value ?? applicationAppliedFilters.organizationType;
+  return getCatalogLabel(getCurrentOrganizationOptions(currentOrganizationTypeValue), value, value);
 }
 
 function getApplicationSelectLabel(select) {
@@ -5030,6 +5410,99 @@ function setCustomSelectDisabled(select, disabled) {
   }
 }
 
+function buildApplicationsApiQuery() {
+  const params = new URLSearchParams({
+    page: String(tableState.currentPage),
+    pageSize: String(Number(rowsPerPage?.value ?? "10")),
+  });
+
+  const values = applicationAppliedFilters;
+  if (values.status !== "all") params.set("status", values.status);
+  if (values.step !== "all") params.set("step", values.step);
+  if (values.region !== "all") params.set("regionId", values.region);
+  if (values.district !== "all") params.set("districtId", values.district);
+  if (values.organizationType !== "all") params.set("organizationTypeId", values.organizationType);
+  if (values.organization !== "all") params.set("organizationId", values.organization);
+  if (values.dateFrom) params.set("dateFrom", values.dateFrom);
+  if (values.dateTo) params.set("dateTo", values.dateTo);
+
+  return params.toString();
+}
+
+async function loadDistrictOptions(regionValue) {
+  const normalizedRegionValue = String(regionValue ?? "").trim();
+  if (!normalizedRegionValue || normalizedRegionValue === "all") {
+    return [];
+  }
+
+  if (applicationFilterCatalog.districtsByRegion[normalizedRegionValue]) {
+    return applicationFilterCatalog.districtsByRegion[normalizedRegionValue];
+  }
+
+  if (applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue]) {
+    return applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
+  }
+
+  applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue] = fetch(
+    `${apiBaseUrl}/mrv/filter-options/districts?regionId=${encodeURIComponent(normalizedRegionValue)}`,
+    { headers: { Accept: "application/json" } },
+  )
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const districts = Array.isArray(payload.districts) ? payload.districts : [];
+      applicationFilterCatalog.districtsByRegion[normalizedRegionValue] = districts;
+      delete applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
+      return districts;
+    })
+    .catch((error) => {
+      delete applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
+      throw error;
+    });
+
+  return applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
+}
+
+async function loadOrganizationOptions(organizationTypeValue) {
+  const normalizedOrganizationTypeValue = String(organizationTypeValue ?? "").trim();
+  if (!normalizedOrganizationTypeValue || normalizedOrganizationTypeValue === "all") {
+    return [];
+  }
+
+  if (applicationFilterCatalog.organizationsByType[normalizedOrganizationTypeValue]) {
+    return applicationFilterCatalog.organizationsByType[normalizedOrganizationTypeValue];
+  }
+
+  if (applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue]) {
+    return applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
+  }
+
+  applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue] = fetch(
+    `${apiBaseUrl}/mrv/filter-options/organizations?organizationTypeId=${encodeURIComponent(normalizedOrganizationTypeValue)}`,
+    { headers: { Accept: "application/json" } },
+  )
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const organizations = Array.isArray(payload.organizations) ? payload.organizations : [];
+      applicationFilterCatalog.organizationsByType[normalizedOrganizationTypeValue] = organizations;
+      delete applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
+      return organizations;
+    })
+    .catch((error) => {
+      delete applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
+      throw error;
+    });
+
+  return applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
+}
+
 function enrichApplicationRows() {
   applicationRows.forEach((row) => {
     const applicationId = row.querySelector(".stacked-cell--application strong")?.textContent?.trim() ?? "";
@@ -5082,7 +5555,7 @@ function enrichApplicationRows() {
     const status = row.getAttribute("data-status") ?? "";
     const organizationTypeMatch = organization.match(/\(([^)]+)\)\s*$/);
     const organizationType = organizationTypeMatch?.[1]?.trim().toLowerCase() ?? "";
-    const stepValue = metadata.step || getDefaultStepForStatus(status);
+    const stepValue = normalizeApplicationStepValue(metadata.step || getDefaultStepForStatus(status), "");
 
     if (organizationPrimary) {
       organizationPrimary.textContent = translateDisplayValue(organization);
@@ -5126,38 +5599,45 @@ function enrichApplicationRows() {
 function updateApplicationFilterOptionSets() {
   const statusValue = statusFilter?.value ?? "all";
   const regionValue = regionFilter?.value ?? "all";
-  const stepValue = stepFilter?.value ?? "all";
   const organizationTypeValue = organizationTypeFilter?.value ?? "all";
-  const rows = Array.from(applicationRows);
+  const allowedStepValues = statusValue === "all"
+    ? applicationStaticFilterOptions.steps.map((item) => item.value)
+    : applicationStaticFilterOptions.steps
+      .filter((item) => {
+        if (statusValue === "jarayonda") {
+          return ["112", "131", "133", "134"].includes(item.value);
+        }
+        if (statusValue === "qabul qilingan") {
+          return ["171", "172"].includes(item.value);
+        }
+        if (statusValue === "rad etilgan") {
+          return ["132", "136"].includes(item.value);
+        }
+        return true;
+      })
+      .map((item) => item.value);
+  const regionOptions = getCurrentRegionOptions();
+  const districtOptions = getCurrentDistrictOptions(regionValue);
+  const organizationOptions = getCurrentOrganizationOptions(organizationTypeValue);
 
-  const stepRows = statusValue === "all"
-    ? rows
-    : rows.filter((row) => (row.getAttribute("data-status") ?? "") === statusValue);
-  const regionRows = regionValue === "all"
-    ? rows
-    : rows.filter((row) => (row.getAttribute("data-region") ?? "") === regionValue);
-
-  const districtValues = regionRows.map((row) => row.getAttribute("data-district") ?? "");
-  const organizationTypeValues = regionRows.map((row) => row.getAttribute("data-organization-type") ?? "");
-  const organizationRows = organizationTypeValue === "all"
-    ? regionRows
-    : regionRows.filter((row) => (row.getAttribute("data-organization-type") ?? "") === organizationTypeValue);
-  const organizationValues = organizationRows.map((row) => row.getAttribute("data-organization") ?? "");
-
+  setCustomSelectOptions(statusFilter, applicationStaticFilterOptions.statuses.map((item) => item.value), (value) => {
+    return getCatalogLabel(applicationStaticFilterOptions.statuses, value, value);
+  });
+  setCustomSelectOptions(stepFilter, allowedStepValues, (value) => {
+    return getCatalogLabel(applicationStaticFilterOptions.steps, value, value);
+  });
+  setCustomSelectOptions(regionFilter, regionOptions.map((item) => item.value), getApplicationRegionLabel);
+  setCustomSelectOptions(districtFilter, districtOptions.map((item) => item.value), getApplicationDistrictLabel);
   setCustomSelectOptions(
-    stepFilter,
-    stepRows.map((row) => row.getAttribute("data-step") ?? ""),
-    getApplicationStepLabel,
+    organizationTypeFilter,
+    applicationStaticFilterOptions.organizationTypes.map((item) => item.value),
+    getApplicationOrganizationTypeLabel,
   );
-  setCustomSelectOptions(districtFilter, districtValues, (value) => {
-    const row = rows.find((item) => (item.getAttribute("data-district") ?? "") === value);
-    return row?.querySelector("td:nth-child(5) span")?.textContent?.trim() ?? value;
-  });
-  setCustomSelectOptions(organizationTypeFilter, organizationTypeValues, getApplicationOrganizationTypeLabel);
-  setCustomSelectOptions(organizationFilter, organizationValues, (value) => {
-    const row = rows.find((item) => (item.getAttribute("data-organization") ?? "") === value);
-    return row?.querySelector("td:nth-child(4) strong")?.textContent?.trim() ?? value;
-  });
+  setCustomSelectOptions(
+    organizationFilter,
+    organizationOptions.map((item) => item.value),
+    getApplicationOrganizationLabel,
+  );
 
   setCustomSelectDisabled(stepFilter, statusValue === "all");
   setCustomSelectDisabled(districtFilter, regionValue === "all");
@@ -5297,23 +5777,6 @@ function updateReportFilterControls() {
   }
 }
 
-async function syncInitialRouteView() {
-  const currentPath = getCurrentRoutePath();
-  const routeTitle = getTitleFromHash(currentPath);
-
-  if (currentPath === "/") {
-    await applyRouteFromHash();
-    return;
-  }
-
-  if (routeTitle) {
-    await navigateToView(routeTitle);
-    return;
-  }
-
-  await applyRouteFromHash();
-}
-
 function applyReportFilters() {
   reportAppliedFilters = { ...getReportFilterValues() };
   updateReportFilterControls();
@@ -5362,18 +5825,22 @@ if (loginForm && loginUsername && loginPassword && loginSubmit) {
     event.preventDefault();
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
+    const shouldRemember = Boolean(rememberMe?.checked);
 
     loginError?.setAttribute("hidden", "");
     loginSubmit.disabled = true;
     loginSubmit.innerHTML = `<span class="login-submit__spinner" aria-hidden="true"></span><span>${tr("login.signingIn", "Kirilmoqda...")}</span>`;
 
-      await sleep(200);
+    await sleep(200);
 
     if (username === "admin" && password === "muruvvat123") {
+      persistAuthState(shouldRemember);
+      rememberUsername(shouldRemember ? username : "");
+      const targetRoute = resolvePostLoginRoute();
       loginSubmit.disabled = false;
       loginSubmit.textContent = tr("login.submit", "Kirish");
       showAppView();
-      window.location.hash = "/apps";
+      window.location.hash = targetRoute;
       showToast(
         tr("login.welcomeTitle", "Xush kelibsiz"),
         tformat("login.welcomeDescription", "Tizimga muvaffaqiyatli kirildi.", {
@@ -5480,9 +5947,12 @@ supportForm?.addEventListener("submit", async (event) => {
 });
 
 logoutButton?.addEventListener("click", () => {
+  clearAuthState();
+  window.sessionStorage.removeItem(routeIntentStorageKey);
   showLoginView();
-  loginUsername && (loginUsername.value = "");
+  loginUsername && (loginUsername.value = getRememberedUsername());
   loginPassword && (loginPassword.value = "");
+  rememberMe && (rememberMe.checked = Boolean(getRememberedUsername()));
   loginSubmit && (loginSubmit.textContent = tr("login.submit", "Kirish"));
 });
 
@@ -5630,13 +6100,18 @@ function syncPageHeading(title) {
   const parts = translateRouteParts(title);
   pageTitle.textContent = parts[parts.length - 1];
   if (title === "Modullar") {
-    document.title = "Modullar";
+    document.title = "NASP - Modullar";
     if (pageBreadcrumb) {
       pageBreadcrumb.textContent = tl("Asosiy menyu");
     }
     return;
   }
-  const moduleShortName = currentModule === "ptpk" ? "PTPK" : "MRV";
+  const moduleShortNameMap = {
+    muruvvat: "MRV",
+    ptpk: "PTPK",
+    cabinet: "Kabinet",
+  };
+  const moduleShortName = moduleShortNameMap[currentModule] || "NASP";
   const pageName = parts[parts.length - 1];
   document.title = pageName === "Home" ? moduleShortName : `${moduleShortName} - ${pageName}`;
   if (pageBreadcrumb) {
@@ -5645,7 +6120,7 @@ function syncPageHeading(title) {
 }
 
 function syncDocumentTitleForAuth() {
-  document.title = "Auth";
+  document.title = "NASP - Kirish";
 }
 
 function syncActiveNavigation(link) {
@@ -5797,49 +6272,71 @@ function applyTableFilters() {
   });
 
   tableState.filteredRows = matchedRows;
-  tableState.totalPages = Math.max(1, Math.ceil(matchedRows.length / limit));
-  tableState.currentPage = Math.min(tableState.currentPage, tableState.totalPages);
+  let startIndex = 0;
+  let endIndex = matchedRows.length;
 
-  const startIndex = (tableState.currentPage - 1) * limit;
-  const endIndex = startIndex + limit;
-  matchedRows.slice(startIndex, endIndex).forEach((row) => {
-    row.style.display = "";
-  });
+  if (tableState.serverPagination) {
+    matchedRows.forEach((row) => {
+      row.style.display = "";
+    });
+  } else {
+    tableState.totalPages = Math.max(1, Math.ceil(matchedRows.length / limit));
+    tableState.currentPage = Math.min(tableState.currentPage, tableState.totalPages);
+    startIndex = (tableState.currentPage - 1) * limit;
+    endIndex = startIndex + limit;
+    matchedRows.slice(startIndex, endIndex).forEach((row) => {
+      row.style.display = "";
+    });
+  }
 
   updateApplicationsEmptyState(matchedRows.length);
 
-  const totalBase = matchedRows.length || 1;
+  const totalBase = (tableState.serverPagination
+    ? Number(tableState.serverStats?.total || tableState.totalItems || 0)
+    : matchedRows.length) || 1;
   const percent = (value) => `${Math.round((value / totalBase) * 100)}%`;
   if (totalApplicationsStat) {
-    totalApplicationsStat.textContent = String(matchedRows.length);
+    totalApplicationsStat.textContent = String(
+      tableState.serverPagination ? tableState.serverStats?.total || tableState.totalItems || 0 : matchedRows.length,
+    );
   }
   if (totalApplicationsShare) {
-    totalApplicationsShare.textContent = matchedRows.length > 0 ? "100%" : "0%";
+    totalApplicationsShare.textContent = totalBase > 0 ? "100%" : "0%";
   }
   if (processApplicationsStat) {
-    processApplicationsStat.textContent = String(processCount);
+    processApplicationsStat.textContent = String(tableState.serverPagination ? tableState.serverStats?.process || 0 : processCount);
   }
   if (processApplicationsShare) {
-    processApplicationsShare.textContent = matchedRows.length > 0 ? percent(processCount) : "0%";
+    processApplicationsShare.textContent = totalBase > 0
+      ? percent(tableState.serverPagination ? tableState.serverStats?.process || 0 : processCount)
+      : "0%";
   }
   if (acceptedApplicationsStat) {
-    acceptedApplicationsStat.textContent = String(acceptedCount);
+    acceptedApplicationsStat.textContent = String(tableState.serverPagination ? tableState.serverStats?.accepted || 0 : acceptedCount);
   }
   if (acceptedApplicationsShare) {
-    acceptedApplicationsShare.textContent = matchedRows.length > 0 ? percent(acceptedCount) : "0%";
+    acceptedApplicationsShare.textContent = totalBase > 0
+      ? percent(tableState.serverPagination ? tableState.serverStats?.accepted || 0 : acceptedCount)
+      : "0%";
   }
   if (rejectedApplicationsStat) {
-    rejectedApplicationsStat.textContent = String(rejectedCount);
+    rejectedApplicationsStat.textContent = String(tableState.serverPagination ? tableState.serverStats?.rejected || 0 : rejectedCount);
   }
   if (rejectedApplicationsShare) {
-    rejectedApplicationsShare.textContent = matchedRows.length > 0 ? percent(rejectedCount) : "0%";
+    rejectedApplicationsShare.textContent = totalBase > 0
+      ? percent(tableState.serverPagination ? tableState.serverStats?.rejected || 0 : rejectedCount)
+      : "0%";
   }
 
   if (paginationInfo) {
-    const from = matchedRows.length > 0 ? startIndex + 1 : 0;
-    const to = matchedRows.length > 0 ? Math.min(endIndex, matchedRows.length) : 0;
+    const from = matchedRows.length > 0
+      ? (tableState.serverPagination ? ((tableState.currentPage - 1) * limit) + 1 : startIndex + 1)
+      : 0;
+    const to = matchedRows.length > 0
+      ? (tableState.serverPagination ? ((tableState.currentPage - 1) * limit) + matchedRows.length : Math.min(endIndex, matchedRows.length))
+      : 0;
     paginationInfo.textContent = matchedRows.length > 0
-      ? formatPaginationInfo(from, to, matchedRows.length)
+      ? formatPaginationInfo(from, to, tableState.serverPagination ? tableState.totalItems : matchedRows.length)
       : formatPaginationInfo(0, 0, 0);
   }
 
@@ -5848,6 +6345,10 @@ function applyTableFilters() {
 
 function resetAndApplyFilters() {
   tableState.currentPage = 1;
+  if (tableState.serverPagination) {
+    loadApplicationsFromApi();
+    return;
+  }
   applyTableFilters();
 }
 
@@ -6038,11 +6539,65 @@ if (filterToggle && filterMenu) {
   });
 }
 
-[statusFilter, regionFilter, stepFilter, districtFilter, organizationTypeFilter, organizationFilter].forEach((select) => {
+[statusFilter, stepFilter, districtFilter, organizationFilter].forEach((select) => {
   select?.addEventListener("change", () => {
     updateApplicationFilterOptionSets();
     updateApplicationFilterControls();
   });
+});
+
+regionFilter?.addEventListener("change", async () => {
+  if (districtFilter) {
+    districtFilter.value = "all";
+  }
+
+  updateApplicationFilterOptionSets();
+  updateApplicationFilterControls();
+
+  const regionValue = regionFilter.value ?? "all";
+  if (regionValue === "all" || !tableState.serverPagination) {
+    return;
+  }
+
+  try {
+    await loadDistrictOptions(regionValue);
+    updateApplicationFilterOptionSets();
+    updateApplicationFilterControls();
+  } catch (error) {
+    console.error("Failed to load district options:", error);
+    showToast(
+      "Districtlar yuklanmadi",
+      "Tanlangan hudud uchun districtlar ro'yxatini olishda xatolik yuz berdi.",
+      "error",
+    );
+  }
+});
+
+organizationTypeFilter?.addEventListener("change", async () => {
+  if (organizationFilter) {
+    organizationFilter.value = "all";
+  }
+
+  updateApplicationFilterOptionSets();
+  updateApplicationFilterControls();
+
+  const organizationTypeValue = organizationTypeFilter.value ?? "all";
+  if (organizationTypeValue === "all" || !tableState.serverPagination) {
+    return;
+  }
+
+  try {
+    await loadOrganizationOptions(organizationTypeValue);
+    updateApplicationFilterOptionSets();
+    updateApplicationFilterControls();
+  } catch (error) {
+    console.error("Failed to load organization options:", error);
+    showToast(
+      "Tashkilotlar yuklanmadi",
+      "Tanlangan tur uchun tashkilotlar ro'yxatini olishda xatolik yuz berdi.",
+      "error",
+    );
+  }
 });
 
 languageItems.forEach((button) => {
@@ -6069,7 +6624,11 @@ applyFilters?.addEventListener("click", () => {
   applicationAppliedFilters = { ...getApplicationFilterValues() };
   updateApplicationFilterControls();
   tableState.currentPage = 1;
-  applyTableFilters();
+  if (tableState.serverPagination) {
+    loadApplicationsFromApi();
+  } else {
+    applyTableFilters();
+  }
   filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
   filterToggle?.setAttribute("aria-expanded", "false");
 });
@@ -6113,7 +6672,12 @@ if (rowsPerPageMenu && rowsPerPageTrigger && rowsPerPage) {
 
       rowsPerPage.value = value;
       syncRowsPerPageUi();
-      resetAndApplyFilters();
+      if (tableState.serverPagination) {
+        tableState.currentPage = 1;
+        loadApplicationsFromApi();
+      } else {
+        resetAndApplyFilters();
+      }
       rowsPerPageMenu.classList.remove("pagination-select--open");
       rowsPerPageTrigger.setAttribute("aria-expanded", "false");
     });
@@ -6597,6 +7161,10 @@ resetFilters?.addEventListener("click", () => {
   tableState.currentPage = 1;
   closeCalendar();
   updateApplicationFilterControls();
+  if (tableState.serverPagination) {
+    loadApplicationsFromApi();
+    return;
+  }
   applyTableFilters();
 });
 
@@ -6609,11 +7177,19 @@ tableEmptyAction?.addEventListener("click", () => {
 
 paginationPrev?.addEventListener("click", () => {
   tableState.currentPage = Math.max(1, tableState.currentPage - 1);
+  if (tableState.serverPagination) {
+    loadApplicationsFromApi();
+    return;
+  }
   applyTableFilters();
 });
 
 paginationNext?.addEventListener("click", () => {
   tableState.currentPage = Math.min(tableState.totalPages, tableState.currentPage + 1);
+  if (tableState.serverPagination) {
+    loadApplicationsFromApi();
+    return;
+  }
   applyTableFilters();
 });
 
@@ -6629,6 +7205,10 @@ paginationPages?.addEventListener("click", (event) => {
   }
 
   tableState.currentPage = page;
+  if (tableState.serverPagination) {
+    loadApplicationsFromApi();
+    return;
+  }
   applyTableFilters();
 });
 
@@ -6662,26 +7242,21 @@ document.addEventListener("keydown", (event) => {
 
 initializeTheme();
 initializeLanguage();
-if (getCurrentRoutePath() === "/auth") {
+const rememberedUsername = getRememberedUsername();
+if (loginUsername && rememberedUsername) {
+  loginUsername.value = rememberedUsername;
+}
+if (rememberMe) {
+  rememberMe.checked = Boolean(rememberedUsername);
+}
+if (getCurrentRoutePath() === "/auth" || !isAuthenticated()) {
   showLoginView();
 } else {
   showAppView();
 }
-syncInitialRouteView();
 syncPasswordToggleUi();
-ensureApplicationRowsSeeded();
 bindRowMenuToggles();
 enrichApplicationRows();
-setCustomSelectOptions(
-  regionFilter,
-  Array.from(new Set(Array.from(applicationRows).map((row) => row.getAttribute("data-region") ?? "").filter(Boolean))),
-  getApplicationRegionLabel,
-);
-setCustomSelectOptions(
-  stepFilter,
-  Array.from(new Set(Array.from(applicationRows).map((row) => row.getAttribute("data-step") ?? "").filter(Boolean))),
-  getApplicationStepLabel,
-);
 updateApplicationFilterOptionSets();
 updateApplicationFilterControls();
 applyTableFilters();
@@ -6695,8 +7270,22 @@ enhanceApplicationViewActions();
 
 async function applyRouteFromHash() {
   const currentPath = getCurrentRoutePath();
+  const loggedIn = isAuthenticated();
 
   if (currentPath === "/auth") {
+    if (loggedIn) {
+      const targetRoute = getLastVisitedRoute() || "/apps";
+      if (window.location.hash !== `#${targetRoute}`) {
+        window.location.hash = targetRoute;
+        return;
+      }
+    }
+    showLoginView();
+    return;
+  }
+
+  if (!loggedIn) {
+    storeRouteIntent(currentPath);
     showLoginView();
     return;
   }
@@ -6728,6 +7317,7 @@ async function applyRouteFromHash() {
   const targetLink = document.querySelector(`[data-page-title="${effectiveRouteTitle}"]`);
   syncPageHeading(effectiveRouteTitle);
   syncActiveNavigation(targetLink instanceof HTMLElement ? targetLink : null);
+  storeLastVisitedRoute(currentPath);
 
   await navigateToView(effectiveRouteTitle);
 }
