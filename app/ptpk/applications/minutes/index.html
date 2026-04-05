@@ -3,30 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Muruvvat AT</title>
+  <title>NASP boshqaruv tizimi</title>
+  <script>
+    (function () {
+      var path = window.location.pathname;
+      var appIndex = path.indexOf('/app/');
+      var basePath = appIndex >= 0 ? path.slice(0, appIndex + 1) : (path.endsWith('/') ? path : path.slice(0, path.lastIndexOf('/') + 1)) || '/';
+      document.write('<base href="' + basePath + '">');
+    }());
+  </script>
+  <link rel="icon" type="image/svg+xml" href="muruvvat-logo-cropped.svg">
+  <link rel="shortcut icon" href="muruvvat-logo-cropped.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="login-shell" id="loginView">
     <section class="login-hero">
-      <div class="login-hero__badge">Muruvvat AT</div>
-      <h1 class="login-hero__title">Internat uylariga joylashtirish jarayonini yagona oynada boshqaring.</h1>
-      <p class="login-hero__text">Arizalar, qarorlar, so'rovnomalar va monitoring holatini bitta tizimda yuritish uchun tizimga kiring.</p>
+      <div class="login-hero__badge">NASP boshqaruv tizimi</div>
+      <h1 class="login-hero__title">Ko'p modulli axborot tizimlarini yagona oynada boshqaring.</h1>
+      <p class="login-hero__text">Modullar, arizalar, hisobotlar va ishchi jarayonlarni bitta platformada boshqarish uchun tizimga kiring.</p>
       <div class="login-hero__stats">
         <article class="login-hero__card">
           <strong>12 480+</strong>
-          <span>Qayta ishlangan arizalar</span>
+          <span>Ko'p modulli platforma</span>
         </article>
         <article class="login-hero__card">
           <strong>24/7</strong>
-          <span>Markazlashgan nazorat</span>
+          <span>Markazlashgan boshqaruv</span>
         </article>
         <article class="login-hero__card">
           <strong>Hududiy</strong>
-          <span>Barcha bo'limlar bilan integratsiya</span>
+          <span>Hududiy integratsiya</span>
         </article>
       </div>
     </section>
@@ -35,10 +45,10 @@
       <div class="login-card">
         <div class="login-card__brand">
           <span class="login-card__mark" aria-hidden="true">
-            <img src="/muruvvat-logo-cropped.svg" alt="" />
+            <img src="muruvvat-logo-cropped.svg" alt="" />
           </span>
           <div>
-            <strong>Muruvvat moduli</strong>
+            <strong>NASP boshqaruv tizimi</strong>
             <span>Tizimga kirish</span>
           </div>
         </div>
@@ -75,7 +85,7 @@
         <div class="login-alt">
           <a class="login-alt__button" href="https://id.egov.uz" target="_blank" rel="noopener noreferrer">
             <span class="login-alt__icon login-alt__icon--oneid" aria-hidden="true">
-              <img src="/oneid-logo-cropped.png" alt="" />
+              <img src="oneid-logo-cropped.png" alt="" />
             </span>
             <span class="login-alt__copy">
               <strong>OneID orqali kirish</strong>
@@ -95,9 +105,9 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar__top">
         <div class="brand">
-          <div class="brand__mark" aria-hidden="true">
-            <img src="/muruvvat-logo-cropped.svg" alt="" />
-          </div>
+          <button class="brand__mark" id="sidebarHomeButton" type="button" aria-label="Modul bosh sahifasi">
+            <img src="muruvvat-logo-cropped.svg" alt="" />
+          </button>
           <div>
             <h1 class="brand__title" id="moduleTitle">Muruvvat moduli</h1>
           </div>
@@ -127,10 +137,9 @@
               <svg viewBox="0 0 24 24" fill="none"><path d="M5 5h4v4H5zM10 5h4v4h-4zM15 5h4v4h-4zM5 10h4v4H5zM10 10h4v4h-4zM15 10h4v4h-4zM5 15h4v4H5zM10 15h4v4h-4zM15 15h4v4h-4z" stroke="currentColor" stroke-width="1.4"/></svg>
             </button>
             <div class="header-dropdown">
-              <a class="header-dropdown__item" href="/app/mrv">Muruvvat moduli</a>
-              <a class="header-dropdown__item" href="/app/ptpk">PTPK moduli</a>
-              <a class="header-dropdown__item" href="/app">Monitoring paneli</a>
-              <a class="header-dropdown__item" href="/app/mrv/reports/disabilityinfo">Hisobotlar markazi</a>
+              <a class="header-dropdown__item" href="#/mrv/home">Muruvvat moduli</a>
+              <a class="header-dropdown__item" href="#/ptpk/home">PTPK moduli</a>
+              <a class="header-dropdown__item" href="#/cabinet/home">Shaxsiy kabinet</a>
             </div>
           </div>
           <div class="header-menu">
@@ -145,6 +154,16 @@
               <button class="header-dropdown__item" type="button" data-language-code="ru">&#1056;&#1091;&#1089;&#1089;&#1082;&#1080;&#1081;</button>
               <button class="header-dropdown__item" type="button" data-language-code="en">English</button>
               <button class="header-dropdown__item" type="button" data-language-code="i18n">i18n keys</button>
+            </div>
+          </div>
+          <div class="header-menu">
+            <button class="header-tool" type="button" aria-label="Shrift" aria-expanded="false" data-menu-toggle="font">
+                    <span id="fontCurrent">Noto</span>
+            </button>
+            <div class="header-dropdown">
+                      <button class="header-dropdown__item" type="button" data-font-code="inter">Inter</button>
+                      <button class="header-dropdown__item" type="button" data-font-code="roboto">Roboto</button>
+                      <button class="header-dropdown__item" type="button" data-font-code="noto">Noto Sans</button>
             </div>
           </div>
           <button class="header-tool header-tool--theme" type="button" id="themeToggle" aria-label="Night mode" aria-pressed="false">
@@ -174,37 +193,144 @@
 
       <main class="content">
         <section class="modules-view" id="modulesView" hidden>
-          <div class="modules-view__hero">
-            <div>
-              <p class="modules-view__eyebrow">Modullar markazi</p>
-              <h3>Kerakli modulni tanlang</h3>
-              <p>Tizim modullari alohida yo'nalishlar bo'yicha ajratilgan. Mos bo'limni tanlab ishchi oynaga o'ting.</p>
-            </div>
-            <div class="modules-view__stats">
-              <article class="modules-stat">
-                <strong>2 ta</strong>
-                <span>Asosiy modul</span>
-              </article>
-              <article class="modules-stat">
-                <strong>Yagona</strong>
-                <span>URL struktura va navigatsiya</span>
-              </article>
-            </div>
-          </div>
-
           <div class="modules-grid">
-            <a class="module-card module-card--primary" href="/app/mrv" data-module-path="/app/mrv">
+            <a class="module-card module-card--primary" href="#/mrv/home" data-module-path="/mrv/home">
               <span class="module-card__badge">MRV</span>
               <strong>Muruvvat moduli</strong>
-              <p>Internat uylariga joylashtirish, arizalar, qarorlar va support jarayonlarini boshqarish moduli.</p>
-              <span class="module-card__meta">Asosiy ishchi modul</span>
+              <p>Internat uylariga joylashtirish va bog'liq ishchi jarayonlar.</p>
             </a>
-            <a class="module-card" href="/app/ptpk" data-module-path="/app/ptpk">
+            <a class="module-card" href="#/ptpk/home" data-module-path="/ptpk/home">
               <span class="module-card__badge">PTPK</span>
               <strong>PTPK moduli</strong>
-              <p>Komissiya yig'ilishlari, bayonnomalar, xulosalar va bog'liq jarayonlar uchun alohida modul.</p>
-              <span class="module-card__meta">Qo'shimcha modul</span>
+              <p>Komissiya yig'ilishlari, bayonnomalar va xulosalar uchun modul.</p>
             </a>
+            <a class="module-card" href="#/cabinet/home" data-module-path="/cabinet/home">
+              <span class="module-card__badge">SK</span>
+              <strong>Shaxsiy kabinet</strong>
+              <p>Ijtimoiy navigator va foydalanuvchi uchun shaxsiy yo'nalishlar moduli.</p>
+            </a>
+            <div class="module-card module-card--disabled" aria-disabled="true">
+              <span class="module-card__badge">INS</span>
+              <strong>Inson moduli</strong>
+              <p>Shaxsga oid jarayonlar va xizmatlar uchun modul.</p>
+              <span class="module-card__status">Ishlab chiqish jarayonida</span>
+            </div>
+            <div class="module-card module-card--disabled" aria-disabled="true">
+              <span class="module-card__badge">EIS</span>
+              <strong>Erta aralashuv moduli</strong>
+              <p>Erta aralashuv bilan bog'liq ishchi jarayonlar uchun modul.</p>
+              <span class="module-card__status">Ishlab chiqish jarayonida</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="navigator-view" id="cabinetNavigatorView" hidden>
+          <article class="navigator-hero">
+            <div class="navigator-hero__content">
+              <span class="navigator-hero__eyebrow">Shaxsiy kabinet</span>
+              <h3>Ijtimoiy navigator</h3>
+              <p>Xizmatlar, murojaatlar va foydalanuvchi uchun kerakli keyingi qadamlarni bir joydan boshqarish uchun boshlang'ich sahifa.</p>
+            </div>
+            <div class="navigator-hero__chips">
+              <span class="navigator-chip">Faol</span>
+              <span class="navigator-chip navigator-chip--soft">Boshlang'ich ko'rinish</span>
+            </div>
+          </article>
+
+          <div class="navigator-layout">
+            <aside class="navigator-profile">
+              <div class="navigator-profile__avatar">AB</div>
+              <div class="navigator-profile__main">
+                <span class="navigator-profile__eyebrow">Profil</span>
+                <strong>Asilbek Bekhbudiyev</strong>
+                <p>Shaxsiy kabinet foydalanuvchisi</p>
+              </div>
+              <div class="navigator-profile__meta">
+                <div class="navigator-profile__row"><span>Status</span><strong>Faol</strong></div>
+                <div class="navigator-profile__row"><span>Hudud</span><strong>Toshkent shahri</strong></div>
+                <div class="navigator-profile__row"><span>Oxirgi kirish</span><strong>Bugun, 09:42</strong></div>
+              </div>
+              <div class="navigator-progress">
+                <span class="navigator-progress__label">Profil tayyorligi</span>
+                <div class="navigator-progress__bar"><span style="width: 72%"></span></div>
+                <span class="navigator-progress__value">72%</span>
+              </div>
+            </aside>
+
+            <div class="navigator-main">
+              <section class="navigator-stats">
+                <article class="navigator-stat">
+                  <span>Faol yo'nalish</span>
+                  <strong>03</strong>
+                  <small>Yakunlanmagan tavsiya</small>
+                </article>
+                <article class="navigator-stat">
+                  <span>Ko'rib chiqilmoqda</span>
+                  <strong>07</strong>
+                  <small>Jarayondagi murojaat</small>
+                </article>
+                <article class="navigator-stat">
+                  <span>Xizmatlar</span>
+                  <strong>12</strong>
+                  <small>Mos xizmat topildi</small>
+                </article>
+              </section>
+
+              <div class="navigator-grid">
+                <article class="navigator-card navigator-card--accent">
+                  <span class="navigator-card__label">Asosiy yo'nalish</span>
+                  <strong>Mening ijtimoiy navigatorim</strong>
+                  <p>Hududiy xizmatlar, foydali yo'nalishlar va holatlarni shu bo'limda jamlash mumkin.</p>
+                  <ul class="navigator-inline-list">
+                    <li>Hududiy xizmatlar</li>
+                    <li>Foydali tavsiyalar</li>
+                    <li>Keyingi qadamlar</li>
+                  </ul>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Tezkor amallar</span>
+                  <div class="navigator-actions">
+                    <button class="navigator-action" type="button">Murojaat yaratish</button>
+                    <button class="navigator-action" type="button">Holatni tekshirish</button>
+                    <button class="navigator-action" type="button">Xizmat topish</button>
+                    <button class="navigator-action" type="button">Ma'lumotni yangilash</button>
+                  </div>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Tavsiya etilgan yo'nalishlar</span>
+                  <ul class="navigator-list">
+                    <li><strong>Bolalar xizmatlari</strong><span>Yoshga mos xizmat va yo'nalishlar</span></li>
+                    <li><strong>Tibbiy yordam</strong><span>Hujjatlar va xulosalar bo'yicha keyingi qadamlar</span></li>
+                    <li><strong>Hududiy markazlar</strong><span>Eng yaqin bo'lim va aloqa nuqtalari</span></li>
+                  </ul>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Mening holatim</span>
+                  <div class="navigator-checklist">
+                    <div class="navigator-checklist__item is-done"><strong>Profil tekshirildi</strong><span>Asosiy ma'lumotlar to'ldirilgan</span></div>
+                    <div class="navigator-checklist__item is-active"><strong>Hududiy xizmat tanlanmoqda</strong><span>Eng mos xizmatlar saralanmoqda</span></div>
+                    <div class="navigator-checklist__item"><strong>Qo'shimcha hujjat kutilmoqda</strong><span>Keyingi bosqich uchun tayyor turadi</span></div>
+                  </div>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Faol holatlar</span>
+                  <ul class="navigator-feed">
+                    <li><span>Shaxsiy tavsiyalar yangilandi</span><small>Bugun, 09:20</small></li>
+                    <li><span>Hududiy xizmatlar qayta tekshirildi</span><small>Bugun, 08:45</small></li>
+                    <li><span>Profil ma'lumotlari sinxronlandi</span><small>Kecha, 17:10</small></li>
+                  </ul>
+                </article>
+
+                <article class="navigator-card">
+                  <span class="navigator-card__label">Izoh</span>
+                  <p class="navigator-note">Bu sahifa boshlang'ich skelet ko'rinishida tayyorlandi. Keyingi bosqichda profil, xizmatlar, murojaatlar va tavsiyalar shu bloklar asosida bosqichma-bosqich kengaytiriladi.</p>
+                </article>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -591,8 +717,7 @@
             </table>
           </div>
           <div class="table-pagination">
-            <div class="table-pagination__info" id="paginationInfo">1-12 / 12 ta yozuv</div>
-            <div class="table-pagination__right">
+            <div class="table-pagination__left">
               <div class="pagination-select" id="rowsPerPageMenu">
                 <button class="pagination-select__trigger" id="rowsPerPageTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Bir sahifadagi yozuvlar soni">
                   <span id="rowsPerPageLabel">10 ta</span>
@@ -610,6 +735,9 @@
                   <option value="100">100 ta</option>
                 </select>
               </div>
+            </div>
+            <div class="table-pagination__info" id="paginationInfo">1-12 / 12 ta yozuv</div>
+            <div class="table-pagination__right">
               <button class="pagination__button pagination__button--icon" id="paginationPrev" type="button" disabled aria-label="Oldingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <div class="pagination" id="paginationPages" aria-label="Sahifalar"></div>
               <button class="pagination__button pagination__button--icon" id="paginationNext" type="button" aria-label="Keyingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -623,251 +751,6 @@
             </span>
             <strong id="emptyViewTitle">Bo'sh sahifa</strong>
             <p id="emptyViewDescription">Bu bo'lim uchun kontent hali tayyorlanmagan.</p>
-          </div>
-        </section>
-        <section class="support-view" id="supportView" hidden>
-          <div class="support-hero">
-            <div class="support-hero__copy">
-              <span class="support-hero__eyebrow">Support markazi</span>
-              <h3>Muammoingizni tez hal qilish uchun barcha kanallar bitta joyda</h3>
-              <p>Qo'llanmalarni ko'ring, supportga murojaat yuboring yoki tezkor aloqa kanallari orqali bog'laning.</p>
-            </div>
-            <div class="support-hero__metrics">
-              <article class="support-metric">
-                <strong>15 daqiqa</strong>
-                <span>Telegram orqali o'rtacha birinchi javob</span>
-              </article>
-              <article class="support-metric">
-                <strong>24/7</strong>
-                <span>Qo'llanmalar va FAQ doim ochiq</span>
-              </article>
-              <article class="support-metric">
-                <strong>1 ish kuni</strong>
-                <span>Ticketlar bo'yicha standart qayta aloqa</span>
-              </article>
-            </div>
-          </div>
-
-          <div class="support-grid">
-            <section class="support-card support-card--channels">
-              <div class="support-card__header">
-                <strong>Tezkor aloqa</strong>
-                <span>Qulay kanalni tanlang</span>
-              </div>
-              <div class="support-channel-list">
-                <a class="support-channel" href="tel:+998712009900">
-                  <span class="support-channel__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M6.5 4h3L11 8 8.8 10.2a14.7 14.7 0 0 0 5 5L16 13l4 1.5v3a1.5 1.5 0 0 1-1.68 1.49A16.5 16.5 0 0 1 5 5.68 1.5 1.5 0 0 1 6.5 4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                  </span>
-                  <div class="support-channel__content">
-                    <strong>Call-markaz</strong>
-                    <span>+998 71 200 99 00</span>
-                  </div>
-                  <small>Ish vaqti: 09:00-18:00</small>
-                </a>
-                <a class="support-channel" href="https://t.me/muruvvat_support" target="_blank" rel="noreferrer">
-                  <span class="support-channel__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="m21 4-3.8 17-5.3-4-2.9 2.8.5-4 8.9-8.1-11 7L3 13z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-                  </span>
-                  <div class="support-channel__content">
-                    <strong>Telegram support</strong>
-                    <span>@muruvvat_support</span>
-                  </div>
-                  <small>Tezkor savollar uchun</small>
-                </a>
-                <a class="support-channel" href="mailto:support@muruvvat.uz">
-                  <span class="support-channel__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h13A1.5 1.5 0 0 1 20 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-9Z" stroke="currentColor" stroke-width="1.5"/><path d="m5 7 7 5 7-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </span>
-                  <div class="support-channel__content">
-                    <strong>Email</strong>
-                    <span>support@muruvvat.uz</span>
-                  </div>
-                  <small>Rasmiy murojaatlar uchun</small>
-                </a>
-              </div>
-            </section>
-
-            <section class="support-card support-card--guides">
-              <div class="support-card__header">
-                <strong>Qo'llanmalar va FAQ</strong>
-                <span>Ko'p uchraydigan holatlar uchun tezkor yordam</span>
-              </div>
-              <div class="support-guide-list">
-                <button class="support-guide" type="button" data-guide-title="Yangi ariza yaratish">
-                  <strong>Yangi ariza yaratish</strong>
-                  <span>Ariza yuborish jarayonini 5 qadamda tushuntiradi</span>
-                </button>
-                <button class="support-guide" type="button" data-guide-title="ERR-409 xatoligi">
-                  <strong>ERR-409 xatoligi</strong>
-                  <span>Konflikt xatoligini bartaraf etish bo'yicha tavsiyalar</span>
-                </button>
-                <button class="support-guide" type="button" data-guide-title="Qabul qilish va rad etish">
-                  <strong>Qabul qilish / Rad etish</strong>
-                  <span>Jarayon natijalarini to'g'ri rasmiylashtirish qoidalari</span>
-                </button>
-                <button class="support-guide" type="button" data-guide-title="OneID orqali kirish">
-                  <strong>OneID orqali kirish</strong>
-                  <span>Avtorizatsiya va kirishdagi muammolar bo'yicha yo'riqnoma</span>
-                </button>
-              </div>
-              <article class="support-guide-preview" id="supportGuidePreview">
-                <span class="support-guide-preview__eyebrow">Tanlangan qo'llanma</span>
-                <strong id="supportGuidePreviewTitle">Yangi ariza yaratish</strong>
-                <p id="supportGuidePreviewText">Ariza yuborishdan oldin arizachi ma'lumotlari, hujjatlar va manzil bo'limlarini to'liq tekshiring. Tizimga kiritilgan ma'lumotlar avtomatik validatsiyadan o'tadi.</p>
-                <ol class="support-guide-preview__steps" id="supportGuidePreviewSteps">
-                  <li>Arizachi ma'lumotlarini kiriting va PINFL ni tekshiring.</li>
-                  <li>Hudud va internat uyini tanlang.</li>
-                  <li>Kerakli hujjatlarni biriktiring.</li>
-                </ol>
-              </article>
-            </section>
-          </div>
-
-          <div class="support-grid support-grid--secondary">
-            <section class="support-card support-card--form">
-              <div class="support-card__header">
-                <strong>Murojaat yuborish</strong>
-                <span>Muammoni tasvirlab bering, support javob beradi</span>
-              </div>
-              <form class="support-form" id="supportForm">
-                <div class="support-form__grid">
-                  <label class="support-field">
-                    <span>Muammo turi</span>
-                    <select id="supportCategory">
-                      <option value="Texnik muammo">Texnik muammo</option>
-                      <option value="Funktsional savol">Funktsional savol</option>
-                      <option value="Kirish muammosi">Kirish muammosi</option>
-                      <option value="Taklif">Taklif</option>
-                    </select>
-                  </label>
-                  <label class="support-field">
-                    <span>Ustuvorlik</span>
-                    <select id="supportPriority">
-                      <option value="Oddiy">Oddiy</option>
-                      <option value="Yuqori">Yuqori</option>
-                      <option value="Shoshilinch">Shoshilinch</option>
-                    </select>
-                  </label>
-                  <label class="support-field">
-                    <span>Ariza ID</span>
-                    <input id="supportApplicationId" type="text" placeholder="Masalan, AR-000124">
-                  </label>
-                  <label class="support-field">
-                    <span>Bog'lanish usuli</span>
-                    <select id="supportContactMethod">
-                      <option value="Telegram">Telegram</option>
-                      <option value="Telefon">Telefon</option>
-                      <option value="Email">Email</option>
-                    </select>
-                  </label>
-                </div>
-                <label class="support-field">
-                  <span>Muammo tavsifi</span>
-                  <textarea id="supportMessage" rows="5" placeholder="Muammo qachon yuz bergani va nimani kutganingizni yozing"></textarea>
-                </label>
-                <div class="support-form__actions">
-                  <span class="support-form__hint">Tizim avtomatik ravishda joriy sahifa, sana va foydalanuvchi ma'lumotini biriktiradi.</span>
-                  <button class="support-submit" id="supportSubmit" type="submit">Yuborish</button>
-                </div>
-              </form>
-            </section>
-
-            <section class="support-card support-card--tickets">
-              <div class="support-card__header">
-                <strong>Mening murojaatlarim</strong>
-                <span>Yuborilgan ticketlar va ularning holati</span>
-              </div>
-              <div class="support-ticket-list" id="supportTicketList">
-                <article class="support-ticket">
-                  <div class="support-ticket__top">
-                    <strong>SUP-1024</strong>
-                    <span class="support-ticket__status support-ticket__status--process">Jarayonda</span>
-                  </div>
-                  <p>ERR-409 xatoligi bo'yicha qo'shimcha tekshiruv ketmoqda.</p>
-                  <small>Yangilangan: 16.03.2026 09:24</small>
-                </article>
-                <article class="support-ticket">
-                  <div class="support-ticket__top">
-                    <strong>SUP-1021</strong>
-                    <span class="support-ticket__status support-ticket__status--resolved">Yakunlangan</span>
-                  </div>
-                  <p>OneID orqali kirish muammosi bo'yicha yo'riqnoma yuborilgan.</p>
-                  <small>Yangilangan: 15.03.2026 16:40</small>
-                </article>
-                <article class="support-ticket">
-                  <div class="support-ticket__top">
-                    <strong>SUP-1018</strong>
-                    <span class="support-ticket__status support-ticket__status--new">Yangi</span>
-                  </div>
-                  <p>Ariza statuslarini eksportga chiqarish bo'yicha taklif qabul qilingan.</p>
-                  <small>Yangilangan: 15.03.2026 10:05</small>
-                </article>
-              </div>
-            </section>
-          </div>
-
-          <div class="support-grid support-grid--secondary">
-            <section class="support-card">
-              <div class="support-card__header">
-                <strong>Ko'p so'raladigan savollar</strong>
-                <span>Eng ko'p uchraydigan holatlar bo'yicha tez javoblar</span>
-              </div>
-              <div class="support-faq-list">
-                <details class="support-faq" open>
-                  <summary>Nega Qabul qilish bosqichida xatolik chiqadi?</summary>
-                  <p>Aksariyat holatda ariza bo'yicha hujjatlar to'liq tekshirilmagan yoki oldingi qaror bilan konflikt mavjud bo'ladi. Ariza tarixini va biriktirilgan fayllarni tekshiring.</p>
-                </details>
-                <details class="support-faq">
-                  <summary>ERR-409 xatoligi nimani anglatadi?</summary>
-                  <p>Bu tizimdagi joriy holat bilan siz yuborgan amal o'rtasida konflikt borligini bildiradi. Odatda ariza allaqachon yangilangan yoki parallel amal bajarilgan bo'ladi.</p>
-                </details>
-                <details class="support-faq">
-                  <summary>OneID orqali kirish ishlamasa nima qilish kerak?</summary>
-                  <p>Brauzer sessiyasini tozalab qayta urinib ko'ring, so'ngra OneID profilingiz faol ekanini tekshiring. Muammo davom etsa, support ticket yuboring.</p>
-                </details>
-              </div>
-            </section>
-
-            <section class="support-card">
-              <div class="support-card__header">
-                <strong>SLA va javob berish tartibi</strong>
-                <span>Qaysi murojaat qancha vaqtda ko'rib chiqiladi</span>
-              </div>
-              <div class="support-sla-list">
-                <article class="support-sla">
-                  <strong>Shoshilinch</strong>
-                  <span>15 daqiqa ichida birinchi javob, 2 soat ichida eskalatsiya</span>
-                </article>
-                <article class="support-sla">
-                  <strong>Yuqori</strong>
-                  <span>1 ish soati ichida javob, ish kuni davomida ko'rib chiqish</span>
-                </article>
-                <article class="support-sla">
-                  <strong>Oddiy</strong>
-                  <span>1 ish kuni ichida qayta aloqa va navbat bo'yicha yechim</span>
-                </article>
-              </div>
-              <div class="support-team">
-                <strong>Mas'ul support guruhi</strong>
-                <div class="support-team__list">
-                  <article class="support-team__member">
-                    <span class="support-team__avatar">NZ</span>
-                    <div>
-                      <strong>N.O. Zokirova</strong>
-                      <span>1-liniya operatori</span>
-                    </div>
-                  </article>
-                  <article class="support-team__member">
-                    <span class="support-team__avatar">AB</span>
-                    <div>
-                      <strong>A.B. Xasanov</strong>
-                      <span>Tizim administratori</span>
-                    </div>
-                  </article>
-                </div>
-              </div>
-            </section>
           </div>
         </section>
         <section class="table-card report-card" id="disabilityReportView" hidden>
@@ -1130,6 +1013,6 @@
       </main>
     </div>
   </div>
-  <script src="/script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

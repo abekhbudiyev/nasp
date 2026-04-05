@@ -3699,9 +3699,10 @@ function getStatusBadgeClass(status) {
 
 function getApplicantAvatar(application) {
   const version = "20260327c";
+  const resolve = (fileName) => new URL(fileName, document.baseURI).toString();
   return String(application.gender || "").toLowerCase() === "ayol"
-    ? `/person-girl.png?v=${version}`
-    : `/person-boy.png?v=${version}`;
+    ? resolve(`person-girl.png?v=${version}`)
+    : resolve(`person-boy.png?v=${version}`);
 }
 
 function inferGenderFromPersonName(fullName) {
@@ -3729,16 +3730,18 @@ function inferGenderFromPersonName(fullName) {
 
 function getRepresentativeAvatar(gender) {
   const version = "20260327c";
+  const resolve = (fileName) => new URL(fileName, document.baseURI).toString();
   return String(gender || "").toLowerCase() === "ayol"
-    ? `/person-woman.png?v=${version}`
-    : `/person-man.png?v=${version}`;
+    ? resolve(`person-woman.png?v=${version}`)
+    : resolve(`person-man.png?v=${version}`);
 }
 
 function getReceiverAvatar(gender) {
   const version = "20260327c";
+  const resolve = (fileName) => new URL(fileName, document.baseURI).toString();
   return String(gender || "").toLowerCase() === "ayol"
-    ? `/person-operator-female.png?v=${version}`
-    : `/person-operator-male.png?v=${version}`;
+    ? resolve(`person-operator-female.png?v=${version}`)
+    : resolve(`person-operator-male.png?v=${version}`);
 }
 
 function getStatusBadgeVariant(status) {

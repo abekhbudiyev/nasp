@@ -4,12 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NASP boshqaruv tizimi</title>
-  <link rel="icon" type="image/svg+xml" href="/muruvvat-logo-cropped.svg">
-  <link rel="shortcut icon" href="/muruvvat-logo-cropped.svg">
+  <script>
+    (function () {
+      var path = window.location.pathname;
+      var appIndex = path.indexOf('/app/');
+      var basePath = appIndex >= 0 ? path.slice(0, appIndex + 1) : (path.endsWith('/') ? path : path.slice(0, path.lastIndexOf('/') + 1)) || '/';
+      document.write('<base href="' + basePath + '">');
+    }());
+  </script>
+  <link rel="icon" type="image/svg+xml" href="muruvvat-logo-cropped.svg">
+  <link rel="shortcut icon" href="muruvvat-logo-cropped.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="login-shell" id="loginView">
@@ -37,7 +45,7 @@
       <div class="login-card">
         <div class="login-card__brand">
           <span class="login-card__mark" aria-hidden="true">
-            <img src="/muruvvat-logo-cropped.svg" alt="" />
+            <img src="muruvvat-logo-cropped.svg" alt="" />
           </span>
           <div>
             <strong>NASP boshqaruv tizimi</strong>
@@ -77,7 +85,7 @@
         <div class="login-alt">
           <a class="login-alt__button" href="https://id.egov.uz" target="_blank" rel="noopener noreferrer">
             <span class="login-alt__icon login-alt__icon--oneid" aria-hidden="true">
-              <img src="/oneid-logo-cropped.png" alt="" />
+              <img src="oneid-logo-cropped.png" alt="" />
             </span>
             <span class="login-alt__copy">
               <strong>OneID orqali kirish</strong>
@@ -98,7 +106,7 @@
       <div class="sidebar__top">
         <div class="brand">
           <button class="brand__mark" id="sidebarHomeButton" type="button" aria-label="Modul bosh sahifasi">
-            <img src="/muruvvat-logo-cropped.svg" alt="" />
+            <img src="muruvvat-logo-cropped.svg" alt="" />
           </button>
           <div>
             <h1 class="brand__title" id="moduleTitle">Muruvvat moduli</h1>
@@ -1005,6 +1013,6 @@
       </main>
     </div>
   </div>
-  <script src="/script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
