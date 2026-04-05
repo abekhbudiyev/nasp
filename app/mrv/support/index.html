@@ -7,8 +7,22 @@
   <script>
     (function () {
       var path = window.location.pathname;
+      var host = window.location.hostname;
+      var segments = path.split('/').filter(Boolean);
+      var isGitHubPages = /github\.io$/i.test(host);
       var appIndex = path.indexOf('/app/');
-      var basePath = appIndex >= 0 ? path.slice(0, appIndex + 1) : (path.endsWith('/') ? path : path.slice(0, path.lastIndexOf('/') + 1)) || '/';
+      var basePath;
+
+      if (appIndex >= 0) {
+        basePath = path.slice(0, appIndex + 1);
+      } else if (isGitHubPages && segments.length > 0) {
+        basePath = '/' + segments[0] + '/';
+      } else if (path.endsWith('/')) {
+        basePath = path;
+      } else {
+        basePath = path.slice(0, path.lastIndexOf('/') + 1) || '/';
+      }
+
       document.write('<base href="' + basePath + '">');
     }());
   </script>
