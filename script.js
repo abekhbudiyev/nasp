@@ -2969,6 +2969,10 @@ function normalizeRoutePath(pathValue) {
   normalized = normalized.replace(/^\/app(?=\/|$)/, "") || "/";
   normalized = normalized.replace(/\/+$/, "") || "/";
 
+  if (normalized === "/") {
+    return "/auth";
+  }
+
   const legacyAliases = {
     "/auth": "/auth",
     "/apps": "/apps",
