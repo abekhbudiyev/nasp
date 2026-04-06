@@ -132,6 +132,12 @@ const detailAcceptButton = document.getElementById("detailAcceptButton");
 const detailRejectButton = document.getElementById("detailRejectButton");
 const systemTheme = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 const themeStorageKey = "muruvvat-theme";
+const themeModes = [
+  { key: "brand-light", dark: false, label: "Brand day" },
+  { key: "brand-dark", dark: true, label: "Brand night" },
+  { key: "classic-light", dark: false, label: "Classic day" },
+  { key: "classic-dark", dark: true, label: "Classic night" },
+];
 const fontStorageKey = "mrv-font";
 const authStorageKey = "nasp-auth-state";
 const rememberedUsernameStorageKey = "nasp-remembered-username";
@@ -396,6 +402,7 @@ const literalKeyMap = {
   "Tugash sana": "common.endDate",
   Tashxis: "common.diagnosis",
   "Nogironlik guruhi": "common.disabilityGroup",
+  NBB: "value.group.nbb",
   Jinsi: "common.gender",
   Yoshi: "common.age",
   "Qo'llash": "common.apply",
@@ -554,6 +561,7 @@ const valueTranslations = {
     "value.organizationType.children": "Ð‘Ð¾Ð»Ð°Ð»Ð°Ñ€",
     "value.organizationType.men": "Ð­Ñ€ÐºÐ°ÐºÐ»Ð°Ñ€",
     "value.organizationType.women": "ÐÑ‘Ð»Ð»Ð°Ñ€",
+    "value.group.nbb": "ÐÐ¾Ð³Ð¸Ñ€Ð¾Ð½Ð»Ð¸Ð³Ð¸ Ð±ÑžÐ»Ð³Ð°Ð½ Ð±Ð¾Ð»Ð°",
     "value.log.applicationCreated": "ÐÑ€Ð¸Ð·Ð° ÑÑ€Ð°Ñ‚Ð¸Ð»Ð´Ð¸",
     "value.log.actAttached": "Ð”Ð°Ð»Ð¾Ð»Ð°Ñ‚Ð½Ð¾Ð¼Ð° Ð±Ð¸Ñ€Ð¸ÐºÑ‚Ð¸Ñ€Ð¸Ð»Ð´Ð¸",
     "value.log.decisionPrepared": "ÒšÐ°Ñ€Ð¾Ñ€ Ð»Ð¾Ð¹Ð¸Ò³Ð°ÑÐ¸ ÑˆÐ°ÐºÐ»Ð»Ð°Ð½Ñ‚Ð¸Ñ€Ð¸Ð»Ð´Ð¸",
@@ -586,6 +594,7 @@ const valueTranslations = {
     "value.organizationType.children": "Balalar",
     "value.organizationType.men": "Erkakler",
     "value.organizationType.women": "Hayallar",
+    "value.group.nbb": "Nogironlıǵı bolǵan bala",
     "value.log.applicationCreated": "Ariza jaratÄ±ldÄ±",
     "value.log.actAttached": "Dalolatnoma biriktirildi",
     "value.log.decisionPrepared": "Qaror joybarÄ± tayarlandi",
@@ -2258,32 +2267,45 @@ const translationKeyOverrides = {
     "report.summary": "Respublika jami",
   },
   "uz-cyrl": {
-    "applications.address": "Манзил",
-    "detail.result": "Натижа",
-    "report.summary": "Республика жами",
-    "result.positive": "Ижобий",
-    "result.negative": "Салбий",
-  },
+      "applications.address": "Манзил",
+      "detail.result": "Натижа",
+      "report.summary": "Республика жами",
+      "value.group.nbb": "Ногиронлиги бўлган бола",
+      "result.positive": "Ижобий",
+      "result.negative": "Салбий",
+    },
   kaa: {
-    "applications.address": "Manzil",
-    "detail.result": "Nátiyje",
-    "report.summary": "Respublika jámi",
-  },
+      "applications.address": "Manzil",
+      "detail.result": "Nátiyje",
+      "report.summary": "Respublika jámi",
+      "value.group.nbb": "Nogironlıǵı bolǵan bala",
+    },
   "kaa-cyrl": {
-    "applications.address": "Манзил",
-    "detail.result": "Нәтийже",
-    "report.summary": "Республика жәми",
-    "result.positive": "Ижобий",
-    "result.negative": "Салбий",
-  },
+      "applications.address": "Манзил",
+      "detail.result": "Нәтийже",
+      "report.summary": "Республика жәми",
+      "value.group.nbb": "Ногиронлығы болған бала",
+      "result.positive": "Ижобий",
+      "result.negative": "Салбий",
+    },
   ru: {
-    "applications.address": "Адрес",
-    "detail.result": "Результат",
-    "report.summary": "Итого по республике",
-    "result.positive": "Положительный",
-    "result.negative": "Отрицательный",
-  },
-};
+      "applications.address": "Адрес",
+      "detail.result": "Результат",
+      "report.summary": "Итого по республике",
+      "value.group.nbb": "Ребёнок с инвалидностью",
+      "result.positive": "Положительный",
+      "result.negative": "Отрицательный",
+    },
+  en: {
+      "value.group.nbb": "Child with disability",
+    },
+  uz: {
+      "value.group.nbb": "Nogironligi bo'lgan bola",
+    },
+  i18n: {
+      "value.group.nbb": "value.group.nbb",
+    },
+  };
 
 Object.entries(translationKeyOverrides).forEach(([lang, values]) => {
   translations[lang] = { ...(translations[lang] ?? {}), ...values };
@@ -2701,7 +2723,7 @@ function applyStaticTranslations() {
   const staticSelectTranslations = [
     { select: statusFilter, map: { all: tr("common.all", "Barchasi"), "jarayonda": tr("status.process", "Jarayonda"), "qabul qilingan": tr("status.accepted", "Qabul qilingan"), "rad etilgan": tr("status.rejected", "Rad etilgan") } },
     { select: reportDiagnosisFilter, map: { all: tr("common.all", "Barchasi") } },
-    { select: reportDisabilityGroupFilter, map: { all: tr("common.all", "Barchasi") } },
+    { select: reportDisabilityGroupFilter, map: { all: tr("common.all", "Barchasi"), nbb: tr("value.group.nbb", "Nogironligi bo'lgan bola") } },
     { select: reportGenderFilter, map: { all: tr("common.all", "Barchasi"), erkak: tr("gender.male", "Erkak"), ayol: tr("gender.female", "Ayol") } },
     { select: reportAgeFilter, map: { all: tr("common.all", "Barchasi") } },
   ];
@@ -2737,8 +2759,8 @@ function applyStaticTranslations() {
   });
   const fromInput = document.getElementById("dateFromInput");
   const toInput = document.getElementById("dateToInput");
-  if (fromInput) fromInput.placeholder = tr("date.placeholder", "Sanani tanlang");
-  if (toInput) toInput.placeholder = tr("date.placeholder", "Sanani tanlang");
+  if (fromInput) fromInput.placeholder = getDateInputPlaceholder();
+  if (toInput) toInput.placeholder = getDateInputPlaceholder();
   const appTableHeads = document.querySelectorAll("#applicationsTable thead th");
   if (appTableHeads[0]) appTableHeads[0].textContent = tr("applications.actions", "Amallar");
   if (appTableHeads[1]) appTableHeads[1].textContent = tr("applications.application", "Ariza");
@@ -2757,11 +2779,13 @@ function applyStaticTranslations() {
   if (reportHeads[0]) reportHeads[0].textContent = tr("common.region", "Hudud");
   if (reportHeads[1]) reportHeads[1].textContent = tr("report.totalPersons", "Jami NBSHlar soni");
   if (reportHeads[2]) reportHeads[2].textContent = tr("report.byDiagnosis", "Tashxislari bo'yicha");
-  if (reportHeads[3]) reportHeads[3].textContent = tr("report.byDisability", "Nogironlik guruhi");
-  if (reportHeads[4]) reportHeads[4].textContent = tr("common.gender", "Jinsi");
-  if (reportHeads[5]) reportHeads[5].textContent = tr("common.age", "Yoshi");
-  if (reportHeads[12]) reportHeads[12].textContent = tr("gender.male", "Erkak");
-  if (reportHeads[13]) reportHeads[13].textContent = tr("gender.female", "Ayol");
+    if (reportHeads[3]) reportHeads[3].textContent = tr("report.byDisability", "Nogironlik guruhi");
+    if (reportHeads[4]) reportHeads[4].textContent = tr("common.gender", "Jinsi");
+    if (reportHeads[5]) reportHeads[5].textContent = tr("common.age", "Yoshi");
+    const reportNbbHead = document.querySelector('.report-table thead [data-col="nbb"]');
+    if (reportNbbHead) reportNbbHead.textContent = tr("value.group.nbb", "Nogironligi bo'lgan bola");
+    if (reportHeads[14]) reportHeads[14].textContent = tr("gender.male", "Erkak");
+    if (reportHeads[15]) reportHeads[15].textContent = tr("gender.female", "Ayol");
   if (tableEmptyAction) tableEmptyAction.textContent = tr("common.reset", "Tozalash");
   if (detailModalTitle) detailModalTitle.textContent = tr("detail.title", "Ariza tafsilotlari");
   if (detailModalLoading?.querySelector("span:last-child")) detailModalLoading.querySelector("span:last-child").textContent = tr("detail.loading", "Ariza ma'lumotlari yuklanmoqda...");
@@ -2969,6 +2993,42 @@ function formatTypedDate(rawValue) {
   const month = digits.slice(2, 4);
   const year = digits.slice(4, 8);
   return [day, month, year].filter(Boolean).join(".");
+}
+
+function getDateInputPlaceholder() {
+  switch (currentLanguage) {
+    case "uz-cyrl":
+      return "Санани киритинг";
+    case "kaa":
+      return "Sánanı kirgiziń";
+    case "kaa-cyrl":
+      return "Сәнаны киргизиң";
+    case "ru":
+      return "Введите дату";
+    case "en":
+      return "Enter date";
+    case "i18n":
+      return "date.input";
+    default:
+      return "Sanani kiriting";
+  }
+}
+
+function getDateInputMask() {
+  switch (currentLanguage) {
+    case "uz-cyrl":
+    case "kaa-cyrl":
+    case "ru":
+      return "дд.мм.гггг";
+    case "kaa":
+      return "kk.aa.jjjj";
+    case "en":
+      return "dd.mm.yyyy";
+    case "i18n":
+      return "date.mask";
+    default:
+      return "kk.oo.yyyy";
+  }
 }
 
 function parseTypedDate(value) {
@@ -3751,6 +3811,7 @@ function syncDateFieldUi(field) {
 
   if (textInput instanceof HTMLInputElement) {
     textInput.value = formatDateLabel(input?.value ?? "");
+    textInput.placeholder = hasValue ? getDateInputMask() : getDateInputPlaceholder();
   }
 
   field.classList.toggle("custom-date--filled", hasValue);
@@ -5601,30 +5662,50 @@ function syncReportFrozenColumn() {
   return;
 }
 
-function setThemeIcon(isDark) {
+function getThemeMeta(themeKey) {
+  return themeModes.find((theme) => theme.key === themeKey) ?? themeModes[0];
+}
+
+function getCurrentThemeKey() {
+  return document.body.dataset.theme || (document.body.classList.contains("theme-dark") ? "brand-dark" : "brand-light");
+}
+
+function getNextThemeKey(themeKey) {
+  const currentIndex = themeModes.findIndex((theme) => theme.key === themeKey);
+  const safeIndex = currentIndex === -1 ? 0 : currentIndex;
+  return themeModes[(safeIndex + 1) % themeModes.length].key;
+}
+
+function setThemeIcon(themeKey) {
   if (!themeToggleIcon) {
     return;
   }
 
-  themeToggleIcon.innerHTML = isDark
+  themeToggleIcon.innerHTML = getThemeMeta(themeKey).dark
     ? '<path d="M12 3v2.2M12 18.8V21M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M3 12h2.2M18.8 12H21M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.5"/>'
     : '<path d="M14.5 4.5a7 7 0 1 0 5 12 7.5 7.5 0 1 1-5-12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>';
 }
 
-function applyTheme(isDark) {
-  document.body.classList.toggle("theme-dark", isDark);
-  themeToggle?.setAttribute("aria-pressed", String(isDark));
-  setThemeIcon(isDark);
+function applyTheme(themeKey) {
+  const theme = getThemeMeta(themeKey);
+
+  document.body.dataset.theme = theme.key;
+  document.body.classList.toggle("theme-dark", theme.dark);
+  themeToggle?.setAttribute("aria-pressed", String(theme.dark));
+  themeToggle?.setAttribute("aria-label", theme.label);
+  themeToggle?.setAttribute("title", theme.label);
+  setThemeIcon(theme.key);
 }
 
 function getSavedThemePreference() {
-  return window.localStorage.getItem(themeStorageKey);
+  const savedTheme = window.localStorage.getItem(themeStorageKey);
+  return themeModes.some((theme) => theme.key === savedTheme) ? savedTheme : null;
 }
 
 function initializeTheme() {
   const savedTheme = getSavedThemePreference();
-  const isDark = savedTheme ? savedTheme === "dark" : Boolean(systemTheme?.matches);
-  applyTheme(isDark);
+  const themeKey = savedTheme || (systemTheme?.matches ? "brand-dark" : "brand-light");
+  applyTheme(themeKey);
 }
 
 function initializeLanguage() {
@@ -5799,9 +5880,9 @@ if (sidebarCollapse && appShell) {
 
 if (themeToggle) {
   themeToggle.addEventListener("click", () => {
-    const isDark = !document.body.classList.contains("theme-dark");
-    window.localStorage.setItem(themeStorageKey, isDark ? "dark" : "light");
-    applyTheme(isDark);
+    const nextTheme = getNextThemeKey(getCurrentThemeKey());
+    window.localStorage.setItem(themeStorageKey, nextTheme);
+    applyTheme(nextTheme);
   });
 }
 
@@ -5810,7 +5891,7 @@ systemTheme?.addEventListener("change", (event) => {
     return;
   }
 
-  applyTheme(event.matches);
+  applyTheme(event.matches ? "brand-dark" : "brand-light");
 });
 
 menuToggles.forEach((toggle) => {
@@ -6502,6 +6583,7 @@ dateFields.forEach((field) => {
       }
 
       textInput.dataset.previousValue = input.value ?? "";
+      textInput.placeholder = getDateInputMask();
       if (textInput.value.trim()) {
         textInput.value = "";
       }
@@ -6516,11 +6598,11 @@ dateFields.forEach((field) => {
       textInput.value = formatTypedDate(textInput.value);
     });
 
-    textInput.addEventListener("blur", () => {
-      const parsedValue = parseTypedDate(textInput.value);
-      if (parsedValue) {
-        input instanceof HTMLInputElement && (input.value = parsedValue);
-        syncDateFieldUi(field);
+      textInput.addEventListener("blur", () => {
+        const parsedValue = parseTypedDate(textInput.value);
+        if (parsedValue) {
+          input instanceof HTMLInputElement && (input.value = parsedValue);
+          syncDateFieldUi(field);
       } else if (!textInput.value.trim()) {
         if ((input?.id === "dateFromFilter" || input?.id === "dateToFilter") && textInput.dataset.previousValue) {
           input instanceof HTMLInputElement && (input.value = textInput.dataset.previousValue);
@@ -6529,11 +6611,12 @@ dateFields.forEach((field) => {
           input instanceof HTMLInputElement && (input.value = "");
           syncDateFieldUi(field);
         }
-      } else {
-        syncDateFieldUi(field);
-      }
+        } else {
+          syncDateFieldUi(field);
+        }
 
-      delete textInput.dataset.previousValue;
+        textInput.placeholder = textInput.value.trim() ? getDateInputMask() : getDateInputPlaceholder();
+        delete textInput.dataset.previousValue;
 
       if (input.id === "dateFromFilter" || input.id === "dateToFilter") {
         updateApplicationFilterControls();
