@@ -130,7 +130,6 @@ const detailContent = document.getElementById("detailContent");
 const detailActions = document.getElementById("detailActions");
 const detailAcceptButton = document.getElementById("detailAcceptButton");
 const detailRejectButton = document.getElementById("detailRejectButton");
-const applicationsTableBody = document.querySelector("#applicationsTable tbody");
 const systemTheme = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 const themeStorageKey = "muruvvat-theme";
 const fontStorageKey = "mrv-font";
@@ -138,14 +137,6 @@ const authStorageKey = "nasp-auth-state";
 const rememberedUsernameStorageKey = "nasp-remembered-username";
 const routeIntentStorageKey = "nasp-route-intent";
 const lastVisitedRouteStorageKey = "nasp-last-route";
-const apiBaseUrl = (() => {
-  const port = window.location.port;
-  const isFrontendDevServer = port === "8000";
-  const origin = isFrontendDevServer
-    ? `${window.location.protocol}//${window.location.hostname}:3000`
-    : window.location.origin;
-  return `${origin}/api`;
-})();
 const calendarLocaleLabels = {
   uz: {
     months: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
@@ -176,22 +167,9 @@ const calendarLocaleLabels = {
     weekdays: ["date.week.mo", "date.week.tu", "date.week.we", "date.week.th", "date.week.fr", "date.week.sa", "date.week.su"],
   },
 };
-const tableState = {
-  currentPage: 1,
-  totalPages: 1,
-  filteredRows: [],
-  totalItems: 0,
-  serverPagination: false,
-  serverStats: null,
-};
+const tableState = { currentPage: 1, totalPages: 1, filteredRows: [] };
 const calendarState = { activeField: null, viewDate: null };
 const confirmState = { action: "", applicationId: "" };
-const applicationFilterCatalog = {
-  districtsByRegion: {},
-  districtLoadingPromises: {},
-  organizationsByType: {},
-  organizationLoadingPromises: {},
-};
 let supportTicketCounter = 1025;
 let currentModule = "muruvvat";
 let currentLanguage = "uz";
@@ -3469,76 +3447,6 @@ function ensureApplicationRowsSeeded() {
   rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
 }
 
-async function loadApplicationsFromApi({ hideUntilResolved = false } = {}) {
-  if (!applicationsTableBody) {
-    return;
-  }
-
-  if (hideUntilResolved) {
-    applicationsListView?.setAttribute("hidden", "");
-  }
-  contentLoader?.removeAttribute("hidden");
-
-  try {
-    const pageSize = Number(rowsPerPage?.value ?? "10");
-    const response = await fetch(`${apiBaseUrl}/mrv/applications?${buildApplicationsApiQuery()}`, {
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const payload = await response.json();
-    const items = Array.isArray(payload.items) ? payload.items : [];
-    const emptyRow = document.getElementById("tableEmptyRow");
-    tableState.serverPagination = true;
-    tableState.totalItems = Number(payload.totalCount || items.length || 0);
-    tableState.totalPages = Math.max(1, Number(payload.totalPages || 1));
-    tableState.serverStats = payload.stats || null;
-
-    Array.from(applicationsTableBody.querySelectorAll("tr:not(.table-empty)")).forEach((row) => row.remove());
-
-    if (items.length > 0 && emptyRow) {
-      emptyRow.insertAdjacentHTML("beforebegin", items.map(buildApplicationTableRow).join(""));
-      applicationsTableBody.dataset.seeded = "api";
-      applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr:not(.table-empty)"));
-      rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
-      updateApplicationFilterOptionSets();
-      updateApplicationFilterControls();
-      bindRowMenuToggles();
-      applyTableFilters();
-      showApplicationsView();
-      return;
-    }
-
-    applicationsTableBody.dataset.seeded = "api";
-    applicationRows = [];
-    rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
-    updateApplicationFilterOptionSets();
-    updateApplicationFilterControls();
-    applyTableFilters();
-    showApplicationsView();
-  } catch (error) {
-    console.error("Failed to load applications from API:", error);
-    tableState.serverPagination = false;
-    tableState.serverStats = null;
-    ensureApplicationRowsSeeded();
-    enrichApplicationRows();
-    updateApplicationFilterOptionSets();
-    updateApplicationFilterControls();
-    applyTableFilters();
-    showApplicationsView();
-    showToast(
-      "API ulanmagan",
-      "Oracle API ishlamadi, demo arizalar ko'rsatildi.",
-      "error",
-    );
-  }
-}
-
 const reportColumnKeys = [
   "jami",
   "f00f03",
@@ -5123,7 +5031,7 @@ async function navigateToView(title) {
   }
 
   if (isApplicationsList) {
-    await loadApplicationsFromApi({ hideUntilResolved: true });
+    showApplicationsView();
     return;
   }
 
@@ -5302,8 +5210,7 @@ function getCurrentDistrictOptions(regionValue) {
     return [];
   }
 
-  return applicationFilterCatalog.districtsByRegion[String(regionValue)]
-    ?? getFallbackDistrictOptionsFromRows(regionValue);
+  return getFallbackDistrictOptionsFromRows(regionValue);
 }
 
 function getCurrentOrganizationOptions(organizationTypeValue) {
@@ -5311,8 +5218,7 @@ function getCurrentOrganizationOptions(organizationTypeValue) {
     return [];
   }
 
-  return applicationFilterCatalog.organizationsByType[String(organizationTypeValue)]
-    ?? getFallbackOrganizationOptionsFromRows(organizationTypeValue);
+  return getFallbackOrganizationOptionsFromRows(organizationTypeValue);
 }
 
 function getApplicationDistrictLabel(value) {
@@ -5408,99 +5314,6 @@ function setCustomSelectDisabled(select, disabled) {
   if (menu) {
     syncCustomSelectUi(menu);
   }
-}
-
-function buildApplicationsApiQuery() {
-  const params = new URLSearchParams({
-    page: String(tableState.currentPage),
-    pageSize: String(Number(rowsPerPage?.value ?? "10")),
-  });
-
-  const values = applicationAppliedFilters;
-  if (values.status !== "all") params.set("status", values.status);
-  if (values.step !== "all") params.set("step", values.step);
-  if (values.region !== "all") params.set("regionId", values.region);
-  if (values.district !== "all") params.set("districtId", values.district);
-  if (values.organizationType !== "all") params.set("organizationTypeId", values.organizationType);
-  if (values.organization !== "all") params.set("organizationId", values.organization);
-  if (values.dateFrom) params.set("dateFrom", values.dateFrom);
-  if (values.dateTo) params.set("dateTo", values.dateTo);
-
-  return params.toString();
-}
-
-async function loadDistrictOptions(regionValue) {
-  const normalizedRegionValue = String(regionValue ?? "").trim();
-  if (!normalizedRegionValue || normalizedRegionValue === "all") {
-    return [];
-  }
-
-  if (applicationFilterCatalog.districtsByRegion[normalizedRegionValue]) {
-    return applicationFilterCatalog.districtsByRegion[normalizedRegionValue];
-  }
-
-  if (applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue]) {
-    return applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
-  }
-
-  applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue] = fetch(
-    `${apiBaseUrl}/mrv/filter-options/districts?regionId=${encodeURIComponent(normalizedRegionValue)}`,
-    { headers: { Accept: "application/json" } },
-  )
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const payload = await response.json();
-      const districts = Array.isArray(payload.districts) ? payload.districts : [];
-      applicationFilterCatalog.districtsByRegion[normalizedRegionValue] = districts;
-      delete applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
-      return districts;
-    })
-    .catch((error) => {
-      delete applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
-      throw error;
-    });
-
-  return applicationFilterCatalog.districtLoadingPromises[normalizedRegionValue];
-}
-
-async function loadOrganizationOptions(organizationTypeValue) {
-  const normalizedOrganizationTypeValue = String(organizationTypeValue ?? "").trim();
-  if (!normalizedOrganizationTypeValue || normalizedOrganizationTypeValue === "all") {
-    return [];
-  }
-
-  if (applicationFilterCatalog.organizationsByType[normalizedOrganizationTypeValue]) {
-    return applicationFilterCatalog.organizationsByType[normalizedOrganizationTypeValue];
-  }
-
-  if (applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue]) {
-    return applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
-  }
-
-  applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue] = fetch(
-    `${apiBaseUrl}/mrv/filter-options/organizations?organizationTypeId=${encodeURIComponent(normalizedOrganizationTypeValue)}`,
-    { headers: { Accept: "application/json" } },
-  )
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const payload = await response.json();
-      const organizations = Array.isArray(payload.organizations) ? payload.organizations : [];
-      applicationFilterCatalog.organizationsByType[normalizedOrganizationTypeValue] = organizations;
-      delete applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
-      return organizations;
-    })
-    .catch((error) => {
-      delete applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
-      throw error;
-    });
-
-  return applicationFilterCatalog.organizationLoadingPromises[normalizedOrganizationTypeValue];
 }
 
 function enrichApplicationRows() {
@@ -6274,69 +6087,48 @@ function applyTableFilters() {
   tableState.filteredRows = matchedRows;
   let startIndex = 0;
   let endIndex = matchedRows.length;
-
-  if (tableState.serverPagination) {
-    matchedRows.forEach((row) => {
-      row.style.display = "";
-    });
-  } else {
-    tableState.totalPages = Math.max(1, Math.ceil(matchedRows.length / limit));
-    tableState.currentPage = Math.min(tableState.currentPage, tableState.totalPages);
-    startIndex = (tableState.currentPage - 1) * limit;
-    endIndex = startIndex + limit;
-    matchedRows.slice(startIndex, endIndex).forEach((row) => {
-      row.style.display = "";
-    });
-  }
+  tableState.totalPages = Math.max(1, Math.ceil(matchedRows.length / limit));
+  tableState.currentPage = Math.min(tableState.currentPage, tableState.totalPages);
+  startIndex = (tableState.currentPage - 1) * limit;
+  endIndex = startIndex + limit;
+  matchedRows.slice(startIndex, endIndex).forEach((row) => {
+    row.style.display = "";
+  });
 
   updateApplicationsEmptyState(matchedRows.length);
 
-  const totalBase = (tableState.serverPagination
-    ? Number(tableState.serverStats?.total || tableState.totalItems || 0)
-    : matchedRows.length) || 1;
+  const totalBase = matchedRows.length || 1;
   const percent = (value) => `${Math.round((value / totalBase) * 100)}%`;
   if (totalApplicationsStat) {
-    totalApplicationsStat.textContent = String(
-      tableState.serverPagination ? tableState.serverStats?.total || tableState.totalItems || 0 : matchedRows.length,
-    );
+    totalApplicationsStat.textContent = String(matchedRows.length);
   }
   if (totalApplicationsShare) {
     totalApplicationsShare.textContent = totalBase > 0 ? "100%" : "0%";
   }
   if (processApplicationsStat) {
-    processApplicationsStat.textContent = String(tableState.serverPagination ? tableState.serverStats?.process || 0 : processCount);
+    processApplicationsStat.textContent = String(processCount);
   }
   if (processApplicationsShare) {
-    processApplicationsShare.textContent = totalBase > 0
-      ? percent(tableState.serverPagination ? tableState.serverStats?.process || 0 : processCount)
-      : "0%";
+    processApplicationsShare.textContent = totalBase > 0 ? percent(processCount) : "0%";
   }
   if (acceptedApplicationsStat) {
-    acceptedApplicationsStat.textContent = String(tableState.serverPagination ? tableState.serverStats?.accepted || 0 : acceptedCount);
+    acceptedApplicationsStat.textContent = String(acceptedCount);
   }
   if (acceptedApplicationsShare) {
-    acceptedApplicationsShare.textContent = totalBase > 0
-      ? percent(tableState.serverPagination ? tableState.serverStats?.accepted || 0 : acceptedCount)
-      : "0%";
+    acceptedApplicationsShare.textContent = totalBase > 0 ? percent(acceptedCount) : "0%";
   }
   if (rejectedApplicationsStat) {
-    rejectedApplicationsStat.textContent = String(tableState.serverPagination ? tableState.serverStats?.rejected || 0 : rejectedCount);
+    rejectedApplicationsStat.textContent = String(rejectedCount);
   }
   if (rejectedApplicationsShare) {
-    rejectedApplicationsShare.textContent = totalBase > 0
-      ? percent(tableState.serverPagination ? tableState.serverStats?.rejected || 0 : rejectedCount)
-      : "0%";
+    rejectedApplicationsShare.textContent = totalBase > 0 ? percent(rejectedCount) : "0%";
   }
 
   if (paginationInfo) {
-    const from = matchedRows.length > 0
-      ? (tableState.serverPagination ? ((tableState.currentPage - 1) * limit) + 1 : startIndex + 1)
-      : 0;
-    const to = matchedRows.length > 0
-      ? (tableState.serverPagination ? ((tableState.currentPage - 1) * limit) + matchedRows.length : Math.min(endIndex, matchedRows.length))
-      : 0;
+    const from = matchedRows.length > 0 ? startIndex + 1 : 0;
+    const to = matchedRows.length > 0 ? Math.min(endIndex, matchedRows.length) : 0;
     paginationInfo.textContent = matchedRows.length > 0
-      ? formatPaginationInfo(from, to, tableState.serverPagination ? tableState.totalItems : matchedRows.length)
+      ? formatPaginationInfo(from, to, matchedRows.length)
       : formatPaginationInfo(0, 0, 0);
   }
 
@@ -6345,10 +6137,6 @@ function applyTableFilters() {
 
 function resetAndApplyFilters() {
   tableState.currentPage = 1;
-  if (tableState.serverPagination) {
-    loadApplicationsFromApi();
-    return;
-  }
   applyTableFilters();
 }
 
@@ -6553,24 +6341,6 @@ regionFilter?.addEventListener("change", async () => {
 
   updateApplicationFilterOptionSets();
   updateApplicationFilterControls();
-
-  const regionValue = regionFilter.value ?? "all";
-  if (regionValue === "all" || !tableState.serverPagination) {
-    return;
-  }
-
-  try {
-    await loadDistrictOptions(regionValue);
-    updateApplicationFilterOptionSets();
-    updateApplicationFilterControls();
-  } catch (error) {
-    console.error("Failed to load district options:", error);
-    showToast(
-      "Districtlar yuklanmadi",
-      "Tanlangan hudud uchun districtlar ro'yxatini olishda xatolik yuz berdi.",
-      "error",
-    );
-  }
 });
 
 organizationTypeFilter?.addEventListener("change", async () => {
@@ -6580,24 +6350,6 @@ organizationTypeFilter?.addEventListener("change", async () => {
 
   updateApplicationFilterOptionSets();
   updateApplicationFilterControls();
-
-  const organizationTypeValue = organizationTypeFilter.value ?? "all";
-  if (organizationTypeValue === "all" || !tableState.serverPagination) {
-    return;
-  }
-
-  try {
-    await loadOrganizationOptions(organizationTypeValue);
-    updateApplicationFilterOptionSets();
-    updateApplicationFilterControls();
-  } catch (error) {
-    console.error("Failed to load organization options:", error);
-    showToast(
-      "Tashkilotlar yuklanmadi",
-      "Tanlangan tur uchun tashkilotlar ro'yxatini olishda xatolik yuz berdi.",
-      "error",
-    );
-  }
 });
 
 languageItems.forEach((button) => {
@@ -6624,11 +6376,7 @@ applyFilters?.addEventListener("click", () => {
   applicationAppliedFilters = { ...getApplicationFilterValues() };
   updateApplicationFilterControls();
   tableState.currentPage = 1;
-  if (tableState.serverPagination) {
-    loadApplicationsFromApi();
-  } else {
-    applyTableFilters();
-  }
+  applyTableFilters();
   filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
   filterToggle?.setAttribute("aria-expanded", "false");
 });
@@ -6672,12 +6420,7 @@ if (rowsPerPageMenu && rowsPerPageTrigger && rowsPerPage) {
 
       rowsPerPage.value = value;
       syncRowsPerPageUi();
-      if (tableState.serverPagination) {
-        tableState.currentPage = 1;
-        loadApplicationsFromApi();
-      } else {
-        resetAndApplyFilters();
-      }
+      resetAndApplyFilters();
       rowsPerPageMenu.classList.remove("pagination-select--open");
       rowsPerPageTrigger.setAttribute("aria-expanded", "false");
     });
@@ -7161,10 +6904,6 @@ resetFilters?.addEventListener("click", () => {
   tableState.currentPage = 1;
   closeCalendar();
   updateApplicationFilterControls();
-  if (tableState.serverPagination) {
-    loadApplicationsFromApi();
-    return;
-  }
   applyTableFilters();
 });
 
@@ -7177,19 +6916,11 @@ tableEmptyAction?.addEventListener("click", () => {
 
 paginationPrev?.addEventListener("click", () => {
   tableState.currentPage = Math.max(1, tableState.currentPage - 1);
-  if (tableState.serverPagination) {
-    loadApplicationsFromApi();
-    return;
-  }
   applyTableFilters();
 });
 
 paginationNext?.addEventListener("click", () => {
   tableState.currentPage = Math.min(tableState.totalPages, tableState.currentPage + 1);
-  if (tableState.serverPagination) {
-    loadApplicationsFromApi();
-    return;
-  }
   applyTableFilters();
 });
 
@@ -7205,10 +6936,6 @@ paginationPages?.addEventListener("click", (event) => {
   }
 
   tableState.currentPage = page;
-  if (tableState.serverPagination) {
-    loadApplicationsFromApi();
-    return;
-  }
   applyTableFilters();
 });
 
