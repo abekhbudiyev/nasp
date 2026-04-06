@@ -2197,12 +2197,13 @@ body.theme-dark .login-hero__card {
   max-width: 176px;
   text-align: left;
   white-space: normal;
-  color: var(--ink);
-  background: var(--surface);
+  color: #273126;
+  background: #f3f6f1;
 }
 
 .report-table tbody td:first-child {
-  background: var(--surface);
+  color: #273126;
+  background: #fff;
 }
 
 .report-table thead tr:first-child th:first-child {
@@ -2277,22 +2278,30 @@ body.theme-dark .login-hero__card {
 
 .report-table__summary td {
   display: table-cell;
-  background: #e5efe2;
+  background: #edf2ed;
   font-weight: 700;
+  color: #202a21;
   position: static;
   box-shadow: none;
 }
 
 .report-table__summary td:first-child {
-  background: #e5efe2;
+  background: #edf2ed;
+  color: #202a21;
+}
+
+.report-table tbody tr.report-table__summary td {
+  background: #edf2ed !important;
+  color: #202a21 !important;
+}
+
+.report-table tbody tr.report-table__summary td:first-child {
+  background: #edf2ed !important;
+  color: #202a21 !important;
 }
 
 .report-table [data-report-hidden="true"] {
   display: none;
-}
-
-.report-table tbody tr.report-table__summary td:first-child {
-  background: #e5efe2;
 }
 
 body.theme-dark .report-table th {
@@ -2302,19 +2311,33 @@ body.theme-dark .report-table th {
 }
 
 body.theme-dark .report-table tbody td:first-child {
+  color: #edf2ed;
   background: #172019;
 }
 
 body.theme-dark .report-table thead tr:first-child th:first-child {
-  background: #202a21;
+  background: #202a21 !important;
+  color: #edf2ed !important;
 }
 
 body.theme-dark .report-table__summary td {
   background: #243126;
+  color: #edf2ed;
 }
 
 body.theme-dark .report-table__summary td:first-child {
   background: #243126;
+  color: #edf2ed;
+}
+
+body.theme-dark .report-table tbody tr.report-table__summary td {
+  background: #243126 !important;
+  color: #edf2ed !important;
+}
+
+body.theme-dark .report-table tbody tr.report-table__summary td:first-child {
+  background: #243126 !important;
+  color: #edf2ed !important;
 }
 
 body.theme-dark .report-selection {
@@ -2343,23 +2366,6 @@ body[data-theme="classic-dark"] .report-table th,
 body[data-theme="classic-dark"] .report-table td {
   border-right-color: color-mix(in srgb, var(--line) 88%, var(--ink) 12%);
   border-bottom-color: color-mix(in srgb, var(--line) 88%, var(--ink) 12%);
-}
-
-body[data-theme="classic-light"] .report-table thead tr:first-child th:first-child,
-body[data-theme="classic-dark"] .report-table thead tr:first-child th:first-child,
-body[data-theme="classic-light"] .report-table tbody td:first-child,
-body[data-theme="classic-dark"] .report-table tbody td:first-child {
-  background: var(--surface);
-  border-right-color: color-mix(in srgb, var(--line) 88%, var(--ink) 12%);
-}
-
-body[data-theme="classic-light"] .report-table__summary td,
-body[data-theme="classic-light"] .report-table__summary td:first-child,
-body[data-theme="classic-light"] .report-table tbody tr.report-table__summary td:first-child,
-body[data-theme="classic-dark"] .report-table__summary td,
-body[data-theme="classic-dark"] .report-table__summary td:first-child,
-body[data-theme="classic-dark"] .report-table tbody tr.report-table__summary td:first-child {
-  background: color-mix(in srgb, var(--surface) 82%, var(--ink) 18%);
 }
 
 body[data-theme="classic-light"] .report-table__cell--selected,

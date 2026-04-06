@@ -135,8 +135,6 @@ const themeStorageKey = "muruvvat-theme";
 const themeModes = [
   { key: "brand-light", dark: false, label: "Brand day" },
   { key: "brand-dark", dark: true, label: "Brand night" },
-  { key: "classic-light", dark: false, label: "Classic day" },
-  { key: "classic-dark", dark: true, label: "Classic night" },
 ];
 const fontStorageKey = "mrv-font";
 const authStorageKey = "nasp-auth-state";
@@ -2265,47 +2263,45 @@ const translationKeyOverrides = {
     "applications.address": "Manzil",
     "detail.result": "Natija",
     "report.summary": "Respublika jami",
+    "value.group.nbb": "NBB",
   },
   "uz-cyrl": {
-      "applications.address": "Манзил",
-      "detail.result": "Натижа",
-      "report.summary": "Республика жами",
-      "value.group.nbb": "Ногиронлиги бўлган бола",
-      "result.positive": "Ижобий",
-      "result.negative": "Салбий",
-    },
+    "applications.address": "Манзил",
+    "detail.result": "Натижа",
+    "report.summary": "Республика жами",
+    "value.group.nbb": "НББ",
+    "result.positive": "Ижобий",
+    "result.negative": "Салбий",
+  },
   kaa: {
-      "applications.address": "Manzil",
-      "detail.result": "Nátiyje",
-      "report.summary": "Respublika jámi",
-      "value.group.nbb": "Nogironlıǵı bolǵan bala",
-    },
+    "applications.address": "Manzil",
+    "detail.result": "Nátiyje",
+    "report.summary": "Respublika jámi",
+    "value.group.nbb": "NBB",
+  },
   "kaa-cyrl": {
-      "applications.address": "Манзил",
-      "detail.result": "Нәтийже",
-      "report.summary": "Республика жәми",
-      "value.group.nbb": "Ногиронлығы болған бала",
-      "result.positive": "Ижобий",
-      "result.negative": "Салбий",
-    },
+    "applications.address": "Манзил",
+    "detail.result": "Нәтийже",
+    "report.summary": "Республика жәми",
+    "value.group.nbb": "НББ",
+    "result.positive": "Ижобий",
+    "result.negative": "Салбий",
+  },
   ru: {
-      "applications.address": "Адрес",
-      "detail.result": "Результат",
-      "report.summary": "Итого по республике",
-      "value.group.nbb": "Ребёнок с инвалидностью",
-      "result.positive": "Положительный",
-      "result.negative": "Отрицательный",
-    },
+    "applications.address": "Адрес",
+    "detail.result": "Результат",
+    "report.summary": "Итого по республике",
+    "value.group.nbb": "РИ",
+    "result.positive": "Положительный",
+    "result.negative": "Отрицательный",
+  },
   en: {
-      "value.group.nbb": "Child with disability",
-    },
-  uz: {
-      "value.group.nbb": "Nogironligi bo'lgan bola",
-    },
+    "value.group.nbb": "CWD",
+  },
   i18n: {
-      "value.group.nbb": "value.group.nbb",
-    },
-  };
+    "value.group.nbb": "value.group.nbb",
+  },
+};
 
 Object.entries(translationKeyOverrides).forEach(([lang, values]) => {
   translations[lang] = { ...(translations[lang] ?? {}), ...values };
@@ -5662,12 +5658,25 @@ function syncReportFrozenColumn() {
   return;
 }
 
+function normalizeThemeKey(themeKey) {
+  if (themeKey === "classic-light") {
+    return "brand-light";
+  }
+
+  if (themeKey === "classic-dark") {
+    return "brand-dark";
+  }
+
+  return themeKey;
+}
+
 function getThemeMeta(themeKey) {
-  return themeModes.find((theme) => theme.key === themeKey) ?? themeModes[0];
+  const normalizedThemeKey = normalizeThemeKey(themeKey);
+  return themeModes.find((theme) => theme.key === normalizedThemeKey) ?? themeModes[0];
 }
 
 function getCurrentThemeKey() {
-  return document.body.dataset.theme || (document.body.classList.contains("theme-dark") ? "brand-dark" : "brand-light");
+  return normalizeThemeKey(document.body.dataset.theme) || (document.body.classList.contains("theme-dark") ? "brand-dark" : "brand-light");
 }
 
 function getNextThemeKey(themeKey) {
@@ -5687,7 +5696,8 @@ function setThemeIcon(themeKey) {
 }
 
 function applyTheme(themeKey) {
-  const theme = getThemeMeta(themeKey);
+  const normalizedThemeKey = normalizeThemeKey(themeKey);
+  const theme = getThemeMeta(normalizedThemeKey);
 
   document.body.dataset.theme = theme.key;
   document.body.classList.toggle("theme-dark", theme.dark);
@@ -5698,7 +5708,7 @@ function applyTheme(themeKey) {
 }
 
 function getSavedThemePreference() {
-  const savedTheme = window.localStorage.getItem(themeStorageKey);
+  const savedTheme = normalizeThemeKey(window.localStorage.getItem(themeStorageKey));
   return themeModes.some((theme) => theme.key === savedTheme) ? savedTheme : null;
 }
 
