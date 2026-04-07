@@ -966,8 +966,8 @@
                       </div>
                     </div>
                     <div class="application-filter-actions report-filter-actions">
-                      <button class="table-action table-action--primary" id="applicationsReportApplyFilters" type="button">Qo'llash</button>
-                      <button class="table-action" id="applicationsReportResetFilters" type="button">Tozalash</button>
+                      <button class="table-action table-action--block" id="applicationsReportApplyFilters" type="button">Qo'llash</button>
+                      <button class="table-action table-action--block" id="applicationsReportResetFilters" type="button">Tozalash</button>
                     </div>
                   </div>
                 </div>
@@ -982,7 +982,7 @@
             <button class="table-action" id="applicationsReportScopeBack" type="button">Orqaga</button>
             <div class="report-scope__path" id="applicationsReportScopePath">Respublika jami</div>
           </div>
-          <div class="table-wrap report-table-wrap">
+          <div class="table-wrap report-table-wrap report-table-wrap--applications">
               <table class="data-table report-table report-table--applications" id="applicationsReportTable">
                 <colgroup>
                   <col style="width: 176px;">
@@ -995,6 +995,22 @@
                   <col style="width: 112px;">
                   <col style="width: 96px;">
                   <col style="width: 112px;">
+                  <col style="width: 92px;">
+                  <col style="width: 82px;">
+                  <col style="width: 82px;">
+                  <col style="width: 82px;">
+                  <col style="width: 92px;">
+                  <col style="width: 70px;">
+                  <col style="width: 70px;">
+                  <col style="width: 70px;">
+                  <col style="width: 110px;">
+                  <col style="width: 90px;">
+                  <col style="width: 90px;">
+                  <col style="width: 74px;">
+                  <col style="width: 74px;">
+                  <col style="width: 82px;">
+                  <col style="width: 96px;">
+                  <col style="width: 88px;">
                 </colgroup>
                 <thead>
                   <tr>
@@ -1003,6 +1019,10 @@
                     <th colspan="4" data-group="in-progress">Jarayondagi arizalar</th>
                     <th colspan="3" data-group="rejected">Rad etilgan arizalar</th>
                     <th rowspan="2" data-col="accepted">Qabul qilingan arizalar</th>
+                  <th colspan="5" data-group="diagnosis">Tashxislari bo'yicha</th>
+                  <th colspan="4" data-group="disability-group">Nogironlik guruhi</th>
+                    <th colspan="2" data-group="gender">Jinsi bo'yicha</th>
+                    <th colspan="5" data-group="age">Yoshi bo'yicha</th>
                   </tr>
                   <tr>
                     <th data-col="inProgress">Jami</th>
@@ -1012,6 +1032,22 @@
                     <th data-col="rejected">Jami</th>
                     <th data-col="workingRejected">Ishchi guruhidan rad etilgan</th>
                     <th data-col="commissionRejected">Komissiyadan rad etilgan</th>
+                    <th data-col="f00f03">F00-F03</th>
+                    <th data-col="f71">F71*</th>
+                    <th data-col="f72">F72*</th>
+                    <th data-col="f73">F73*</th>
+                  <th data-col="otherDiagnosis">Boshqa</th>
+                  <th data-col="group1">1</th>
+                  <th data-col="group2">2</th>
+                  <th data-col="group3">3</th>
+                  <th data-col="nbb">NBB</th>
+                  <th data-col="male">Erkak</th>
+                    <th data-col="female">Ayol</th>
+                    <th data-col="age0_3">0-3</th>
+                    <th data-col="age3_7">3-7</th>
+                    <th data-col="age7_18">7-18</th>
+                    <th data-col="age18_55_60">18-55/60</th>
+                    <th data-col="age55_60">55/60+</th>
                   </tr>
                 </thead>
                 <tbody id="applicationsReportTableBody"></tbody>

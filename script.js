@@ -2641,6 +2641,186 @@ function getTranslatedPdfDocumentLabel() {
   return labels[currentLanguage] ?? labels.uz;
 }
 
+function getApplicationsReportUiText(key, fallback = "") {
+  const labels = {
+    filtersTitle: {
+      uz: "Filterlar",
+      "uz-cyrl": "Фильтрлар",
+      kaa: "Filterler",
+      "kaa-cyrl": "Фильтрлер",
+      ru: "Фильтры",
+      en: "Filters",
+      i18n: "common.filters",
+    },
+    totalApplications: {
+      uz: "Jami arizalar",
+      "uz-cyrl": "Жами аризалар",
+      kaa: "Jami arızalar",
+      "kaa-cyrl": "Жами арызалар",
+      ru: "Всего заявлений",
+      en: "Total applications",
+      i18n: "report.totalApplications",
+    },
+    total: {
+      uz: "Jami",
+      "uz-cyrl": "Жами",
+      kaa: "Jami",
+      "kaa-cyrl": "Жәми",
+      ru: "Итого",
+      en: "Total",
+      i18n: "common.total",
+    },
+    inProgressApplications: {
+      uz: "Jarayondagi arizalar",
+      "uz-cyrl": "Жараёндаги аризалар",
+      kaa: "Jarayondaǵı arızalar",
+      "kaa-cyrl": "Жараёндағы арызалар",
+      ru: "Заявления в процессе",
+      en: "Applications in progress",
+      i18n: "report.inProgressApplications",
+    },
+    rejectedApplications: {
+      uz: "Rad etilgan arizalar",
+      "uz-cyrl": "Рад этилган аризалар",
+      kaa: "Rad etilgen arızalar",
+      "kaa-cyrl": "Рад етилген арызалар",
+      ru: "Отклонённые заявления",
+      en: "Rejected applications",
+      i18n: "report.rejectedApplications",
+    },
+    acceptedApplications: {
+      uz: "Qabul qilingan arizalar",
+      "uz-cyrl": "Қабул қилинган аризалар",
+      kaa: "Qabıl etilgen arızalar",
+      "kaa-cyrl": "Қабыл етилген арызалар",
+      ru: "Принятые заявления",
+      en: "Accepted applications",
+      i18n: "report.acceptedApplications",
+    },
+    workingReview: {
+      uz: "Ishchi guruhi tomonidan ko'rib chiqilmoqda",
+      "uz-cyrl": "Ишчи гуруҳи томонидан кўриб чиқилмоқда",
+      kaa: "Jumısşı topar tárepinen kórip shıǵılmaqta",
+      "kaa-cyrl": "Жумысшы топар тәрепинен көрип шығылмақта",
+      ru: "Рассматривается рабочей группой",
+      en: "Under review by working group",
+      i18n: "step.131",
+    },
+    workingAccepted: {
+      uz: "Ishchi guruhi tomonidan qabul qilingan",
+      "uz-cyrl": "Ишчи гуруҳи томонидан қабул қилинган",
+      kaa: "Jumısşı topar tárepinen qabıl etilgen",
+      "kaa-cyrl": "Жумысшы топар тәрепинен қабыл этилген",
+      ru: "Принято рабочей группой",
+      en: "Accepted by working group",
+      i18n: "step.133",
+    },
+    commissionReview: {
+      uz: "Komissiya tomonidan ko'rib chiqilmoqda",
+      "uz-cyrl": "Комиссия томонидан кўриб чиқилмоқда",
+      kaa: "Komissiya tárepinen kórip shıǵılmaqta",
+      "kaa-cyrl": "Комиссия тәрепинен көрип шығылмақта",
+      ru: "Рассматривается комиссией",
+      en: "Under review by commission",
+      i18n: "step.134",
+    },
+    workingRejected: {
+      uz: "Ishchi guruhidan rad etilgan",
+      "uz-cyrl": "Ишчи гуруҳидан рад этилган",
+      kaa: "Jumısşı toparınan rad etilgen",
+      "kaa-cyrl": "Жумысшы топарынан рад этилген",
+      ru: "Отклонено рабочей группой",
+      en: "Rejected by working group",
+      i18n: "step.132",
+    },
+    commissionRejected: {
+      uz: "Komissiyadan rad etilgan",
+      "uz-cyrl": "Комиссиядан рад этилган",
+      kaa: "Komissiyadan rad etilgen",
+      "kaa-cyrl": "Комиссиядан рад этилген",
+      ru: "Отклонено комиссией",
+      en: "Rejected by commission",
+      i18n: "step.136",
+    },
+    byDiagnosis: {
+      uz: "Tashxislari bo'yicha",
+      "uz-cyrl": "Ташхислари бўйича",
+      kaa: "Tashxisleri boyınsha",
+      "kaa-cyrl": "Ташхислери бойынша",
+      ru: "По диагнозам",
+      en: "By diagnosis",
+      i18n: "report.byDiagnosis",
+    },
+    byDisability: {
+      uz: "Nogironlik guruhi",
+      "uz-cyrl": "Ногиронлик гуруҳи",
+      kaa: "Nogironlıq guruhi",
+      "kaa-cyrl": "Ногиронлық гурухы",
+      ru: "Группа инвалидности",
+      en: "Disability group",
+      i18n: "report.byDisability",
+    },
+    byGender: {
+      uz: "Jinsi bo'yicha",
+      "uz-cyrl": "Жинси бўйича",
+      kaa: "Jınsı boyınsha",
+      "kaa-cyrl": "Жинсы бойынша",
+      ru: "По полу",
+      en: "By gender",
+      i18n: "report.byGender",
+    },
+    byAge: {
+      uz: "Yoshi bo'yicha",
+      "uz-cyrl": "Ёши бўйича",
+      kaa: "Jası boyınsha",
+      "kaa-cyrl": "Жасы бойынша",
+      ru: "По возрасту",
+      en: "By age",
+      i18n: "report.byAge",
+    },
+    otherDiagnosis: {
+      uz: "Boshqa",
+      "uz-cyrl": "Бошқа",
+      kaa: "Basqa",
+      "kaa-cyrl": "Басқа",
+      ru: "Прочее",
+      en: "Other",
+      i18n: "report.otherDiagnosis",
+    },
+    noData: {
+      uz: "Mavjud emas",
+      "uz-cyrl": "Мавжуд эмас",
+      kaa: "Mavjud emes",
+      "kaa-cyrl": "Маўжуд емес",
+      ru: "Нет данных",
+      en: "No data",
+      i18n: "report.noData",
+    },
+    regionTotalSuffix: {
+      uz: "bo'yicha jami",
+      "uz-cyrl": "бўйича жами",
+      kaa: "boyınsha jami",
+      "kaa-cyrl": "бойынша жами",
+      ru: "итого",
+      en: "total",
+      i18n: "report.regionTotalSuffix",
+    },
+  };
+
+  return labels[key]?.[currentLanguage] ?? labels[key]?.uz ?? fallback;
+}
+
+function getRegionTotalLabel(name) {
+  const regionName = translateDisplayValue(name);
+  const suffix = getApplicationsReportUiText("regionTotalSuffix", "bo'yicha jami");
+
+  if (currentLanguage === "ru") {
+    return `${regionName} ${suffix}`;
+  }
+
+  return `${regionName} ${suffix}`.trim();
+}
+
 function translateRouteTitle(title) {
   const key = routeTitleKeys[title];
   if (!key) {
@@ -2788,6 +2968,12 @@ function applyStaticTranslations() {
     'label[for="organizationFilter"]': tr("common.organization", "Tashkilot"),
     'label[for="dateFromFilter"]': tr("common.startDate", "Boshlanish sana"),
     'label[for="dateToFilter"]': tr("common.endDate", "Tugash sana"),
+    'label[for="applicationsReportStatusFilter"]': tr("common.status", "Status"),
+    'label[for="applicationsReportStepFilter"]': tr("common.step", "Bosqich"),
+    'label[for="applicationsReportGenderFilter"]': tr("common.gender", "Jinsi"),
+    'label[for="applicationsReportAgeFilter"]': tr("common.age", "Yoshi"),
+    'label[for="applicationsReportDateFromFilter"]': tr("common.startDate", "Boshlanish sana"),
+    'label[for="applicationsReportDateToFilter"]': tr("common.endDate", "Tugash sana"),
     'label[for="reportDiagnosisFilter"]': tr("common.diagnosis", "Tashxis"),
     'label[for="reportDisabilityGroupFilter"]': tr("common.disabilityGroup", "Nogironlik guruhi"),
     'label[for="reportGenderFilter"]': tr("common.gender", "Jinsi"),
@@ -2801,6 +2987,12 @@ function applyStaticTranslations() {
   const toInput = document.getElementById("dateToInput");
   if (fromInput) fromInput.placeholder = getDateInputPlaceholder();
   if (toInput) toInput.placeholder = getDateInputPlaceholder();
+  if (applicationsReportDateFromText) applicationsReportDateFromText.placeholder = getDateInputPlaceholder();
+  if (applicationsReportDateToText) applicationsReportDateToText.placeholder = getDateInputPlaceholder();
+  const reportFilterPanelTitle = reportFilterMenu?.querySelector(".application-filter-panel__title");
+  const applicationsReportFilterPanelTitle = applicationsReportFilterMenu?.querySelector(".application-filter-panel__title");
+  if (reportFilterPanelTitle) reportFilterPanelTitle.textContent = getApplicationsReportUiText("filtersTitle", "Filterlar");
+  if (applicationsReportFilterPanelTitle) applicationsReportFilterPanelTitle.textContent = getApplicationsReportUiText("filtersTitle", "Filterlar");
   const appTableHeads = document.querySelectorAll("#applicationsTable thead th");
   if (appTableHeads[0]) appTableHeads[0].textContent = tr("applications.actions", "Amallar");
   if (appTableHeads[1]) appTableHeads[1].textContent = tr("applications.application", "Ariza");
@@ -2839,6 +3031,10 @@ function applyStaticTranslations() {
   const applicationsReportHeadAccepted = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="accepted"]');
   const applicationsReportHeadInProgressGroup = applicationsReportView?.querySelector('#applicationsReportTable thead [data-group="in-progress"]');
   const applicationsReportHeadRejectedGroup = applicationsReportView?.querySelector('#applicationsReportTable thead [data-group="rejected"]');
+  const applicationsReportHeadDiagnosisGroup = applicationsReportView?.querySelector('#applicationsReportTable thead [data-group="diagnosis"]');
+  const applicationsReportHeadDisabilityGroup = applicationsReportView?.querySelector('#applicationsReportTable thead [data-group="disability-group"]');
+  const applicationsReportHeadGenderGroup = applicationsReportView?.querySelector('#applicationsReportTable thead [data-group="gender"]');
+  const applicationsReportHeadAgeGroup = applicationsReportView?.querySelector('#applicationsReportTable thead [data-group="age"]');
   const applicationsReportHeadInProgress = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="inProgress"]');
   const applicationsReportHeadWorkingReview = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="workingReview"]');
   const applicationsReportHeadWorkingAccepted = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="workingAccepted"]');
@@ -2846,18 +3042,30 @@ function applyStaticTranslations() {
   const applicationsReportHeadRejected = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="rejected"]');
   const applicationsReportHeadWorkingRejected = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="workingRejected"]');
   const applicationsReportHeadCommissionRejected = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="commissionRejected"]');
+  const applicationsReportHeadOtherDiagnosis = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="otherDiagnosis"]');
+  const applicationsReportHeadNbb = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="nbb"]');
+  const applicationsReportHeadMale = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="male"]');
+  const applicationsReportHeadFemale = applicationsReportView?.querySelector('#applicationsReportTable thead [data-col="female"]');
   if (applicationsReportHeadRegion) applicationsReportHeadRegion.textContent = tr("common.region", "Hudud");
-  if (applicationsReportHeadTotal) applicationsReportHeadTotal.textContent = tr("report.totalApplications", "Jami arizalar");
-  if (applicationsReportHeadInProgressGroup) applicationsReportHeadInProgressGroup.textContent = tr("report.inProgressApplications", "Jarayondagi arizalar");
-  if (applicationsReportHeadRejectedGroup) applicationsReportHeadRejectedGroup.textContent = tr("report.rejectedApplications", "Rad etilgan arizalar");
-  if (applicationsReportHeadAccepted) applicationsReportHeadAccepted.textContent = tr("report.acceptedApplications", "Qabul qilingan arizalar");
-  if (applicationsReportHeadInProgress) applicationsReportHeadInProgress.textContent = tr("common.total", "Jami");
-  if (applicationsReportHeadRejected) applicationsReportHeadRejected.textContent = tr("common.total", "Jami");
-  if (applicationsReportHeadWorkingReview) applicationsReportHeadWorkingReview.textContent = tr("step.131", "Ishchi guruhi tomonidan ko'rib chiqilmoqda");
-  if (applicationsReportHeadWorkingAccepted) applicationsReportHeadWorkingAccepted.textContent = tr("step.133", "Ishchi guruhi tomonidan qabul qilingan");
-  if (applicationsReportHeadCommissionReview) applicationsReportHeadCommissionReview.textContent = tr("step.134", "Komissiya tomonidan ko'rib chiqilmoqda");
-  if (applicationsReportHeadWorkingRejected) applicationsReportHeadWorkingRejected.textContent = tr("step.132", "Ishchi guruhidan rad etilgan");
-  if (applicationsReportHeadCommissionRejected) applicationsReportHeadCommissionRejected.textContent = tr("step.136", "Komissiyadan rad etilgan");
+  if (applicationsReportHeadTotal) applicationsReportHeadTotal.textContent = getApplicationsReportUiText("totalApplications", "Jami arizalar");
+  if (applicationsReportHeadInProgressGroup) applicationsReportHeadInProgressGroup.textContent = getApplicationsReportUiText("inProgressApplications", "Jarayondagi arizalar");
+  if (applicationsReportHeadRejectedGroup) applicationsReportHeadRejectedGroup.textContent = getApplicationsReportUiText("rejectedApplications", "Rad etilgan arizalar");
+  if (applicationsReportHeadAccepted) applicationsReportHeadAccepted.textContent = getApplicationsReportUiText("acceptedApplications", "Qabul qilingan arizalar");
+  if (applicationsReportHeadDiagnosisGroup) applicationsReportHeadDiagnosisGroup.textContent = getApplicationsReportUiText("byDiagnosis", "Tashxislari bo'yicha");
+  if (applicationsReportHeadDisabilityGroup) applicationsReportHeadDisabilityGroup.textContent = getApplicationsReportUiText("byDisability", "Nogironlik guruhi");
+  if (applicationsReportHeadGenderGroup) applicationsReportHeadGenderGroup.textContent = getApplicationsReportUiText("byGender", "Jinsi bo'yicha");
+  if (applicationsReportHeadAgeGroup) applicationsReportHeadAgeGroup.textContent = getApplicationsReportUiText("byAge", "Yoshi bo'yicha");
+  if (applicationsReportHeadInProgress) applicationsReportHeadInProgress.textContent = getApplicationsReportUiText("total", "Jami");
+  if (applicationsReportHeadRejected) applicationsReportHeadRejected.textContent = getApplicationsReportUiText("total", "Jami");
+  if (applicationsReportHeadWorkingReview) applicationsReportHeadWorkingReview.textContent = getApplicationsReportUiText("workingReview", "Ishchi guruhi tomonidan ko'rib chiqilmoqda");
+  if (applicationsReportHeadWorkingAccepted) applicationsReportHeadWorkingAccepted.textContent = getApplicationsReportUiText("workingAccepted", "Ishchi guruhi tomonidan qabul qilingan");
+  if (applicationsReportHeadCommissionReview) applicationsReportHeadCommissionReview.textContent = getApplicationsReportUiText("commissionReview", "Komissiya tomonidan ko'rib chiqilmoqda");
+  if (applicationsReportHeadWorkingRejected) applicationsReportHeadWorkingRejected.textContent = getApplicationsReportUiText("workingRejected", "Ishchi guruhidan rad etilgan");
+  if (applicationsReportHeadCommissionRejected) applicationsReportHeadCommissionRejected.textContent = getApplicationsReportUiText("commissionRejected", "Komissiyadan rad etilgan");
+  if (applicationsReportHeadOtherDiagnosis) applicationsReportHeadOtherDiagnosis.textContent = getApplicationsReportUiText("otherDiagnosis", "Boshqa");
+  if (applicationsReportHeadNbb) applicationsReportHeadNbb.textContent = tr("value.group.nbb", "NBB");
+  if (applicationsReportHeadMale) applicationsReportHeadMale.textContent = tr("gender.male", "Erkak");
+  if (applicationsReportHeadFemale) applicationsReportHeadFemale.textContent = tr("gender.female", "Ayol");
   if (tableEmptyAction) tableEmptyAction.textContent = tr("common.reset", "Tozalash");
   if (detailModalTitle) detailModalTitle.textContent = tr("detail.title", "Ariza tafsilotlari");
   if (detailModalLoading?.querySelector("span:last-child")) detailModalLoading.querySelector("span:last-child").textContent = tr("detail.loading", "Ariza ma'lumotlari yuklanmoqda...");
@@ -2869,12 +3077,15 @@ function applyStaticTranslations() {
   document.querySelectorAll('[data-process-action="reject"] span').forEach((label) => {
     label.textContent = tr("detail.reject", "Rad etish");
   });
-  const reportSelectionLabels = document.querySelectorAll(".report-selection__stat span");
-  if (reportSelectionLabels[0]) reportSelectionLabels[0].textContent = tr("selection.count", "Soni");
-  if (reportSelectionLabels[1]) reportSelectionLabels[1].textContent = tr("selection.sum", "Yig'indi");
-  if (reportSelectionLabels[2]) reportSelectionLabels[2].textContent = tr("selection.avg", "O'rtacha");
-  if (reportSelectionLabels[3]) reportSelectionLabels[3].textContent = tr("selection.min", "Min");
-  if (reportSelectionLabels[4]) reportSelectionLabels[4].textContent = tr("selection.max", "Max");
+  const reportSelectionLabels = reportSelectionBar?.querySelectorAll(".report-selection__stat span") ?? [];
+  const applicationsReportSelectionLabels = applicationsReportSelectionBar?.querySelectorAll(".report-selection__stat span") ?? [];
+  [reportSelectionLabels, applicationsReportSelectionLabels].forEach((labels) => {
+    if (labels[0]) labels[0].textContent = tr("selection.count", "Soni");
+    if (labels[1]) labels[1].textContent = tr("selection.sum", "Yig'indi");
+    if (labels[2]) labels[2].textContent = tr("selection.avg", "O'rtacha");
+    if (labels[3]) labels[3].textContent = tr("selection.min", "Min");
+    if (labels[4]) labels[4].textContent = tr("selection.max", "Max");
+  });
 }
 
 function applyLanguage(languageCode) {
@@ -3280,6 +3491,50 @@ function toRegionKey(name) {
     .replace(/^-+|-+$/g, "");
 }
 
+const canonicalRegionOrder = [
+  "qoraqalpogiston",
+  "andijon",
+  "buxoro",
+  "jizzax",
+  "qashqadaryo",
+  "navoiy",
+  "namangan",
+  "samarqand",
+  "sirdaryo",
+  "surxondaryo",
+  "toshkent-viloyati",
+  "fargona",
+  "xorazm",
+  "toshkent-shahri",
+];
+
+const canonicalRegionOrderMap = new Map(canonicalRegionOrder.map((key, index) => [key, index]));
+
+function getCanonicalRegionOrderToken(value = "") {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (normalized.includes("qoraqalpog")) return "qoraqalpogiston";
+  if (normalized.includes("toshkent shahri")) return "toshkent-shahri";
+  if (normalized.includes("toshkent vil")) return "toshkent-viloyati";
+  if (normalized.includes("andijon")) return "andijon";
+  if (normalized.includes("buxoro")) return "buxoro";
+  if (normalized.includes("jizzax")) return "jizzax";
+  if (normalized.includes("qashqadaryo")) return "qashqadaryo";
+  if (normalized.includes("navoiy")) return "navoiy";
+  if (normalized.includes("namangan")) return "namangan";
+  if (normalized.includes("samarqand")) return "samarqand";
+  if (normalized.includes("sirdaryo")) return "sirdaryo";
+  if (normalized.includes("surxondaryo")) return "surxondaryo";
+  if (normalized.includes("farg")) return "fargona";
+  if (normalized.includes("xorazm")) return "xorazm";
+
+  return toRegionKey(value);
+}
+
 function splitIntegerByRatios(total, ratios) {
   const rawValues = ratios.map((ratio) => total * ratio);
   const floored = rawValues.map((value) => Math.floor(value));
@@ -3544,6 +3799,32 @@ function getApplicationStepValueFromName(stepName = "") {
   return normalizeApplicationStepValue("", stepName);
 }
 
+function getApplicationDiagnosisValue(item, numericSeed) {
+  const explicit = String(item.diagnosisValue || item.diagnosis || "").toLowerCase().trim();
+  if (explicit === "f00-f03" || explicit === "f00f03") return "f00f03";
+  if (explicit === "f71*" || explicit === "f71") return "f71";
+  if (explicit === "f72*" || explicit === "f72") return "f72";
+  if (explicit === "f73*" || explicit === "f73") return "f73";
+  if (explicit === "mavjud emas" || explicit === "none" || explicit === "no-diagnosis") return "none";
+  if (explicit) return "other";
+
+  return ["f00f03", "f71", "f72", "f73", "other", "none"][numericSeed % 6];
+}
+
+function getApplicationDisabilityGroupValue(item, numericSeed, ageGroupValue) {
+  const explicit = String(item.disabilityGroupValue || item.disabilityGroup || "").toLowerCase().trim();
+  if (["1", "2", "3"].includes(explicit)) return explicit;
+  if (explicit === "nbb" || explicit === "nogironligi bo'lgan bola") return "nbb";
+  if (explicit === "mavjud emas" || explicit === "none" || explicit === "no-group") return "none";
+
+  const isChild = ["0-3", "3-7", "7-18"].includes(ageGroupValue);
+  if (isChild && numericSeed % 4 === 0) {
+    return "nbb";
+  }
+
+  return ["1", "2", "3", "none"][numericSeed % 4];
+}
+
 function buildApplicationTableRow(item) {
   const statusLabel = item.status || deriveApplicationStatusLabel(item.appStep);
   const statusClass = statusLabel === "Qabul qilingan"
@@ -3564,6 +3845,8 @@ function buildApplicationTableRow(item) {
   const genderLabel = inferGenderFromPersonName(item.fullName || "");
   const genderValue = genderLabel.toLowerCase();
   const ageGroupValue = ["0-3", "3-7", "7-18", "18-55/60", "55/60+"][numericSeed % 5];
+  const diagnosisValue = getApplicationDiagnosisValue(item, numericSeed);
+  const disabilityGroupValue = getApplicationDisabilityGroupValue(item, numericSeed, ageGroupValue);
   const [dayPart = "", monthPart = "", yearPart = ""] = String(item.date || "").split(".");
   const dateIso = dayPart && monthPart && yearPart
     ? `${yearPart}-${monthPart.padStart(2, "0")}-${dayPart.padStart(2, "0")}`
@@ -3588,7 +3871,9 @@ function buildApplicationTableRow(item) {
     <tr data-status="${statusLabel.toLowerCase()}" data-region="${escapeHtml(regionValue)}" data-step="${escapeHtml(stepValue)}"
         data-district="${escapeHtml(districtValue)}" data-organization-type="${escapeHtml(organizationTypeValue)}"
         data-organization="${escapeHtml(organizationValue)}" data-search="${escapeHtml(searchValue)}"
-        data-gender="${escapeHtml(genderValue)}" data-age-group="${escapeHtml(ageGroupValue)}" data-date-iso="${escapeHtml(dateIso)}"
+        data-gender="${escapeHtml(genderValue)}" data-age-group="${escapeHtml(ageGroupValue)}"
+        data-diagnosis="${escapeHtml(diagnosisValue)}" data-disability-group="${escapeHtml(disabilityGroupValue)}"
+        data-date-iso="${escapeHtml(dateIso)}"
         data-organization-raw="${escapeHtml(organizationLabel)}"
         data-organization-region-raw="${escapeHtml(organizationRegionLabel)}"
         data-region-label-raw="${escapeHtml(regionLabel)}"
@@ -3641,7 +3926,20 @@ const reportColumnKeys = [
 
 const initialReportRows = reportTableBody ? Array.from(reportTableBody.querySelectorAll("tr")) : [];
 const reportSummaryData = initialReportRows.length ? extractReportRowData(initialReportRows[0], "summary") : null;
-const reportRegionData = initialReportRows.slice(1).map((row, index) => extractReportRowData(row, `region-${index + 1}`)).filter(Boolean);
+const reportRegionData = initialReportRows
+  .slice(1)
+  .map((row, index) => extractReportRowData(row, `region-${index + 1}`))
+  .filter(Boolean)
+  .sort((left, right) => {
+    const leftIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(left?.name ?? left?.key ?? "")) ?? Number.MAX_SAFE_INTEGER;
+    const rightIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(right?.name ?? right?.key ?? "")) ?? Number.MAX_SAFE_INTEGER;
+
+    if (leftIndex !== rightIndex) {
+      return leftIndex - rightIndex;
+    }
+
+    return String(left?.name ?? "").localeCompare(String(right?.name ?? ""), "uz");
+  });
 
 function generateDistrictRows(region) {
   const names = reportDistrictTemplates[region.key] ?? [
@@ -3691,22 +3989,7 @@ function normalizeLocationOrderKey(value = "") {
 }
 
 function getApplicationsReportRegionOrderToken(value = "") {
-  const normalized = normalizeLocationOrderKey(value);
-  if (normalized.includes("qoraqalpog")) return "qoraqalpogiston";
-  if (normalized.includes("toshkent shahri")) return "toshkent-shahri";
-  if (normalized.includes("toshkent viloyati")) return "toshkent-viloyati";
-  if (normalized.includes("andijon")) return "andijon";
-  if (normalized.includes("buxoro")) return "buxoro";
-  if (normalized.includes("jizzax")) return "jizzax";
-  if (normalized.includes("qashqadaryo")) return "qashqadaryo";
-  if (normalized.includes("navoiy")) return "navoiy";
-  if (normalized.includes("namangan")) return "namangan";
-  if (normalized.includes("samarqand")) return "samarqand";
-  if (normalized.includes("sirdaryo")) return "sirdaryo";
-  if (normalized.includes("surxondaryo")) return "surxondaryo";
-  if (normalized.includes("farg")) return "fargona";
-  if (normalized.includes("xorazm")) return "xorazm";
-  return normalized;
+  return getCanonicalRegionOrderToken(normalizeLocationOrderKey(value));
 }
 
 const applicationsReportColumnKeys = [
@@ -3719,6 +4002,22 @@ const applicationsReportColumnKeys = [
   "workingRejected",
   "commissionRejected",
   "accepted",
+  "f00f03",
+  "f71",
+  "f72",
+  "f73",
+  "otherDiagnosis",
+  "group1",
+  "group2",
+  "group3",
+  "nbb",
+  "male",
+  "female",
+  "age0_3",
+  "age3_7",
+  "age7_18",
+  "age18_55_60",
+  "age55_60",
 ];
 
 function getApplicationsReportMetrics(rows) {
@@ -3732,10 +4031,30 @@ function getApplicationsReportMetrics(rows) {
     workingRejected: 0,
     commissionRejected: 0,
     accepted: 0,
+    f00f03: 0,
+    f71: 0,
+    f72: 0,
+    f73: 0,
+    otherDiagnosis: 0,
+    group1: 0,
+    group2: 0,
+    group3: 0,
+    nbb: 0,
+    male: 0,
+    female: 0,
+    age0_3: 0,
+    age3_7: 0,
+    age7_18: 0,
+    age18_55_60: 0,
+    age55_60: 0,
   };
 
   rows.forEach((row) => {
     const step = String(row.getAttribute("data-step") ?? "").trim();
+    const diagnosis = String(row.getAttribute("data-diagnosis") ?? "").trim();
+    const disabilityGroup = String(row.getAttribute("data-disability-group") ?? "").trim();
+    const gender = String(row.getAttribute("data-gender") ?? "").trim();
+    const ageGroup = String(row.getAttribute("data-age-group") ?? "").trim();
 
     if (["112", "131", "133", "134"].includes(step)) totals.inProgress += 1;
     if (step === "131") totals.workingReview += 1;
@@ -3745,6 +4064,26 @@ function getApplicationsReportMetrics(rows) {
     if (step === "132") totals.workingRejected += 1;
     if (step === "136") totals.commissionRejected += 1;
     if (["171", "172"].includes(step)) totals.accepted += 1;
+
+    if (diagnosis === "f00f03") totals.f00f03 += 1;
+    else if (diagnosis === "f71") totals.f71 += 1;
+    else if (diagnosis === "f72") totals.f72 += 1;
+    else if (diagnosis === "f73") totals.f73 += 1;
+    else totals.otherDiagnosis += 1;
+
+    if (disabilityGroup === "1") totals.group1 += 1;
+    else if (disabilityGroup === "2") totals.group2 += 1;
+    else if (disabilityGroup === "3") totals.group3 += 1;
+    else if (disabilityGroup === "nbb") totals.nbb += 1;
+
+    if (gender === "erkak") totals.male += 1;
+    else if (gender === "ayol") totals.female += 1;
+
+    if (ageGroup === "0-3") totals.age0_3 += 1;
+    else if (ageGroup === "3-7") totals.age3_7 += 1;
+    else if (ageGroup === "7-18") totals.age7_18 += 1;
+    else if (ageGroup === "18-55/60") totals.age18_55_60 += 1;
+    else if (ageGroup === "55/60+") totals.age55_60 += 1;
   });
 
   return applicationsReportColumnKeys.map((key) => totals[key] ?? 0);
@@ -3752,7 +4091,6 @@ function getApplicationsReportMetrics(rows) {
 
 function getApplicationsReportRegionRows() {
   const regionMap = new Map();
-  const regionOrderMap = new Map(reportData.map((region, index) => [String(region.key ?? "").trim(), index]));
   ensureApplicationRowsSeeded();
 
   applicationRows.forEach((row) => {
@@ -3783,8 +4121,8 @@ function getApplicationsReportRegionRows() {
       totals: getApplicationsReportMetrics(entry.rows),
     }))
     .sort((left, right) => {
-      const leftIndex = regionOrderMap.get(left.key) ?? Number.MAX_SAFE_INTEGER;
-      const rightIndex = regionOrderMap.get(right.key) ?? Number.MAX_SAFE_INTEGER;
+      const leftIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(left?.name ?? left?.key ?? "")) ?? Number.MAX_SAFE_INTEGER;
+      const rightIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(right?.name ?? right?.key ?? "")) ?? Number.MAX_SAFE_INTEGER;
 
       if (leftIndex !== rightIndex) {
         return leftIndex - rightIndex;
@@ -3910,22 +4248,49 @@ function getVisibleReportRows() {
     return diagnosisOk && groupOk && genderOk && ageOk;
   };
 
+  const normalizeReportRow = (row) => {
+    if (matchesReportRow(row)) {
+      return row;
+    }
+
+    return {
+      ...row,
+      totals: row.totals.map(() => 0),
+    };
+  };
+
   if (reportState.level === "district") {
     const selectedRegion = getSelectedReportRegion();
-    return (selectedRegion?.districts ?? []).filter(matchesReportRow);
+    return (selectedRegion?.districts ?? []).map(normalizeReportRow);
   }
 
-  return reportData.filter(matchesReportRow);
+  return reportData.map(normalizeReportRow);
 }
 
 function getReportSummarySource() {
   const selectedRegion = getSelectedReportRegion();
+  const visibleRows = getVisibleReportRows();
+  const totals = reportColumnKeys.map((_, index) =>
+    visibleRows.reduce((sum, row) => sum + (row.totals[index] ?? 0), 0),
+  );
 
   if (reportState.level === "district" && selectedRegion) {
-    return { source: selectedRegion, label: `${translateDisplayValue(selectedRegion.name)} bo'yicha jami` };
+    return {
+      source: {
+        ...selectedRegion,
+        totals,
+      },
+      label: `${translateDisplayValue(selectedRegion.name)} bo'yicha jami`,
+    };
   }
 
-  return { source: reportSummaryData, label: tr("report.summary", reportSummaryData?.name ?? "Respublika jami") };
+  return {
+    source: {
+      ...(reportSummaryData ?? { name: "Respublika jami" }),
+      totals,
+    },
+    label: tr("report.summary", reportSummaryData?.name ?? "Respublika jami"),
+  };
 }
 
 function parseReportCellValue(value) {
@@ -4113,7 +4478,7 @@ function renderApplicationsReportTable() {
       };
 
   const summaryLabel = applicationsReportState.level === "district" && selectedRegion
-    ? `${translateDisplayValue(selectedRegion.name)} bo'yicha jami`
+    ? getRegionTotalLabel(selectedRegion.name)
     : tr("report.summary", "Respublika jami");
 
   const summaryCells = summarySource.totals
@@ -5446,6 +5811,7 @@ function setReportExportLoadingState(isLoading) {
 }
 
 function showApplicationsView() {
+  ensureApplicationRowsSeeded();
   document.body.classList.remove("route-modules");
   sidebar?.removeAttribute("hidden");
   applicationsListView?.removeAttribute("hidden");
@@ -5923,7 +6289,16 @@ function getFallbackOrganizationOptionsFromRows(organizationTypeValue) {
 }
 
 function getCurrentRegionOptions() {
-  return applicationStaticFilterOptions.regions;
+  return [...applicationStaticFilterOptions.regions].sort((left, right) => {
+    const leftIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(left?.label ?? left?.value ?? "")) ?? Number.MAX_SAFE_INTEGER;
+    const rightIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(right?.label ?? right?.value ?? "")) ?? Number.MAX_SAFE_INTEGER;
+
+    if (leftIndex !== rightIndex) {
+      return leftIndex - rightIndex;
+    }
+
+    return String(left?.label ?? "").localeCompare(String(right?.label ?? ""), "uz");
+  });
 }
 
 function getCurrentDistrictOptions(regionValue) {
@@ -6047,6 +6422,7 @@ function setCustomSelectDisabled(select, disabled) {
 }
 
 function enrichApplicationRows() {
+  ensureApplicationRowsSeeded();
   applicationRows.forEach((row) => {
     const applicationId = row.querySelector(".stacked-cell--application strong")?.textContent?.trim() ?? "";
     const metadata = applicationRowMetadata[applicationId] ?? {};
@@ -6243,7 +6619,7 @@ function updateApplicationFilterControls() {
   }
 
   if (resetFilters) {
-    resetFilters.disabled = !hasAppliedFilters;
+    resetFilters.disabled = !(hasAppliedFilters || hasPendingChanges);
   }
 
   if (filterToggle) {
@@ -6303,7 +6679,7 @@ function updateReportFilterControls() {
   );
 
   if (reportResetFilters) {
-    reportResetFilters.disabled = !hasAppliedFilters;
+    reportResetFilters.disabled = !(hasAppliedFilters || hasPendingChanges);
   }
 
   if (reportApplyFilters) {
@@ -6397,6 +6773,42 @@ function getApplicationsReportFilterActiveCount() {
   return Object.entries(values).reduce((count, [key, value]) => count + (value !== applicationsReportDefaultFilters[key] ? 1 : 0), 0);
 }
 
+function resetApplicationsReportFiltersState() {
+  const resetSelectValue = (select, value) => {
+    if (!select) {
+      return;
+    }
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  const resetDateValue = (input, value) => {
+    if (!(input instanceof HTMLInputElement)) {
+      return;
+    }
+    input.value = value;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  resetSelectValue(applicationsReportStatusFilter, applicationsReportDefaultFilters.status);
+  resetSelectValue(applicationsReportStepFilter, applicationsReportDefaultFilters.step);
+  resetSelectValue(applicationsReportGenderFilter, applicationsReportDefaultFilters.gender);
+  resetSelectValue(applicationsReportAgeFilter, applicationsReportDefaultFilters.age);
+  resetDateValue(applicationsReportDateFromFilter, applicationsReportDefaultFilters.dateFrom);
+  resetDateValue(applicationsReportDateToFilter, applicationsReportDefaultFilters.dateTo);
+
+  applicationsReportAppliedFilters = { ...applicationsReportDefaultFilters };
+  applicationsReportState.level = "region";
+  applicationsReportState.selectedRegionKey = null;
+
+  updateApplicationsReportFilterOptionSets();
+  customSelects.forEach(syncCustomSelectUi);
+  dateFields.forEach(syncDateFieldUi);
+  closeCalendar();
+  updateApplicationsReportFilterControls();
+  renderApplicationsReportTable();
+}
+
 function updateApplicationsReportFilterControls() {
   updateApplicationsReportFilterOptionSets();
   const activeCount = getApplicationsReportFilterActiveCount();
@@ -6413,7 +6825,7 @@ function updateApplicationsReportFilterControls() {
   }
 
   if (applicationsReportResetFilters) {
-    applicationsReportResetFilters.disabled = !hasAppliedFilters;
+    applicationsReportResetFilters.disabled = !(hasAppliedFilters || hasPendingChanges);
   }
 
   if (applicationsReportFilterToggle) {
@@ -6794,16 +7206,14 @@ document.addEventListener("click", (event) => {
   if (reportFilterToggle && reportFilterMenu) {
     const reportFilterContainer = reportFilterToggle.closest(".table-menu");
     if (reportFilterContainer && !reportFilterContainer.contains(target)) {
-      reportFilterContainer.classList.remove("table-menu--open");
-      reportFilterToggle.setAttribute("aria-expanded", "false");
+      // Report filter stays open until user explicitly closes it.
     }
   }
 
   if (applicationsReportFilterToggle && applicationsReportFilterMenu) {
     const applicationsReportFilterContainer = applicationsReportFilterToggle.closest(".table-menu");
     if (applicationsReportFilterContainer && !applicationsReportFilterContainer.contains(target)) {
-      applicationsReportFilterContainer.classList.remove("table-menu--open");
-      applicationsReportFilterToggle.setAttribute("aria-expanded", "false");
+      // Applications report filter stays open until user explicitly closes it.
     }
   }
 
@@ -6951,6 +7361,7 @@ sidebarNav?.addEventListener("click", async (event) => {
 });
 
 function applyTableFilters() {
+  ensureApplicationRowsSeeded();
   const searchValue = applicationSearch?.value.trim().toUpperCase() ?? "";
   const statusValue = applicationAppliedFilters.status;
   const regionValue = applicationAppliedFilters.region;
@@ -7548,24 +7959,10 @@ applicationsReportFilterMenuClose?.addEventListener("click", () => {
   applicationsReportFilterToggle?.setAttribute("aria-expanded", "false");
 });
 
-applicationsReportResetFilters?.addEventListener("click", () => {
-  if (applicationsReportStatusFilter) applicationsReportStatusFilter.value = applicationsReportDefaultFilters.status;
-  if (applicationsReportStepFilter) applicationsReportStepFilter.value = applicationsReportDefaultFilters.step;
-  if (applicationsReportGenderFilter) applicationsReportGenderFilter.value = applicationsReportDefaultFilters.gender;
-  if (applicationsReportAgeFilter) applicationsReportAgeFilter.value = applicationsReportDefaultFilters.age;
-  if (applicationsReportDateFromFilter) applicationsReportDateFromFilter.value = applicationsReportDefaultFilters.dateFrom;
-  if (applicationsReportDateToFilter) applicationsReportDateToFilter.value = applicationsReportDefaultFilters.dateTo;
-  applicationsReportDateFromText && (applicationsReportDateFromText.placeholder = getLocalizedDateEntryPlaceholder());
-  applicationsReportDateToText && (applicationsReportDateToText.placeholder = getLocalizedDateEntryPlaceholder());
-  applicationsReportDateFromFilter?.closest("[data-date-field]") && syncDateFieldUi(applicationsReportDateFromFilter.closest("[data-date-field]"));
-  applicationsReportDateToFilter?.closest("[data-date-field]") && syncDateFieldUi(applicationsReportDateToFilter.closest("[data-date-field]"));
-  applicationsReportAppliedFilters = { ...applicationsReportDefaultFilters };
-  updateApplicationsReportFilterControls();
-  applicationsReportState.level = "region";
-  applicationsReportState.selectedRegionKey = null;
-  renderApplicationsReportTable();
-  applicationsReportFilterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
-  applicationsReportFilterToggle?.setAttribute("aria-expanded", "false");
+applicationsReportResetFilters?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  resetApplicationsReportFiltersState();
 });
 
 if (applicationsReportDateToFilter && !applicationsReportDateToFilter.value) {

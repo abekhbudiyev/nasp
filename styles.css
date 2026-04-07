@@ -1209,16 +1209,20 @@ body.theme-dark .login-hero__card {
 }
 
 .report-card {
-  overflow: hidden;
+  overflow: visible;
+  min-width: 0;
 }
 
 .report-toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .report-scope {
@@ -1301,13 +1305,23 @@ body.theme-dark .login-hero__card {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
 }
 
 .report-date-picker {
   position: relative;
   flex: 1 1 auto;
-  min-width: 280px;
+  min-width: 0;
   max-width: 100%;
+}
+
+.report-toolbar .table-actions,
+.report-toolbar .table-menu,
+.report-toolbar > .table-action,
+.report-toolbar > .table-action--icon {
+  flex: 0 0 auto;
 }
 
 .report-toolbar__date-input {
@@ -2176,6 +2190,47 @@ body.theme-dark .login-hero__card {
   --report-summary-color: #202a21;
 }
 
+.report-table--applications {
+  width: max-content !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  display: table;
+  table-layout: auto;
+}
+
+.report-table-wrap--applications {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: auto;
+  max-height: none;
+  height: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.report-table-wrap--applications .report-table--applications {
+  width: max-content !important;
+  min-width: max-content !important;
+}
+
+#applicationsReportView .report-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+#applicationsReportView .report-date-picker {
+  width: 100%;
+  max-width: none;
+}
+
+#applicationsReportView .report-toolbar__left {
+  width: auto;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
 .report-table th,
 .report-table td {
   padding: 9px 6px;
@@ -2619,8 +2674,8 @@ body[data-theme="classic-dark"] .report-selection__stat {
 }
 
 .table-dropdown--report {
-  width: 320px;
-  min-width: 320px;
+  width: min(380px, calc(100vw - 40px));
+  min-width: 0;
   display: none;
   flex-direction: column;
   align-items: stretch;
@@ -2628,12 +2683,21 @@ body[data-theme="classic-dark"] .report-selection__stat {
 }
 
 #reportFilterMenu.table-dropdown--report {
-  width: 320px !important;
-  min-width: 320px !important;
+  width: min(380px, calc(100vw - 40px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 40px) !important;
+  overflow-x: hidden !important;
   display: none;
   flex-direction: column !important;
   align-items: stretch !important;
   gap: 10px !important;
+}
+
+#applicationsReportFilterMenu.table-dropdown--report {
+  width: min(380px, calc(100vw - 40px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 40px) !important;
+  overflow-x: hidden !important;
 }
 
 .table-menu--open #reportFilterMenu.table-dropdown--report {
@@ -2689,22 +2753,24 @@ body[data-theme="classic-dark"] .report-selection__stat {
 
 #applyFilters.table-action--block,
 #resetFilters.table-action--block,
+#applicationsReportApplyFilters.table-action--block,
+#applicationsReportResetFilters.table-action--block,
 #reportApplyFilters.table-action--block,
 #reportResetFilters.table-action--block {
   min-height: 38px;
   border-radius: 10px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
     color 0.18s ease,
-    transform 0.18s ease,
     box-shadow 0.18s ease,
     opacity 0.18s ease;
 }
 
 #applyFilters.table-action--block,
+#applicationsReportApplyFilters.table-action--block,
 #reportApplyFilters.table-action--block {
   border-color: rgba(103, 154, 98, 0.24);
   background: linear-gradient(180deg, rgba(103, 154, 98, 0.18), rgba(103, 154, 98, 0.12));
@@ -2713,39 +2779,44 @@ body[data-theme="classic-dark"] .report-selection__stat {
 
 #applyFilters.table-action--block:disabled,
 #resetFilters.table-action--block:disabled,
+#applicationsReportApplyFilters.table-action--block:disabled,
+#applicationsReportResetFilters.table-action--block:disabled,
 #reportApplyFilters.table-action--block:disabled,
 #reportResetFilters.table-action--block:disabled {
-  transform: none;
   box-shadow: none;
   color: var(--muted);
-  background: var(--hover);
+  background: var(--surface);
   border-color: var(--line);
-  opacity: 0.72;
+  opacity: 0.68;
   cursor: not-allowed;
 }
 
 #applyFilters.table-action--block:not(:disabled):hover,
 #applyFilters.table-action--block:not(:disabled):focus-visible,
+#applicationsReportApplyFilters.table-action--block:not(:disabled):hover,
+#applicationsReportApplyFilters.table-action--block:not(:disabled):focus-visible,
 #reportApplyFilters.table-action--block:not(:disabled):hover,
 #reportApplyFilters.table-action--block:not(:disabled):focus-visible {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(103, 154, 98, 0.14);
+  box-shadow: 0 8px 18px rgba(103, 154, 98, 0.08);
 }
 
 #resetFilters.table-action--block,
+#applicationsReportResetFilters.table-action--block,
 #reportResetFilters.table-action--block {
-  background: rgba(103, 154, 98, 0.06);
-  color: var(--brand);
-  border-color: rgba(103, 154, 98, 0.18);
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--line);
 }
 
 #resetFilters.table-action--block:not(:disabled):hover,
 #resetFilters.table-action--block:not(:disabled):focus-visible,
+#applicationsReportResetFilters.table-action--block:not(:disabled):hover,
+#applicationsReportResetFilters.table-action--block:not(:disabled):focus-visible,
 #reportResetFilters.table-action--block:not(:disabled):hover,
 #reportResetFilters.table-action--block:not(:disabled):focus-visible {
-  transform: translateY(-1px);
-  border-color: rgba(103, 154, 98, 0.2);
-  box-shadow: 0 6px 14px rgba(103, 154, 98, 0.1);
+  border-color: color-mix(in srgb, var(--text) 14%, var(--line));
+  background: var(--hover);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.03);
 }
 
 .row-menu__toggle {
