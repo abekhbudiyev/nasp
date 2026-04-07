@@ -120,7 +120,12 @@
       <div class="sidebar__top">
         <div class="brand">
           <button class="brand__mark" id="sidebarHomeButton" type="button" aria-label="Modul bosh sahifasi">
-            <img src="muruvvat-logo-cropped.svg" alt="" />
+            <img class="brand__mark-logo" src="muruvvat-logo-cropped.svg" alt="" />
+            <span class="brand__mark-open" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
           </button>
           <div>
             <h1 class="brand__title" id="moduleTitle">Muruvvat moduli</h1>
@@ -836,6 +841,192 @@
             </div>
           </div>
         </section>
+
+        <section class="table-card" id="compositionListView" hidden>
+          <div class="table-toolbar">
+            <h3 id="compositionListTitle">Ishchi guruhi tarkibi</h3>
+            <div class="table-actions">
+              <button class="table-action table-action--icon" id="compositionFilterButton" type="button" aria-label="Filter">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </button>
+              <button class="table-action table-action--primary" id="compositionCreateButton" type="button">Yaratish</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="compositionTable">
+              <thead>
+                <tr>
+                  <th>Amallar</th>
+                  <th>ID</th>
+                  <th>Sana</th>
+                  <th>Hudud</th>
+                  <th>Holat</th>
+                </tr>
+              </thead>
+              <tbody id="compositionTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="table-card report-card" id="applicationsReportView" hidden>
+          <div class="report-toolbar">
+            <div class="report-date-picker" id="applicationsReportDatePicker">
+              <span class="report-date-picker__search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span>
+              <input class="report-toolbar__date-input" id="applicationsReportSnapshotDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" aria-label="Hisobot holat sanasi">
+              <button class="report-date-picker__button" id="applicationsReportSnapshotDateTrigger" type="button" aria-label="Kalendarni ochish">
+                <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+              <input class="report-date-picker__native custom-date__native" id="applicationsReportSnapshotDateNative" type="date" tabindex="-1" aria-hidden="true">
+            </div>
+            <div class="report-toolbar__left">
+              <div class="table-menu">
+                <button class="table-action table-action--icon" type="button" aria-expanded="false" id="applicationsReportFilterToggle" aria-label="Hisobot filterlari">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                  <span class="table-action__badge" id="applicationsReportFilterActiveCount" hidden>0</span>
+                </button>
+                <div class="table-dropdown table-dropdown--filters table-dropdown--report" id="applicationsReportFilterMenu">
+                  <div class="application-filter-panel">
+                    <div class="application-filter-panel__header">
+                      <strong class="application-filter-panel__title">Filterlar</strong>
+                      <button class="application-filter-panel__close" id="applicationsReportFilterMenuClose" type="button" aria-label="Filter oynasini yopish">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="filter-field">
+                      <label class="filter-label" for="applicationsReportStatusFilter">Status</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Status"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Status">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                        </div>
+                        <select class="custom-select__native" id="applicationsReportStatusFilter" aria-label="Status">
+                          <option value="all">Barchasi</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="filter-field">
+                      <label class="filter-label" for="applicationsReportStepFilter">Bosqich</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Bosqich"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Bosqich">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                        </div>
+                        <select class="custom-select__native" id="applicationsReportStepFilter" aria-label="Bosqich">
+                          <option value="all">Barchasi</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="filter-field">
+                      <label class="filter-label" for="applicationsReportGenderFilter">Jinsi</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Jinsi"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Jinsi">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                        </div>
+                        <select class="custom-select__native" id="applicationsReportGenderFilter" aria-label="Jinsi">
+                          <option value="all">Barchasi</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="filter-field">
+                      <label class="filter-label" for="applicationsReportAgeFilter">Yoshi</label>
+                      <div class="custom-select" data-custom-select>
+                        <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Yoshi"><span>Barchasi</span></button>
+                        <div class="custom-select__dropdown" role="listbox" aria-label="Yoshi">
+                          <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                        </div>
+                        <select class="custom-select__native" id="applicationsReportAgeFilter" aria-label="Yoshi">
+                          <option value="all">Barchasi</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="filter-field">
+                      <label class="filter-label" for="applicationsReportDateFromFilter">Boshlanish sanasi</label>
+                      <div class="custom-date" data-date-field>
+                        <div class="custom-date__field">
+                          <input class="custom-date__text-input" id="applicationsReportDateFromText" type="text" inputmode="numeric" maxlength="10" placeholder="Sanani kiriting" aria-label="Boshlanish sanasi">
+                          <button class="custom-date__button" id="applicationsReportDateFromTrigger" type="button" aria-label="Boshlanish sana kalendari">
+                            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                          </button>
+                        </div>
+                        <input class="custom-date__native" id="applicationsReportDateFromFilter" type="date" tabindex="-1" aria-hidden="true">
+                      </div>
+                    </div>
+                    <div class="filter-field">
+                      <label class="filter-label" for="applicationsReportDateToFilter">Tugash sanasi</label>
+                      <div class="custom-date" data-date-field>
+                        <div class="custom-date__field">
+                          <input class="custom-date__text-input" id="applicationsReportDateToText" type="text" inputmode="numeric" maxlength="10" placeholder="Sanani kiriting" aria-label="Tugash sanasi">
+                          <button class="custom-date__button" id="applicationsReportDateToTrigger" type="button" aria-label="Tugash sana kalendari">
+                            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                          </button>
+                        </div>
+                        <input class="custom-date__native" id="applicationsReportDateToFilter" type="date" tabindex="-1" aria-hidden="true">
+                      </div>
+                    </div>
+                    <div class="application-filter-actions report-filter-actions">
+                      <button class="table-action table-action--primary" id="applicationsReportApplyFilters" type="button">Qo'llash</button>
+                      <button class="table-action" id="applicationsReportResetFilters" type="button">Tozalash</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="table-action table-action--icon" type="button" id="applicationsReportExportButton" aria-label="Hisobotni yuklab olish">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="sr-only">Hisobotni yuklab olish</span>
+              </button>
+            </div>
+          </div>
+          <div class="report-scope" id="applicationsReportScope" hidden>
+            <button class="table-action" id="applicationsReportScopeBack" type="button">Orqaga</button>
+            <div class="report-scope__path" id="applicationsReportScopePath">Respublika jami</div>
+          </div>
+          <div class="table-wrap report-table-wrap">
+              <table class="data-table report-table report-table--applications" id="applicationsReportTable">
+                <colgroup>
+                  <col style="width: 176px;">
+                  <col style="width: 88px;">
+                  <col style="width: 94px;">
+                  <col style="width: 118px;">
+                  <col style="width: 118px;">
+                  <col style="width: 118px;">
+                  <col style="width: 78px;">
+                  <col style="width: 112px;">
+                  <col style="width: 96px;">
+                  <col style="width: 112px;">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th rowspan="2" data-col="region">Hudud</th>
+                    <th rowspan="2" data-col="total">Jami arizalar</th>
+                    <th colspan="4" data-group="in-progress">Jarayondagi arizalar</th>
+                    <th colspan="3" data-group="rejected">Rad etilgan arizalar</th>
+                    <th rowspan="2" data-col="accepted">Qabul qilingan arizalar</th>
+                  </tr>
+                  <tr>
+                    <th data-col="inProgress">Jami</th>
+                    <th data-col="workingReview">Ishchi guruhi tomonidan ko'rib chiqilmoqda</th>
+                    <th data-col="workingAccepted">Ishchi guruhi tomonidan qabul qilingan</th>
+                    <th data-col="commissionReview">Komissiya tomonidan ko'rib chiqilmoqda</th>
+                    <th data-col="rejected">Jami</th>
+                    <th data-col="workingRejected">Ishchi guruhidan rad etilgan</th>
+                    <th data-col="commissionRejected">Komissiyadan rad etilgan</th>
+                  </tr>
+                </thead>
+                <tbody id="applicationsReportTableBody"></tbody>
+              </table>
+            </div>
+            <div class="report-selection" id="applicationsReportSelectionBar" hidden>
+              <div class="report-selection__stats">
+                <div class="report-selection__stat"><span>Soni</span><strong id="applicationsReportSelectionCount">0</strong></div>
+                <div class="report-selection__stat"><span>Yig'indi</span><strong id="applicationsReportSelectionSum">0</strong></div>
+                <div class="report-selection__stat"><span>O'rtacha</span><strong id="applicationsReportSelectionAvg">0</strong></div>
+                <div class="report-selection__stat"><span>Min</span><strong id="applicationsReportSelectionMin">0</strong></div>
+                <div class="report-selection__stat"><span>Max</span><strong id="applicationsReportSelectionMax">0</strong></div>
+              </div>
+            </div>
+        </section>
         <section class="empty-view" id="emptyContentView" hidden>
           <div class="empty-view__card">
             <span class="empty-view__icon" aria-hidden="true">
@@ -864,7 +1055,13 @@
                   <span class="table-action__badge" id="reportFilterActiveCount" hidden>0</span>
                 </button>
                 <div class="table-dropdown table-dropdown--filters table-dropdown--report" id="reportFilterMenu">
-                  <div class="report-filter-panel">
+                  <div class="application-filter-panel">
+                    <div class="application-filter-panel__header">
+                      <strong class="application-filter-panel__title">Filterlar</strong>
+                      <button class="application-filter-panel__close" id="reportFilterMenuClose" type="button" aria-label="Filter oynasini yopish">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      </button>
+                    </div>
                     <div class="filter-field">
                       <label class="filter-label" for="reportDiagnosisFilter">Tashxis</label>
                       <div class="custom-select" data-custom-select>
@@ -943,7 +1140,7 @@
                         </select>
                       </div>
                     </div>
-                    <div class="filter-actions report-filter-actions">
+                    <div class="application-filter-actions report-filter-actions">
                       <button class="table-action table-action--block" id="reportApplyFilters" type="button">Qo'llash</button>
                       <button class="table-action table-action--block" id="reportResetFilters" type="button" disabled>Tozalash</button>
                     </div>
@@ -986,7 +1183,7 @@
               <thead>
                 <tr>
                   <th rowspan="2" data-col="region">Hudud</th>
-                  <th rowspan="2" data-col="jami">Jami NBSHlar soni</th>
+                  <th rowspan="2" data-col="jami">Jami NBSHlar</th>
                   <th colspan="4" data-group="diagnosis">Tashxislari bo'yicha</th>
                   <th colspan="4" data-group="disability">Nogironlik guruhi</th>
                   <th colspan="2" data-group="gender">Jinsi</th>

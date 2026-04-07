@@ -665,6 +665,18 @@ body.theme-dark .login-hero__card {
   object-fit: contain;
 }
 
+.brand__mark-open {
+  display: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.brand__mark-open svg {
+  width: 18px;
+  height: 18px;
+}
+
 .brand__mark:hover {
   border-color: rgba(103, 154, 98, 0.36);
   background: var(--surface-hover, rgba(103, 154, 98, 0.08));
@@ -879,8 +891,26 @@ body.theme-dark .login-hero__card {
   margin: 0 auto;
 }
 
+.app-shell--collapsed .sidebar-collapse {
+  display: none;
+}
+
 .app-shell--collapsed .sidebar-collapse span {
   transform: rotate(225deg);
+}
+
+.app-shell--collapsed .brand__mark {
+  cursor: pointer;
+}
+
+.app-shell--collapsed .brand__mark:hover .brand__mark-logo,
+.app-shell--collapsed .brand__mark:focus-visible .brand__mark-logo {
+  display: none;
+}
+
+.app-shell--collapsed .brand__mark:hover .brand__mark-open,
+.app-shell--collapsed .brand__mark:focus-visible .brand__mark-open {
+  display: grid;
 }
 
 .main-area {
@@ -2138,6 +2168,12 @@ body.theme-dark .login-hero__card {
   border-spacing: 0;
   position: relative;
   isolation: isolate;
+  --report-region-header-bg: #f3f6f1;
+  --report-region-header-color: #273126;
+  --report-region-cell-bg: #fff;
+  --report-region-cell-color: #273126;
+  --report-summary-bg: #edf2ed;
+  --report-summary-color: #202a21;
 }
 
 .report-table th,
@@ -2197,13 +2233,12 @@ body.theme-dark .login-hero__card {
   max-width: 176px;
   text-align: left;
   white-space: normal;
-  color: #273126;
-  background: #f3f6f1;
+  color: var(--report-region-cell-color);
 }
 
 .report-table tbody td:first-child {
-  color: #273126;
-  background: #fff;
+  color: var(--report-region-cell-color) !important;
+  background: var(--report-region-cell-bg) !important;
 }
 
 .report-table thead tr:first-child th:first-child {
@@ -2212,6 +2247,10 @@ body.theme-dark .login-hero__card {
   z-index: 9;
   box-shadow: none;
   border-right: 1px solid rgba(103, 154, 98, 0.14);
+  background: var(--report-region-header-bg) !important;
+  color: var(--report-region-header-color) !important;
+  opacity: 1;
+  visibility: visible;
 }
 
 .report-table tbody td:first-child {
@@ -2252,10 +2291,6 @@ body.theme-dark .login-hero__card {
   outline: none;
 }
 
-.report-table thead tr:first-child th:first-child {
-  background: #f3f6f1;
-}
-
 .report-table th:not(:first-child),
 .report-table td:not(:first-child) {
   position: relative;
@@ -2278,26 +2313,26 @@ body.theme-dark .login-hero__card {
 
 .report-table__summary td {
   display: table-cell;
-  background: #edf2ed;
+  background: var(--report-summary-bg);
   font-weight: 700;
-  color: #202a21;
+  color: var(--report-summary-color);
   position: static;
   box-shadow: none;
 }
 
 .report-table__summary td:first-child {
-  background: #edf2ed;
-  color: #202a21;
+  background: var(--report-summary-bg);
+  color: var(--report-summary-color);
 }
 
 .report-table tbody tr.report-table__summary td {
-  background: #edf2ed !important;
-  color: #202a21 !important;
+  background: var(--report-summary-bg) !important;
+  color: var(--report-summary-color) !important;
 }
 
 .report-table tbody tr.report-table__summary td:first-child {
-  background: #edf2ed !important;
-  color: #202a21 !important;
+  background: var(--report-summary-bg) !important;
+  color: var(--report-summary-color) !important;
 }
 
 .report-table [data-report-hidden="true"] {
@@ -2310,34 +2345,19 @@ body.theme-dark .report-table th {
   box-shadow: inset 0 -1px 0 rgba(121, 219, 183, 0.12);
 }
 
-body.theme-dark .report-table tbody td:first-child {
-  color: #edf2ed;
-  background: #172019;
+body.theme-dark .report-table {
+  --report-region-header-bg: #202a21;
+  --report-region-header-color: #edf2ed;
+  --report-region-cell-bg: #172019;
+  --report-region-cell-color: #edf2ed;
+  --report-summary-bg: #243126;
+  --report-summary-color: #edf2ed;
 }
 
 body.theme-dark .report-table thead tr:first-child th:first-child {
-  background: #202a21 !important;
-  color: #edf2ed !important;
-}
-
-body.theme-dark .report-table__summary td {
-  background: #243126;
-  color: #edf2ed;
-}
-
-body.theme-dark .report-table__summary td:first-child {
-  background: #243126;
-  color: #edf2ed;
-}
-
-body.theme-dark .report-table tbody tr.report-table__summary td {
-  background: #243126 !important;
-  color: #edf2ed !important;
-}
-
-body.theme-dark .report-table tbody tr.report-table__summary td:first-child {
-  background: #243126 !important;
-  color: #edf2ed !important;
+  background: var(--report-region-header-bg) !important;
+  color: var(--report-region-header-color) !important;
+  border-right-color: rgba(121, 219, 183, 0.12);
 }
 
 body.theme-dark .report-selection {
