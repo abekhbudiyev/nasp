@@ -2667,7 +2667,7 @@ body[data-theme="classic-dark"] .report-selection__stat {
 
 .application-filter-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   width: 100%;
   padding-top: 4px;
@@ -2759,22 +2759,21 @@ body[data-theme="classic-dark"] .report-selection__stat {
 #reportResetFilters.table-action--block {
   min-height: 38px;
   border-radius: 10px;
-  font-weight: 500;
-  cursor: pointer;
+  font-weight: 400;
+  cursor: default;
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
     color 0.18s ease,
-    box-shadow 0.18s ease,
     opacity 0.18s ease;
 }
 
 #applyFilters.table-action--block,
 #applicationsReportApplyFilters.table-action--block,
 #reportApplyFilters.table-action--block {
-  border-color: rgba(103, 154, 98, 0.24);
-  background: linear-gradient(180deg, rgba(103, 154, 98, 0.18), rgba(103, 154, 98, 0.12));
-  color: var(--brand);
+  background: var(--surface);
+  color: var(--muted);
+  border-color: var(--line);
 }
 
 #applyFilters.table-action--block:disabled,
@@ -2783,7 +2782,6 @@ body[data-theme="classic-dark"] .report-selection__stat {
 #applicationsReportResetFilters.table-action--block:disabled,
 #reportApplyFilters.table-action--block:disabled,
 #reportResetFilters.table-action--block:disabled {
-  box-shadow: none;
   color: var(--muted);
   background: var(--surface);
   border-color: var(--line);
@@ -2797,14 +2795,16 @@ body[data-theme="classic-dark"] .report-selection__stat {
 #applicationsReportApplyFilters.table-action--block:not(:disabled):focus-visible,
 #reportApplyFilters.table-action--block:not(:disabled):hover,
 #reportApplyFilters.table-action--block:not(:disabled):focus-visible {
-  box-shadow: 0 8px 18px rgba(103, 154, 98, 0.08);
+  color: var(--ink);
+  background: var(--hover);
+  border-color: rgba(103, 154, 98, 0.22);
 }
 
 #resetFilters.table-action--block,
 #applicationsReportResetFilters.table-action--block,
 #reportResetFilters.table-action--block {
   background: var(--surface);
-  color: var(--text);
+  color: var(--muted);
   border-color: var(--line);
 }
 
@@ -2814,9 +2814,8 @@ body[data-theme="classic-dark"] .report-selection__stat {
 #applicationsReportResetFilters.table-action--block:not(:disabled):focus-visible,
 #reportResetFilters.table-action--block:not(:disabled):hover,
 #reportResetFilters.table-action--block:not(:disabled):focus-visible {
-  border-color: color-mix(in srgb, var(--text) 14%, var(--line));
+  border-color: rgba(103, 154, 98, 0.22);
   background: var(--hover);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.03);
 }
 
 .row-menu__toggle {
@@ -5391,6 +5390,32 @@ body.theme-dark .detail-summary-chip {
     grid-template-columns: 1fr;
   }
 
+  #applicationsListView .stats-grid {
+    gap: 12px;
+  }
+
+  #applicationsListView .stat-card {
+    width: 100%;
+    min-height: 0;
+    padding: 16px 18px;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  #applicationsListView .stat-card__top {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
+  #applicationsListView .stat-card__value {
+    flex: 0 0 auto;
+    width: auto;
+    margin-top: 0;
+    text-align: right;
+  }
+
   .modules-view__hero,
   .navigator-grid,
   .support-hero,
@@ -5433,10 +5458,6 @@ body.theme-dark .detail-summary-chip {
     flex-direction: row;
   }
 
-  .data-table {
-    table-layout: auto;
-  }
-
   .table-card {
     min-height: auto;
     overflow: hidden;
@@ -5446,6 +5467,172 @@ body.theme-dark .detail-summary-chip {
     max-height: none;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  #applicationsListView .table-wrap {
+    overflow: visible;
+  }
+
+  #applicationsListView .table-card,
+  #applicationsListView .table-toolbar,
+  #applicationsListView .data-table tbody,
+  #applicationsListView .data-table td,
+  #applicationsListView .data-table .actions-cell,
+  #applicationsListView .row-menu {
+    overflow: visible;
+  }
+
+  #applicationsListView .filter-panel__actions {
+    position: relative;
+  }
+
+  #applicationsListView .table-menu {
+    position: static;
+  }
+
+  #applicationsListView .data-table,
+  #applicationsListView .data-table thead,
+  #applicationsListView .data-table tbody,
+  #applicationsListView .data-table tr,
+  #applicationsListView .data-table th,
+  #applicationsListView .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  #applicationsListView .data-table {
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  #applicationsListView .data-table thead {
+    display: none;
+  }
+
+  #applicationsListView .data-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  #applicationsListView .data-table tbody tr {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: none;
+  }
+
+  #applicationsListView .data-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  #applicationsListView .data-table td {
+    display: grid;
+    grid-template-columns: minmax(96px, 112px) minmax(0, 1fr);
+    gap: 10px;
+    padding: 0;
+    border-bottom: 0;
+    align-items: start;
+  }
+
+  #applicationsListView .data-table td::before {
+    content: "";
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  #applicationsListView .data-table td:first-child::before {
+    content: "Amallar";
+  }
+
+  #applicationsListView .data-table td:nth-child(2)::before {
+    content: "Ariza";
+  }
+
+  #applicationsListView .data-table td:nth-child(3)::before {
+    content: "Xizmat oluvchi";
+  }
+
+  #applicationsListView .data-table td:nth-child(4)::before {
+    content: "Tashkilot";
+  }
+
+  #applicationsListView .data-table td:nth-child(5)::before {
+    content: "Manzil";
+  }
+
+  #applicationsListView .data-table td:nth-child(6)::before {
+    content: "Status";
+  }
+
+  #applicationsListView .data-table .actions-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100%;
+  }
+
+  #applicationsListView .data-table .actions-cell::before {
+    display: none;
+  }
+
+  #applicationsListView .row-menu {
+    justify-self: auto;
+    align-self: center;
+  }
+
+  #applicationsListView .table-dropdown--filters {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+    bottom: auto;
+    width: min(360px, calc(100vw - 24px));
+    min-width: 0;
+    max-width: calc(100vw - 24px);
+    max-height: min(70vh, 560px);
+  }
+
+  #applicationsListView .application-filter-panel {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  #applicationsListView .row-menu__dropdown {
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+    min-width: 168px;
+    max-width: min(220px, calc(100vw - 32px));
+  }
+
+  #applicationsListView .stacked-cell {
+    gap: 4px;
+  }
+
+  #applicationsListView .stacked-cell strong,
+  #applicationsListView .stacked-cell span {
+    white-space: normal;
+  }
+
+  #applicationsListView .status-badge {
+    justify-self: start;
+  }
+
+  #applicationsListView .table-empty td {
+    grid-template-columns: 1fr;
+    padding: 12px 0;
+  }
+
+  #applicationsListView .table-empty td::before {
+    display: none;
   }
 
   .report-toolbar {
@@ -5548,5 +5735,81 @@ body.theme-dark .detail-summary-chip {
 
   .table-wrap {
     max-height: none;
+  }
+}
+
+@media (max-width: 480px) {
+  #applicationsListView .stat-card {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  #applicationsListView .stat-card__top {
+    gap: 10px;
+  }
+
+  #applicationsListView .stat-card__value {
+    font-size: 1.9rem;
+  }
+
+  #applicationsListView .data-table tbody tr {
+    padding: 12px;
+  }
+
+  #applicationsListView .data-table td {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  #applicationsListView .data-table .actions-cell {
+    justify-content: flex-start;
+  }
+
+  #applicationsListView .table-dropdown--filters {
+    left: 0;
+    right: auto;
+    bottom: auto;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    transform: none;
+  }
+
+  #applicationsListView .row-menu__dropdown {
+    left: 0;
+    right: auto;
+    width: min(200px, calc(100vw - 32px));
+  }
+
+  #applicationsListView .data-table td::before {
+    font-size: 0.7rem;
+  }
+
+  #applicationsListView .table-pagination__right {
+    justify-content: center;
+  }
+
+  #applicationsListView .pagination {
+    justify-content: center;
+  }
+
+  #applicationsListView .table-pagination {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px 12px;
+  }
+
+  #applicationsListView .table-pagination__left {
+    width: auto;
+  }
+
+  #applicationsListView .table-pagination__info {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  #applicationsListView .table-pagination__right {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }
