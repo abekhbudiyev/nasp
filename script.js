@@ -31,6 +31,10 @@ const stepFilter = document.getElementById("stepFilter");
 const districtFilter = document.getElementById("districtFilter");
 const organizationTypeFilter = document.getElementById("organizationTypeFilter");
 const organizationFilter = document.getElementById("organizationFilter");
+const diagnosisFilter = document.getElementById("diagnosisFilter");
+const disabilityGroupFilter = document.getElementById("disabilityGroupFilter");
+const genderFilter = document.getElementById("genderFilter");
+const ageFilter = document.getElementById("ageFilter");
 const dateFromFilter = document.getElementById("dateFromFilter");
 const dateToFilter = document.getElementById("dateToFilter");
 const applyFilters = document.getElementById("applyFilters");
@@ -363,8 +367,6 @@ const modulesConfig = {
 
 const languageStorageKey = "mrv-language";
 const fontMeta = {
-  inter: { short: "Inter" },
-  noto: { short: "Noto" },
   roboto: { short: "Roboto" },
 };
 const languageMeta = {
@@ -2849,7 +2851,8 @@ function getSavedLanguagePreference() {
 }
 
 function getSavedFontPreference() {
-  return window.localStorage.getItem(fontStorageKey) || "noto";
+  const savedFont = window.localStorage.getItem(fontStorageKey);
+  return savedFont === "roboto" ? savedFont : "roboto";
 }
 
 function updateLanguageMenuUi() {
@@ -2864,7 +2867,7 @@ function updateLanguageMenuUi() {
 }
 
 function updateFontMenuUi() {
-  const meta = fontMeta[currentFont] ?? fontMeta.noto;
+  const meta = fontMeta[currentFont] ?? fontMeta.roboto;
   if (fontCurrent) {
     fontCurrent.textContent = meta.short;
   }
@@ -3109,7 +3112,7 @@ function applyLanguage(languageCode) {
 }
 
 function applyFont(fontCode) {
-  currentFont = fontMeta[fontCode] ? fontCode : "noto";
+  currentFont = fontMeta[fontCode] ? fontCode : "roboto";
   window.localStorage.setItem(fontStorageKey, currentFont);
   updateFontMenuUi();
 }
@@ -3608,6 +3611,10 @@ const applicationDefaultFilters = Object.freeze({
   district: "all",
   organizationType: "all",
   organization: "all",
+  diagnosis: "all",
+  disabilityGroup: "all",
+  gender: "all",
+  age: "all",
   dateFrom: "",
   dateTo: "",
 });
@@ -3681,6 +3688,30 @@ const applicationStaticFilterOptions = {
     { value: "26", label: "Ayollar" },
     { value: "27", label: "Bolalar" },
   ],
+  diagnoses: [
+    { value: "f00f03", label: "F00-F03" },
+    { value: "f71", label: "F71*" },
+    { value: "f72", label: "F72*" },
+    { value: "f73", label: "F73*" },
+    { value: "other", label: "Boshqa" },
+  ],
+  disabilityGroups: [
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
+    { value: "nbb", label: "NBB" },
+  ],
+  genders: [
+    { value: "erkak", label: "Erkak" },
+    { value: "ayol", label: "Ayol" },
+  ],
+  ages: [
+    { value: "0-3", label: "0-3" },
+    { value: "3-7", label: "3-7" },
+    { value: "7-18", label: "7-18" },
+    { value: "18-55/60", label: "18-55/60" },
+    { value: "55/60+", label: "55/60+" },
+  ],
 };
 
 const applicationRowMetadata = {
@@ -3743,7 +3774,7 @@ supplementalApplicationRows.forEach((item) => {
   applicationRowMetadata[item.id] = { step: item.step };
 });
 
-const applicationRowMenuMarkup = `<div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="m4 15.5 9.75-9.75 3.75 3.75L7.75 19.25H4V15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13 6.5 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tahrirlash</span></button><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Yuklab olish</span></button></div></div>`;
+const applicationRowMenuMarkup = `<div class="row-menu"><button class="row-menu__toggle" type="button" aria-expanded="false" aria-label="Amallar menyusi"><span></span><span></span><span></span></button><div class="row-menu__dropdown"><button class="row-menu__item" type="button"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg><span>Ko'rish</span></button></div></div>`;
 const workingGroupMembersData = [
   { id: "IG-001", date: "07.04.2026", region: "Toshkent shahri", status: "Yangi" },
   { id: "IG-002", date: "06.04.2026", region: "Samarqand", status: "Tahrirlangan" },
@@ -5646,34 +5677,8 @@ async function openApplicationDetail(applicationId) {
 }
 
 function enhanceProcessRowActions() {
-  document.querySelectorAll("#applicationsTable tbody tr[data-status='jarayonda']").forEach((row) => {
-    const dropdown = row.querySelector(".row-menu__dropdown");
-    const applicationId = row.querySelector(".stacked-cell--application strong")?.textContent?.trim() ?? "Ariza";
-    if (!dropdown || dropdown.querySelector("[data-process-action]")) {
-      return;
-    }
-
-    const approveButton = document.createElement("button");
-    approveButton.type = "button";
-    approveButton.className = "row-menu__item row-menu__item--accent";
-    approveButton.dataset.processAction = "accept";
-    approveButton.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5l4 4 8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${tr("detail.accept", "Qabul qilish")}</span>`;
-    approveButton.addEventListener("click", () => {
-      openConfirmModal("accept", applicationId);
-    });
-
-    const rejectButton = document.createElement("button");
-    rejectButton.type = "button";
-    rejectButton.className = "row-menu__item row-menu__item--danger";
-    rejectButton.dataset.processAction = "reject";
-    rejectButton.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>${tr("detail.reject", "Rad etish")}</span>`;
-    rejectButton.addEventListener("click", () => {
-      openConfirmModal("reject", applicationId);
-    });
-
-    const editButton = dropdown.querySelector(".row-menu__item:nth-child(2)");
-    editButton?.insertAdjacentElement("afterend", approveButton);
-    approveButton.insertAdjacentElement("afterend", rejectButton);
+  document.querySelectorAll("#applicationsTable .row-menu__dropdown [data-process-action]").forEach((button) => {
+    button.remove();
   });
 }
 
@@ -5681,7 +5686,6 @@ function enhanceApplicationViewActions() {
   applicationRows.forEach((row) => {
     const applicationId = row.querySelector(".stacked-cell--application strong")?.textContent?.trim();
     const viewButton = row.querySelector(".row-menu__dropdown .row-menu__item");
-    const applicationLink = row.querySelector(".stacked-cell--application strong");
 
     if (!applicationId) {
       return;
@@ -5694,22 +5698,6 @@ function enhanceApplicationViewActions() {
       });
     }
 
-    if (applicationLink && !applicationLink.dataset.detailBound) {
-      applicationLink.dataset.detailBound = "true";
-      applicationLink.tabIndex = 0;
-      applicationLink.setAttribute("role", "button");
-      applicationLink.setAttribute("aria-label", `${applicationId} ariza tafsilotlarini ochish`);
-      applicationLink.style.cursor = "pointer";
-      applicationLink.addEventListener("click", () => {
-        openApplicationDetail(applicationId);
-      });
-      applicationLink.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          openApplicationDetail(applicationId);
-        }
-      });
-    }
   });
 }
 
@@ -6327,6 +6315,25 @@ function getApplicationOrganizationLabel(value) {
   return getCatalogLabel(getCurrentOrganizationOptions(currentOrganizationTypeValue), value, value);
 }
 
+function getApplicationDiagnosisLabel(value) {
+  const label = getCatalogLabel(applicationStaticFilterOptions.diagnoses, value, value);
+  return translateDisplayValue(label);
+}
+
+function getApplicationDisabilityGroupLabel(value) {
+  const label = getCatalogLabel(applicationStaticFilterOptions.disabilityGroups, value, value);
+  return translateDisplayValue(label);
+}
+
+function getApplicationGenderLabel(value) {
+  const label = getCatalogLabel(applicationStaticFilterOptions.genders, value, value);
+  return translateDisplayValue(label);
+}
+
+function getApplicationAgeLabel(value) {
+  return getCatalogLabel(applicationStaticFilterOptions.ages, value, value);
+}
+
 function getApplicationSelectLabel(select) {
   if (!select) {
     return "";
@@ -6557,6 +6564,26 @@ function updateApplicationFilterOptionSets() {
     organizationOptions.map((item) => item.value),
     getApplicationOrganizationLabel,
   );
+  setCustomSelectOptions(
+    diagnosisFilter,
+    applicationStaticFilterOptions.diagnoses.map((item) => item.value),
+    getApplicationDiagnosisLabel,
+  );
+  setCustomSelectOptions(
+    disabilityGroupFilter,
+    applicationStaticFilterOptions.disabilityGroups.map((item) => item.value),
+    getApplicationDisabilityGroupLabel,
+  );
+  setCustomSelectOptions(
+    genderFilter,
+    applicationStaticFilterOptions.genders.map((item) => item.value),
+    getApplicationGenderLabel,
+  );
+  setCustomSelectOptions(
+    ageFilter,
+    applicationStaticFilterOptions.ages.map((item) => item.value),
+    getApplicationAgeLabel,
+  );
 
   setCustomSelectDisabled(stepFilter, statusValue === "all");
   setCustomSelectDisabled(districtFilter, regionValue === "all");
@@ -6592,14 +6619,17 @@ function getApplicationFilterValues() {
     district: districtFilter?.value ?? "all",
     organizationType: organizationTypeFilter?.value ?? "all",
     organization: organizationFilter?.value ?? "all",
+    diagnosis: diagnosisFilter?.value ?? "all",
+    disabilityGroup: disabilityGroupFilter?.value ?? "all",
+    gender: genderFilter?.value ?? "all",
+    age: ageFilter?.value ?? "all",
     dateFrom: dateFromFilter?.value ?? "",
     dateTo: dateToFilter?.value ?? "",
   };
 }
 
 function getApplicationFilterActiveCount() {
-  const values = getApplicationFilterValues();
-  return Object.entries(values).reduce((count, [key, value]) => {
+  return Object.entries(applicationAppliedFilters).reduce((count, [key, value]) => {
     return count + (value !== applicationDefaultFilters[key] ? 1 : 0);
   }, 0);
 }
@@ -6662,8 +6692,7 @@ function updateApplicationsEmptyState(matchedRowsCount) {
 }
 
 function getReportFilterActiveCount() {
-  const values = getReportFilterValues();
-  return Object.entries(values).reduce((count, [key, value]) => {
+  return Object.entries(reportAppliedFilters).reduce((count, [key, value]) => {
     return count + (value !== reportDefaultFilters[key] ? 1 : 0);
   }, 0);
 }
@@ -6769,8 +6798,10 @@ function getApplicationsReportFilterValues() {
 }
 
 function getApplicationsReportFilterActiveCount() {
-  const values = getApplicationsReportFilterValues();
-  return Object.entries(values).reduce((count, [key, value]) => count + (value !== applicationsReportDefaultFilters[key] ? 1 : 0), 0);
+  return Object.entries(applicationsReportAppliedFilters).reduce(
+    (count, [key, value]) => count + (value !== applicationsReportDefaultFilters[key] ? 1 : 0),
+    0,
+  );
 }
 
 function resetApplicationsReportFiltersState() {
@@ -6961,7 +6992,7 @@ function initializeTheme() {
 
 function initializeLanguage() {
   currentLanguage = languageMeta[getSavedLanguagePreference()] ? getSavedLanguagePreference() : "uz";
-  currentFont = fontMeta[getSavedFontPreference()] ? getSavedFontPreference() : "noto";
+  currentFont = fontMeta[getSavedFontPreference()] ? getSavedFontPreference() : "roboto";
   applyStaticTranslations();
 }
 
@@ -7369,6 +7400,10 @@ function applyTableFilters() {
   const districtValue = applicationAppliedFilters.district;
   const organizationTypeValue = applicationAppliedFilters.organizationType;
   const organizationValue = applicationAppliedFilters.organization;
+  const diagnosisValue = applicationAppliedFilters.diagnosis;
+  const disabilityGroupValue = applicationAppliedFilters.disabilityGroup;
+  const genderValue = applicationAppliedFilters.gender;
+  const ageValue = applicationAppliedFilters.age;
   const dateFromValue = applicationAppliedFilters.dateFrom;
   const dateToValue = applicationAppliedFilters.dateTo;
   const limit = Number(rowsPerPage?.value ?? "10");
@@ -7384,6 +7419,10 @@ function applyTableFilters() {
     const rowDistrict = row.getAttribute("data-district") ?? "";
     const rowOrganizationType = row.getAttribute("data-organization-type") ?? "";
     const rowOrganization = row.getAttribute("data-organization") ?? "";
+    const rowDiagnosis = row.getAttribute("data-diagnosis") ?? "";
+    const rowDisabilityGroup = row.getAttribute("data-disability-group") ?? "";
+    const rowGender = row.getAttribute("data-gender") ?? "";
+    const rowAge = row.getAttribute("data-age-group") ?? "";
     const rowSearch = row.getAttribute("data-search") ?? "";
     const rowDateText = row.querySelector(".stacked-cell--application span")?.textContent?.trim() ?? "";
     const [day, month, year] = rowDateText.split(".");
@@ -7395,6 +7434,10 @@ function applyTableFilters() {
     const matchesDistrict = districtValue === "all" || rowDistrict === districtValue;
     const matchesOrganizationType = organizationTypeValue === "all" || rowOrganizationType === organizationTypeValue;
     const matchesOrganization = organizationValue === "all" || rowOrganization === organizationValue;
+    const matchesDiagnosis = diagnosisValue === "all" || rowDiagnosis === diagnosisValue || (diagnosisValue === "other" && !["f00f03", "f71", "f72", "f73"].includes(rowDiagnosis));
+    const matchesDisabilityGroup = disabilityGroupValue === "all" || rowDisabilityGroup === disabilityGroupValue;
+    const matchesGender = genderValue === "all" || rowGender === genderValue;
+    const matchesAge = ageValue === "all" || rowAge === ageValue;
     const matchesDateFrom = !dateFromValue || (rowDateValue && rowDateValue >= dateFromValue);
     const matchesDateTo = !dateToValue || (rowDateValue && rowDateValue <= dateToValue);
     const matched = matchesSearch
@@ -7404,6 +7447,10 @@ function applyTableFilters() {
       && matchesDistrict
       && matchesOrganizationType
       && matchesOrganization
+      && matchesDiagnosis
+      && matchesDisabilityGroup
+      && matchesGender
+      && matchesAge
       && matchesDateFrom
       && matchesDateTo;
 
@@ -7672,7 +7719,7 @@ if (filterToggle && filterMenu) {
   });
 }
 
-[statusFilter, stepFilter, districtFilter, organizationFilter].forEach((select) => {
+[statusFilter, stepFilter, districtFilter, organizationFilter, diagnosisFilter, disabilityGroupFilter, genderFilter, ageFilter].forEach((select) => {
   select?.addEventListener("change", () => {
     updateApplicationFilterOptionSets();
     updateApplicationFilterControls();
@@ -7709,7 +7756,7 @@ languageItems.forEach((button) => {
 
 fontItems.forEach((button) => {
   button.addEventListener("click", () => {
-    const nextFont = button.getAttribute("data-font-code") || "noto";
+    const nextFont = button.getAttribute("data-font-code") || "roboto";
     applyFont(nextFont);
     button.closest(".header-menu")?.classList.remove("header-menu--open");
     const toggle = button.closest(".header-menu")?.querySelector("[data-menu-toggle]");
@@ -8333,6 +8380,18 @@ resetFilters?.addEventListener("click", () => {
   }
   if (organizationFilter) {
     organizationFilter.value = "all";
+  }
+  if (diagnosisFilter) {
+    diagnosisFilter.value = "all";
+  }
+  if (disabilityGroupFilter) {
+    disabilityGroupFilter.value = "all";
+  }
+  if (genderFilter) {
+    genderFilter.value = "all";
+  }
+  if (ageFilter) {
+    ageFilter.value = "all";
   }
   if (dateFromFilter) {
     dateFromFilter.value = "";
