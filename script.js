@@ -104,10 +104,18 @@ const applicationsListView = document.getElementById("applicationsListView");
 const disabilityReportView = document.getElementById("disabilityReportView");
 const applicationsReportView = document.getElementById("applicationsReportView");
 const compositionListView = document.getElementById("compositionListView");
-const compositionListTitle = document.getElementById("compositionListTitle");
 const compositionTableBody = document.getElementById("compositionTableBody");
 const compositionFilterButton = document.getElementById("compositionFilterButton");
 const compositionCreateButton = document.getElementById("compositionCreateButton");
+const compositionPaginationInfo = document.getElementById("compositionPaginationInfo");
+const compositionPaginationPrev = document.getElementById("compositionPaginationPrev");
+const compositionPaginationNext = document.getElementById("compositionPaginationNext");
+const compositionPaginationPages = document.getElementById("compositionPaginationPages");
+const compositionRowsPerPage = document.getElementById("compositionRowsPerPage");
+const compositionRowsPerPageMenu = document.getElementById("compositionRowsPerPageMenu");
+const compositionRowsPerPageTrigger = document.getElementById("compositionRowsPerPageTrigger");
+const compositionRowsPerPageLabel = document.getElementById("compositionRowsPerPageLabel");
+const compositionRowsPerPageOptions = document.querySelectorAll("#compositionRowsPerPageMenu .pagination-select__option");
 const applicationsReportSnapshotDate = document.getElementById("applicationsReportSnapshotDate");
 const applicationsReportSnapshotDateTrigger = document.getElementById("applicationsReportSnapshotDateTrigger");
 const applicationsReportSnapshotDateNative = document.getElementById("applicationsReportSnapshotDateNative");
@@ -115,6 +123,9 @@ const applicationsReportFilterToggle = document.getElementById("applicationsRepo
 const applicationsReportFilterMenu = document.getElementById("applicationsReportFilterMenu");
 const applicationsReportFilterMenuClose = document.getElementById("applicationsReportFilterMenuClose");
 const applicationsReportFilterActiveCount = document.getElementById("applicationsReportFilterActiveCount");
+const applicationsReportColumnsToggle = document.getElementById("applicationsReportColumnsToggle");
+const applicationsReportColumnsMenu = document.getElementById("applicationsReportColumnsMenu");
+const applicationsReportColumnsMenuClose = document.getElementById("applicationsReportColumnsMenuClose");
 const applicationsReportStatusFilter = document.getElementById("applicationsReportStatusFilter");
 const applicationsReportStepFilter = document.getElementById("applicationsReportStepFilter");
 const applicationsReportGenderFilter = document.getElementById("applicationsReportGenderFilter");
@@ -181,6 +192,7 @@ const authStorageKey = "nasp-auth-state";
 const rememberedUsernameStorageKey = "nasp-remembered-username";
 const routeIntentStorageKey = "nasp-route-intent";
 const lastVisitedRouteStorageKey = "nasp-last-route";
+const applicationsReportColumnsStorageKey = "nasp-applications-report-columns";
 const calendarLocaleLabels = {
   uz: {
     months: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
@@ -2994,8 +3006,23 @@ function applyStaticTranslations() {
   if (applicationsReportDateToText) applicationsReportDateToText.placeholder = getDateInputPlaceholder();
   const reportFilterPanelTitle = reportFilterMenu?.querySelector(".application-filter-panel__title");
   const applicationsReportFilterPanelTitle = applicationsReportFilterMenu?.querySelector(".application-filter-panel__title");
+  const applicationsReportColumnsPanelTitle = document.getElementById("applicationsReportColumnsTitle");
   if (reportFilterPanelTitle) reportFilterPanelTitle.textContent = getApplicationsReportUiText("filtersTitle", "Filterlar");
   if (applicationsReportFilterPanelTitle) applicationsReportFilterPanelTitle.textContent = getApplicationsReportUiText("filtersTitle", "Filterlar");
+  if (applicationsReportColumnsPanelTitle) applicationsReportColumnsPanelTitle.textContent = tr("common.columns", "Ustunlar");
+  if (applicationsReportColumnsToggle) applicationsReportColumnsToggle.textContent = tr("common.columns", "Ustunlar");
+  const applicationsReportColumnsLabels = {
+    applicationsReportColumnInProgressLabel: getApplicationsReportUiText("inProgressApplications", "Jarayondagi arizalar"),
+    applicationsReportColumnRejectedLabel: getApplicationsReportUiText("rejectedApplications", "Rad etilgan arizalar"),
+    applicationsReportColumnDiagnosisLabel: getApplicationsReportUiText("byDiagnosis", "Tashxislari bo'yicha"),
+    applicationsReportColumnDisabilityLabel: getApplicationsReportUiText("byDisability", "Nogironlik guruhi"),
+    applicationsReportColumnGenderLabel: getApplicationsReportUiText("byGender", "Jinsi bo'yicha"),
+    applicationsReportColumnAgeLabel: getApplicationsReportUiText("byAge", "Yoshi bo'yicha"),
+  };
+  Object.entries(applicationsReportColumnsLabels).forEach(([id, label]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = label;
+  });
   const appTableHeads = document.querySelectorAll("#applicationsTable thead th");
   if (appTableHeads[0]) appTableHeads[0].textContent = tr("applications.actions", "Amallar");
   if (appTableHeads[1]) appTableHeads[1].textContent = tr("applications.application", "Ariza");
@@ -3631,6 +3658,45 @@ const applicationsReportDefaultFilters = Object.freeze({
 let applicationsReportAppliedFilters = { ...applicationsReportDefaultFilters };
 let reportAppliedFilters = { ...reportDefaultFilters };
 
+const applicationsReportColumnGroups = [
+  { key: "in-progress", columns: ["inProgress", "workingReview", "workingAccepted", "commissionReview"] },
+  { key: "rejected", columns: ["rejected", "workingRejected", "commissionRejected"] },
+  { key: "diagnosis", columns: ["f00f03", "f71", "f72", "f73", "otherDiagnosis"] },
+  { key: "disability-group", columns: ["group1", "group2", "group3", "nbb"] },
+  { key: "gender", columns: ["male", "female"] },
+  { key: "age", columns: ["age0_3", "age3_7", "age7_18", "age18_55_60", "age55_60"] },
+];
+
+const applicationsReportColumnGroupDefaults = Object.freeze(
+  applicationsReportColumnGroups.reduce((accumulator, group) => {
+    accumulator[group.key] = true;
+    return accumulator;
+  }, {}),
+);
+
+function getStoredApplicationsReportColumnVisibility() {
+  try {
+    const rawValue = window.localStorage.getItem(applicationsReportColumnsStorageKey);
+    if (!rawValue) {
+      return { ...applicationsReportColumnGroupDefaults };
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    if (!parsedValue || typeof parsedValue !== "object") {
+      return { ...applicationsReportColumnGroupDefaults };
+    }
+
+    return applicationsReportColumnGroups.reduce((accumulator, group) => {
+      accumulator[group.key] = parsedValue[group.key] !== false;
+      return accumulator;
+    }, {});
+  } catch (error) {
+    return { ...applicationsReportColumnGroupDefaults };
+  }
+}
+
+let applicationsReportColumnVisibility = getStoredApplicationsReportColumnVisibility();
+
 const applicationStepLabels = {
   "112": "Yaratildi",
   "131": "Ishchi guruh tomonidan ko'rib chiqilmoqda",
@@ -3791,6 +3857,11 @@ const commissionMembersData = [
   { id: "KM-005", date: "03.04.2026", region: "Qoraqalpog'iston R.", status: "Rad etilgan" },
 ];
 let currentCompositionType = "workingGroup";
+const compositionTableState = {
+  currentPage: 1,
+  pageSize: 20,
+  totalPages: 1,
+};
 
 function deriveApplicationStatusLabel(stepName = "") {
   const normalized = String(stepName).trim().toLowerCase();
@@ -4538,6 +4609,74 @@ function renderApplicationsReportTable() {
   `;
 
   updateApplicationsReportScope();
+  applyApplicationsReportColumnVisibility();
+}
+
+function saveApplicationsReportColumnVisibility() {
+  window.localStorage.setItem(
+    applicationsReportColumnsStorageKey,
+    JSON.stringify(applicationsReportColumnVisibility),
+  );
+}
+
+function syncApplicationsReportColumnControls() {
+  if (!applicationsReportColumnsMenu) {
+    return;
+  }
+
+  applicationsReportColumnsMenu
+    .querySelectorAll("[data-applications-report-column-group]")
+    .forEach((input) => {
+      if (!(input instanceof HTMLInputElement)) {
+        return;
+      }
+
+      const groupKey = input.getAttribute("data-applications-report-column-group") || "";
+      input.checked = applicationsReportColumnVisibility[groupKey] !== false;
+    });
+}
+
+function applyApplicationsReportColumnVisibility() {
+  if (!applicationsReportTable) {
+    return;
+  }
+
+  const tableHead = applicationsReportTable.tHead;
+  const headerRows = tableHead ? Array.from(tableHead.rows) : [];
+  const groupHeaderRow = headerRows[0] ?? null;
+  const detailHeaderRow = headerRows[1] ?? null;
+
+  applicationsReportColumnGroups.forEach((group) => {
+    const isVisible = applicationsReportColumnVisibility[group.key] !== false;
+
+    group.columns.forEach((columnKey) => {
+      applicationsReportTable.querySelectorAll(`[data-col="${columnKey}"]`).forEach((cell) => {
+        cell.classList.toggle("report-table__col--hidden", !isVisible);
+      });
+      applicationsReportTable.querySelectorAll(`col[data-col="${columnKey}"]`).forEach((column) => {
+        column.classList.toggle("report-table__col--hidden", !isVisible);
+      });
+    });
+
+    if (groupHeaderRow) {
+      const groupHeader = groupHeaderRow.querySelector(`[data-group="${group.key}"]`);
+      if (groupHeader instanceof HTMLTableCellElement) {
+        groupHeader.classList.toggle("report-table__col--hidden", !isVisible);
+        if (isVisible) {
+          groupHeader.colSpan = group.columns.length;
+        }
+      }
+    }
+  });
+
+  if (detailHeaderRow) {
+    const hasVisibleDetailCells = Array.from(detailHeaderRow.cells).some(
+      (cell) => !cell.classList.contains("report-table__col--hidden"),
+    );
+    detailHeaderRow.classList.toggle("report-table__row--empty", !hasVisibleDetailCells);
+  }
+
+  syncApplicationsReportColumnControls();
 }
 
 function buildApplicationsReportExportHtml() {
@@ -4563,6 +4702,7 @@ function buildApplicationsReportExportHtml() {
     thead th { background: #eef4ec; font-weight: 700; }
     tbody td:first-child, thead th:first-child { text-align: left; min-width: 180px; }
     .report-table__summary td { background: #edf6e7; font-weight: 700; }
+    .report-table__col--hidden, .report-table__row--empty { display: none !important; }
   </style>
 </head>
 <body>
@@ -5887,22 +6027,25 @@ function getCompositionActionIcon(label) {
 }
 
 function renderCompositionTable(type = "workingGroup") {
+  if (currentCompositionType !== type) {
+    compositionTableState.currentPage = 1;
+  }
   currentCompositionType = type;
   const rows = type === "commission" ? commissionMembersData : workingGroupMembersData;
-  const translatedTitle =
-    type === "commission"
-      ? translateRouteTitle("Arizalar - Komissiya tarkibi")
-      : translateRouteTitle("Arizalar - Ishchi guruhi tarkibi");
-
-  if (compositionListTitle) {
-    compositionListTitle.textContent = translatedTitle;
-  }
 
   if (!compositionTableBody) {
     return;
   }
 
-  compositionTableBody.innerHTML = rows
+  const totalRows = rows.length;
+  const totalPages = Math.max(Math.ceil(totalRows / compositionTableState.pageSize), 1);
+  compositionTableState.totalPages = totalPages;
+  compositionTableState.currentPage = Math.min(compositionTableState.currentPage, totalPages);
+  const startIndex = (compositionTableState.currentPage - 1) * compositionTableState.pageSize;
+  const endIndex = Math.min(startIndex + compositionTableState.pageSize, totalRows);
+  const visibleRows = rows.slice(startIndex, endIndex);
+
+  compositionTableBody.innerHTML = visibleRows
     .map((row) => {
       const menuItems = buildCompositionActionList(row.status)
         .map((action) => {
@@ -5934,8 +6077,81 @@ function renderCompositionTable(type = "workingGroup") {
     })
     .join("");
 
+  renderCompositionPagination(totalRows, startIndex, endIndex);
   rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
   bindRowMenuToggles();
+}
+
+function renderCompositionPagination(totalRows, startIndex, endIndex) {
+  if (!compositionPaginationPages || !compositionPaginationPrev || !compositionPaginationNext || !compositionPaginationInfo) {
+    return;
+  }
+
+  compositionPaginationPages.innerHTML = "";
+  compositionPaginationPrev.disabled = compositionTableState.currentPage <= 1;
+  compositionPaginationNext.disabled = compositionTableState.currentPage >= compositionTableState.totalPages;
+
+  const start = totalRows === 0 ? 0 : startIndex + 1;
+  const end = totalRows === 0 ? 0 : endIndex;
+  compositionPaginationInfo.textContent = `${start}-${end} / ${totalRows} ta yozuv`;
+
+  const pages = [];
+  const { currentPage, totalPages } = compositionTableState;
+
+  if (totalPages <= 1) {
+    pages.push(1);
+  } else {
+    const pageSet = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+    const numericPages = Array.from(pageSet)
+      .filter((page) => page >= 1 && page <= totalPages)
+      .sort((left, right) => left - right);
+
+    numericPages.forEach((page, index) => {
+      pages.push(page);
+      const nextPage = numericPages[index + 1];
+      if (nextPage && nextPage - page > 1) {
+        pages.push(`ellipsis-${page}`);
+      }
+    });
+  }
+
+  pages.forEach((item) => {
+    if (typeof item !== "number") {
+      const ellipsis = document.createElement("span");
+      ellipsis.className = "pagination__ellipsis";
+      ellipsis.setAttribute("aria-hidden", "true");
+      ellipsis.textContent = "...";
+      compositionPaginationPages.append(ellipsis);
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pagination__button";
+    button.dataset.compositionPage = String(item);
+    button.textContent = String(item);
+
+    if (item === currentPage) {
+      button.classList.add("pagination__button--active");
+      button.setAttribute("aria-current", "page");
+    }
+
+    compositionPaginationPages.append(button);
+  });
+}
+
+function syncCompositionRowsPerPageUi() {
+  const selectedValue = compositionRowsPerPage?.value ?? "20";
+
+  compositionRowsPerPageOptions.forEach((option) => {
+    const isActive = option.getAttribute("data-value") === selectedValue;
+    option.classList.toggle("pagination-select__option--active", isActive);
+    option.setAttribute("aria-selected", String(isActive));
+
+    if (isActive && compositionRowsPerPageLabel) {
+      compositionRowsPerPageLabel.textContent = option.textContent ?? `${selectedValue} ta`;
+    }
+  });
 }
 
 function showCompositionView() {
@@ -6152,6 +6368,46 @@ compositionTableBody?.addEventListener("click", (event) => {
   });
 
   showToast(action, `${itemId} bo'yicha "${action}" amali demo rejimda tayyorlandi.`);
+});
+
+compositionPaginationPages?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-composition-page]");
+  if (!(button instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const nextPage = Number(button.dataset.compositionPage);
+  if (!Number.isFinite(nextPage) || nextPage === compositionTableState.currentPage) {
+    return;
+  }
+
+  compositionTableState.currentPage = nextPage;
+  renderCompositionTable(currentCompositionType);
+});
+
+compositionPaginationPrev?.addEventListener("click", () => {
+  if (compositionTableState.currentPage <= 1) {
+    return;
+  }
+
+  compositionTableState.currentPage -= 1;
+  renderCompositionTable(currentCompositionType);
+});
+
+compositionPaginationNext?.addEventListener("click", () => {
+  if (compositionTableState.currentPage >= compositionTableState.totalPages) {
+    return;
+  }
+
+  compositionTableState.currentPage += 1;
+  renderCompositionTable(currentCompositionType);
+});
+
+compositionRowsPerPage?.addEventListener("change", () => {
+  compositionTableState.pageSize = Number(compositionRowsPerPage.value || "20");
+  compositionTableState.currentPage = 1;
+  syncCompositionRowsPerPageUi();
+  renderCompositionTable(currentCompositionType);
 });
 
 function formatSupportTimestamp() {
@@ -7253,6 +7509,11 @@ document.addEventListener("click", (event) => {
     rowsPerPageTrigger?.setAttribute("aria-expanded", "false");
   }
 
+  if (compositionRowsPerPageMenu && !compositionRowsPerPageMenu.contains(target)) {
+    compositionRowsPerPageMenu.classList.remove("pagination-select--open");
+    compositionRowsPerPageTrigger?.setAttribute("aria-expanded", "false");
+  }
+
   customSelects.forEach((select) => {
     if (!select.contains(target)) {
       select.classList.remove("custom-select--open");
@@ -7406,7 +7667,7 @@ function applyTableFilters() {
   const ageValue = applicationAppliedFilters.age;
   const dateFromValue = applicationAppliedFilters.dateFrom;
   const dateToValue = applicationAppliedFilters.dateTo;
-  const limit = Number(rowsPerPage?.value ?? "10");
+  const limit = Number(rowsPerPage?.value ?? "20");
   const matchedRows = [];
   let processCount = 0;
   let acceptedCount = 0;
@@ -7819,6 +8080,32 @@ if (rowsPerPageMenu && rowsPerPageTrigger && rowsPerPage) {
   });
 }
 
+if (compositionRowsPerPageMenu && compositionRowsPerPageTrigger && compositionRowsPerPage) {
+  compositionRowsPerPageTrigger.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = compositionRowsPerPageMenu.classList.contains("pagination-select--open");
+    compositionRowsPerPageMenu.classList.toggle("pagination-select--open", !isOpen);
+    compositionRowsPerPageTrigger.setAttribute("aria-expanded", String(!isOpen));
+  });
+
+  compositionRowsPerPageOptions.forEach((option) => {
+    option.addEventListener("click", () => {
+      const value = option.getAttribute("data-value");
+      if (!value) {
+        return;
+      }
+
+      compositionRowsPerPage.value = value;
+      compositionTableState.pageSize = Number(value);
+      compositionTableState.currentPage = 1;
+      compositionRowsPerPageMenu.classList.remove("pagination-select--open");
+      compositionRowsPerPageTrigger.setAttribute("aria-expanded", "false");
+      syncCompositionRowsPerPageUi();
+      renderCompositionTable(currentCompositionType);
+    });
+  });
+}
+
 customSelects.forEach((select) => {
   const trigger = select.querySelector(".custom-select__trigger");
   const nativeSelect = select.querySelector(".custom-select__native");
@@ -7996,6 +8283,49 @@ if (applicationsReportFilterToggle && applicationsReportFilterMenu) {
     }
   });
 }
+
+if (applicationsReportColumnsToggle && applicationsReportColumnsMenu) {
+  applicationsReportColumnsToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const columnsContainer = applicationsReportColumnsToggle.closest(".table-menu");
+    if (!columnsContainer) {
+      return;
+    }
+
+    const isOpen = columnsContainer.classList.contains("table-menu--open");
+    columnsContainer.classList.toggle("table-menu--open", !isOpen);
+    applicationsReportColumnsToggle.setAttribute("aria-expanded", String(!isOpen));
+    if (!isOpen) {
+      syncTableMenuMaxHeight(applicationsReportColumnsToggle, applicationsReportColumnsMenu);
+    }
+  });
+}
+
+applicationsReportColumnsMenuClose?.addEventListener("click", () => {
+  applicationsReportColumnsToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
+  applicationsReportColumnsToggle?.setAttribute("aria-expanded", "false");
+});
+
+applicationsReportColumnsMenu?.querySelectorAll("[data-applications-report-column-group]").forEach((input) => {
+  input.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) {
+      return;
+    }
+
+    const groupKey = target.getAttribute("data-applications-report-column-group") || "";
+    if (!groupKey) {
+      return;
+    }
+
+    applicationsReportColumnVisibility = {
+      ...applicationsReportColumnVisibility,
+      [groupKey]: target.checked,
+    };
+    saveApplicationsReportColumnVisibility();
+    applyApplicationsReportColumnVisibility();
+  });
+});
 
 applicationsReportApplyFilters?.addEventListener("click", () => {
   applyApplicationsReportFilters();
@@ -8459,12 +8789,16 @@ document.addEventListener("keydown", (event) => {
     });
     rowsPerPageMenu?.classList.remove("pagination-select--open");
     rowsPerPageTrigger?.setAttribute("aria-expanded", "false");
+    compositionRowsPerPageMenu?.classList.remove("pagination-select--open");
+    compositionRowsPerPageTrigger?.setAttribute("aria-expanded", "false");
     filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
     filterToggle?.setAttribute("aria-expanded", "false");
     reportFilterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
     reportFilterToggle?.setAttribute("aria-expanded", "false");
     applicationsReportFilterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
     applicationsReportFilterToggle?.setAttribute("aria-expanded", "false");
+    applicationsReportColumnsToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
+    applicationsReportColumnsToggle?.setAttribute("aria-expanded", "false");
     closeCalendar();
     closeConfirmModal();
     closeDetailModal();
@@ -8493,6 +8827,9 @@ updateApplicationFilterControls();
 updateApplicationsReportFilterControls();
 applyTableFilters();
 applyReportFilters();
+syncCompositionRowsPerPageUi();
+syncApplicationsReportColumnControls();
+applyApplicationsReportColumnVisibility();
 syncReportFrozenColumn();
 syncRowsPerPageUi();
 customSelects.forEach(syncCustomSelectUi);
@@ -8573,6 +8910,10 @@ window.addEventListener("resize", () => {
 
   if (applicationsReportFilterToggle?.closest(".table-menu")?.classList.contains("table-menu--open")) {
     syncTableMenuMaxHeight(applicationsReportFilterToggle, applicationsReportFilterMenu);
+  }
+
+  if (applicationsReportColumnsToggle?.closest(".table-menu")?.classList.contains("table-menu--open")) {
+    syncTableMenuMaxHeight(applicationsReportColumnsToggle, applicationsReportColumnsMenu);
   }
 });
 

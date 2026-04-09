@@ -164,6 +164,118 @@ select {
   font: inherit;
 }
 
+.brand__mark,
+.sidebar-collapse,
+.menu-toggle,
+.header-tool,
+.header-account,
+.login-alt__button,
+.table-action,
+.toolbar-chip,
+.pagination__button,
+.custom-select__trigger,
+.pagination-select__trigger,
+.custom-date__button,
+.application-filter-panel__close,
+.row-menu__toggle,
+.confirm-modal__button,
+.detail-modal__close,
+.detail-inline-actions__button,
+.detail-actions__button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.16s ease,
+    opacity 0.18s ease;
+}
+
+.nav-item,
+.nav-subitem,
+.header-dropdown__item,
+.report-date-picker__button,
+.report-region-button,
+.row-menu__item {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.16s ease,
+    opacity 0.18s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .brand__mark:hover,
+  .sidebar-collapse:hover,
+  .menu-toggle:hover,
+  .header-tool:hover,
+  .header-account:hover,
+  .login-alt__button:hover,
+  .table-action:not(:disabled):hover,
+  .toolbar-chip:hover,
+  .pagination__button:not([disabled]):hover,
+  .custom-select__trigger:hover,
+  .pagination-select__trigger:hover,
+  .custom-date__button:hover,
+  .application-filter-panel__close:hover,
+  .row-menu__toggle:hover,
+  .confirm-modal__button:not([disabled]):hover,
+  .detail-modal__close:hover,
+  .detail-inline-actions__button:hover,
+  .detail-actions__button:hover {
+    background-color: color-mix(in srgb, var(--hover) 72%, var(--surface) 28%);
+    border-color: color-mix(in srgb, var(--brand) 18%, var(--line) 82%);
+  }
+
+  .nav-item:hover,
+  .nav-subitem:hover,
+  .header-dropdown__item:hover,
+  .report-date-picker__button:hover,
+  .report-region-button:hover,
+  .row-menu__item:hover {
+    background-color: color-mix(in srgb, var(--hover) 82%, transparent 18%);
+  }
+}
+
+.brand__mark:active,
+.sidebar-collapse:active,
+.menu-toggle:active,
+.header-tool:active,
+.header-account:active,
+.login-alt__button:active,
+.table-action:not(:disabled):active,
+.toolbar-chip:active,
+.pagination__button:not([disabled]):active,
+.custom-select__trigger:active,
+.pagination-select__trigger:active,
+.custom-date__button:active,
+.application-filter-panel__close:active,
+.row-menu__toggle:active,
+.confirm-modal__button:not([disabled]):active,
+.detail-modal__close:active,
+.detail-inline-actions__button:active,
+.detail-actions__button:active {
+  transform: translateY(1px);
+  background-color: color-mix(in srgb, var(--hover) 88%, var(--surface) 12%);
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line) 78%);
+}
+
+.nav-item:active,
+.nav-subitem:active,
+.header-dropdown__item:active,
+.report-date-picker__button:active,
+.report-region-button:active,
+.row-menu__item:active {
+  transform: translateY(1px);
+  background-color: color-mix(in srgb, var(--hover) 88%, transparent 12%);
+}
+
 .login-shell {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 420px);
@@ -2228,6 +2340,59 @@ body.theme-dark .login-hero__card {
   justify-content: flex-end;
 }
 
+.report-columns-menu {
+  min-width: 260px;
+  max-width: min(280px, calc(100vw - 40px));
+  padding: 10px;
+}
+
+.report-columns-panel {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+.report-columns-panel__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.report-columns-panel__options {
+  display: grid;
+  gap: 8px;
+}
+
+.report-columns-panel__option {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.9rem;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.report-columns-panel__option:hover,
+.report-columns-panel__option:focus-within {
+  background: var(--hover);
+  border-color: rgba(103, 154, 98, 0.22);
+}
+
+.report-columns-panel__option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+
 .report-table th,
 .report-table td {
   padding: 9px 6px;
@@ -2265,6 +2430,14 @@ body.theme-dark .login-hero__card {
   height: 32px;
   padding-top: 4px;
   padding-bottom: 4px;
+}
+
+.report-table__col--hidden {
+  display: none !important;
+}
+
+.report-table__row--empty {
+  display: none;
 }
 
 .report-table thead tr:nth-child(2) th {

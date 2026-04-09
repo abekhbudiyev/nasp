@@ -859,19 +859,23 @@
             <div class="table-pagination__left">
               <div class="pagination-select" id="rowsPerPageMenu">
                 <button class="pagination-select__trigger" id="rowsPerPageTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Bir sahifadagi yozuvlar soni">
-                  <span id="rowsPerPageLabel">10 ta</span>
+                  <span id="rowsPerPageLabel">20 ta</span>
                 </button>
                 <div class="pagination-select__dropdown" id="rowsPerPageDropdown" role="listbox" aria-label="Bir sahifadagi yozuvlar soni">
-                  <button class="pagination-select__option pagination-select__option--active" type="button" role="option" data-value="10" aria-selected="true">10 ta</button>
-                  <button class="pagination-select__option" type="button" role="option" data-value="25" aria-selected="false">25 ta</button>
+                  <button class="pagination-select__option" type="button" role="option" data-value="10" aria-selected="false">10 ta</button>
+                  <button class="pagination-select__option pagination-select__option--active" type="button" role="option" data-value="20" aria-selected="true">20 ta</button>
                   <button class="pagination-select__option" type="button" role="option" data-value="50" aria-selected="false">50 ta</button>
                   <button class="pagination-select__option" type="button" role="option" data-value="100" aria-selected="false">100 ta</button>
+                  <button class="pagination-select__option" type="button" role="option" data-value="200" aria-selected="false">200 ta</button>
+                  <button class="pagination-select__option" type="button" role="option" data-value="500" aria-selected="false">500 ta</button>
                 </div>
                 <select class="pagination-select__native" id="rowsPerPage" aria-hidden="true" tabindex="-1">
-                  <option value="10" selected>10 ta</option>
-                  <option value="25">25 ta</option>
+                  <option value="10">10 ta</option>
+                  <option value="20" selected>20 ta</option>
                   <option value="50">50 ta</option>
                   <option value="100">100 ta</option>
+                  <option value="200">200 ta</option>
+                  <option value="500">500 ta</option>
                 </select>
               </div>
             </div>
@@ -886,7 +890,6 @@
 
         <section class="table-card" id="compositionListView" hidden>
           <div class="table-toolbar">
-            <h3 id="compositionListTitle">Ishchi guruhi tarkibi</h3>
             <div class="table-actions">
               <button class="table-action table-action--icon" id="compositionFilterButton" type="button" aria-label="Filter">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -907,6 +910,37 @@
               </thead>
               <tbody id="compositionTableBody"></tbody>
             </table>
+          </div>
+          <div class="table-pagination">
+            <div class="table-pagination__left">
+              <div class="pagination-select" id="compositionRowsPerPageMenu">
+                <button class="pagination-select__trigger" id="compositionRowsPerPageTrigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Bir sahifadagi yozuvlar soni">
+                  <span id="compositionRowsPerPageLabel">20 ta</span>
+                </button>
+                <div class="pagination-select__dropdown" id="compositionRowsPerPageDropdown" role="listbox" aria-label="Bir sahifadagi yozuvlar soni">
+                  <button class="pagination-select__option" type="button" role="option" data-value="10" aria-selected="false">10 ta</button>
+                  <button class="pagination-select__option pagination-select__option--active" type="button" role="option" data-value="20" aria-selected="true">20 ta</button>
+                  <button class="pagination-select__option" type="button" role="option" data-value="50" aria-selected="false">50 ta</button>
+                  <button class="pagination-select__option" type="button" role="option" data-value="100" aria-selected="false">100 ta</button>
+                  <button class="pagination-select__option" type="button" role="option" data-value="200" aria-selected="false">200 ta</button>
+                  <button class="pagination-select__option" type="button" role="option" data-value="500" aria-selected="false">500 ta</button>
+                </div>
+                <select class="pagination-select__native" id="compositionRowsPerPage" aria-hidden="true" tabindex="-1">
+                  <option value="10">10 ta</option>
+                  <option value="20" selected>20 ta</option>
+                  <option value="50">50 ta</option>
+                  <option value="100">100 ta</option>
+                  <option value="200">200 ta</option>
+                  <option value="500">500 ta</option>
+                </select>
+              </div>
+              <div class="table-pagination__info" id="compositionPaginationInfo">1-6 / 6 ta yozuv</div>
+            </div>
+            <div class="table-pagination__right">
+              <button class="pagination__button pagination__button--icon" id="compositionPaginationPrev" type="button" disabled aria-label="Oldingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <div class="pagination" id="compositionPaginationPages" aria-label="Sahifalar"></div>
+              <button class="pagination__button pagination__button--icon" id="compositionPaginationNext" type="button" aria-label="Keyingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
           </div>
         </section>
         <section class="table-card report-card" id="applicationsReportView" hidden>
@@ -1014,6 +1048,45 @@
                   </div>
                 </div>
               </div>
+              <div class="table-menu">
+                <button class="table-action" type="button" aria-expanded="false" id="applicationsReportColumnsToggle">Ustunlar</button>
+                <div class="table-dropdown report-columns-menu" id="applicationsReportColumnsMenu">
+                  <div class="report-columns-panel">
+                    <div class="application-filter-panel__header">
+                      <strong class="report-columns-panel__title" id="applicationsReportColumnsTitle">Ustunlar</strong>
+                      <button class="application-filter-panel__close" id="applicationsReportColumnsMenuClose" type="button" aria-label="Ustunlar oynasini yopish">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="report-columns-panel__options">
+                      <label class="report-columns-panel__option">
+                        <input id="applicationsReportColumnInProgress" type="checkbox" data-applications-report-column-group="in-progress" checked>
+                        <span id="applicationsReportColumnInProgressLabel">Jarayondagi arizalar</span>
+                      </label>
+                      <label class="report-columns-panel__option">
+                        <input id="applicationsReportColumnRejected" type="checkbox" data-applications-report-column-group="rejected" checked>
+                        <span id="applicationsReportColumnRejectedLabel">Rad etilgan arizalar</span>
+                      </label>
+                      <label class="report-columns-panel__option">
+                        <input id="applicationsReportColumnDiagnosis" type="checkbox" data-applications-report-column-group="diagnosis" checked>
+                        <span id="applicationsReportColumnDiagnosisLabel">Tashxislari bo'yicha</span>
+                      </label>
+                      <label class="report-columns-panel__option">
+                        <input id="applicationsReportColumnDisability" type="checkbox" data-applications-report-column-group="disability-group" checked>
+                        <span id="applicationsReportColumnDisabilityLabel">Nogironlik guruhi</span>
+                      </label>
+                      <label class="report-columns-panel__option">
+                        <input id="applicationsReportColumnGender" type="checkbox" data-applications-report-column-group="gender" checked>
+                        <span id="applicationsReportColumnGenderLabel">Jinsi bo'yicha</span>
+                      </label>
+                      <label class="report-columns-panel__option">
+                        <input id="applicationsReportColumnAge" type="checkbox" data-applications-report-column-group="age" checked>
+                        <span id="applicationsReportColumnAgeLabel">Yoshi bo'yicha</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button class="table-action table-action--icon" type="button" id="applicationsReportExportButton" aria-label="Hisobotni yuklab olish">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10M8 10l4 4 4-4M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <span class="sr-only">Hisobotni yuklab olish</span>
@@ -1027,32 +1100,32 @@
           <div class="table-wrap report-table-wrap report-table-wrap--applications">
               <table class="data-table report-table report-table--applications" id="applicationsReportTable">
                 <colgroup>
-                  <col style="width: 176px;">
-                  <col style="width: 88px;">
-                  <col style="width: 94px;">
-                  <col style="width: 118px;">
-                  <col style="width: 118px;">
-                  <col style="width: 118px;">
-                  <col style="width: 78px;">
-                  <col style="width: 112px;">
-                  <col style="width: 96px;">
-                  <col style="width: 112px;">
-                  <col style="width: 92px;">
-                  <col style="width: 82px;">
-                  <col style="width: 82px;">
-                  <col style="width: 82px;">
-                  <col style="width: 92px;">
-                  <col style="width: 70px;">
-                  <col style="width: 70px;">
-                  <col style="width: 70px;">
-                  <col style="width: 110px;">
-                  <col style="width: 90px;">
-                  <col style="width: 90px;">
-                  <col style="width: 74px;">
-                  <col style="width: 74px;">
-                  <col style="width: 82px;">
-                  <col style="width: 96px;">
-                  <col style="width: 88px;">
+                  <col data-col="region" style="width: 176px;">
+                  <col data-col="total" style="width: 88px;">
+                  <col data-col="inProgress" style="width: 94px;">
+                  <col data-col="workingReview" style="width: 118px;">
+                  <col data-col="workingAccepted" style="width: 118px;">
+                  <col data-col="commissionReview" style="width: 118px;">
+                  <col data-col="rejected" style="width: 78px;">
+                  <col data-col="workingRejected" style="width: 112px;">
+                  <col data-col="commissionRejected" style="width: 96px;">
+                  <col data-col="accepted" style="width: 112px;">
+                  <col data-col="f00f03" style="width: 92px;">
+                  <col data-col="f71" style="width: 82px;">
+                  <col data-col="f72" style="width: 82px;">
+                  <col data-col="f73" style="width: 82px;">
+                  <col data-col="otherDiagnosis" style="width: 92px;">
+                  <col data-col="group1" style="width: 70px;">
+                  <col data-col="group2" style="width: 70px;">
+                  <col data-col="group3" style="width: 70px;">
+                  <col data-col="nbb" style="width: 110px;">
+                  <col data-col="male" style="width: 90px;">
+                  <col data-col="female" style="width: 90px;">
+                  <col data-col="age0_3" style="width: 74px;">
+                  <col data-col="age3_7" style="width: 74px;">
+                  <col data-col="age7_18" style="width: 82px;">
+                  <col data-col="age18_55_60" style="width: 96px;">
+                  <col data-col="age55_60" style="width: 88px;">
                 </colgroup>
                 <thead>
                   <tr>
