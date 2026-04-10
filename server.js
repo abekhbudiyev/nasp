@@ -321,6 +321,15 @@ function mapActStatus(statusId) {
   return String(statusId ?? "");
 }
 
+function mapWorkingGroupStatus(statusId) {
+  const value = Number(statusId);
+  if (value === 1) return "Yangi";
+  if (value === 4) return "Tahrirlangan";
+  if (value === 17) return "Tasdiqlangan";
+  if (value === 35) return "Yuborilgan";
+  return String(statusId ?? "");
+}
+
 function buildActsFilterQuery(payload = {}) {
   const filters = payload.filters || {};
   const binds = {};
@@ -363,6 +372,48 @@ function buildActsFilterQuery(payload = {}) {
   };
 }
 
+function buildWorkingGroupFilterQuery(payload = {}) {
+  const filters = payload.filters || {};
+  const binds = {};
+  const clauses = [];
+  const search = String(payload.search || "").trim();
+
+  const statusValue = parseNumericFilterValue(filters.status);
+  if (statusValue != null) {
+    binds.statusId = statusValue;
+    clauses.push("m.STATUS_ID = :statusId");
+  }
+
+  const regionValue = parseNumericFilterValue(filters.region);
+  if (regionValue != null) {
+    binds.regionId = regionValue;
+    clauses.push("m.REGION_ID = :regionId");
+  }
+
+  if (filters.dateFrom) {
+    binds.dateFrom = filters.dateFrom;
+    clauses.push("trunc(m.CREATED_AT) >= to_date(:dateFrom, 'YYYY-MM-DD')");
+  }
+
+  if (filters.dateTo) {
+    binds.dateTo = filters.dateTo;
+    clauses.push("trunc(m.CREATED_AT) <= to_date(:dateTo, 'YYYY-MM-DD')");
+  }
+
+  if (search) {
+    binds.search = `%${search.toUpperCase()}%`;
+    clauses.push(`(
+      upper(to_char(m.ID)) like :search
+      or upper(nvl(r.FULL_NAME, '')) like :search
+    )`);
+  }
+
+  return {
+    whereSql: clauses.length ? ` and ${clauses.join(" and ")}` : "",
+    binds,
+  };
+}
+
 function mapActRow(row) {
   return {
     id: Number(row.ID),
@@ -371,6 +422,16 @@ function mapActRow(row) {
     regionId: Number(row.REGION_ID || 0),
     statusId: Number(row.STATUS_ID || 0),
     status: mapActStatus(row.STATUS_ID),
+  };
+}
+
+function mapWorkingGroupRow(row) {
+  return {
+    id: Number(row.ID),
+    date: formatDate(row.CREATED_AT),
+    region: String(row.FULL_NAME || "").trim(),
+    statusId: Number(row.STATUS_ID || 0),
+    status: mapWorkingGroupStatus(row.STATUS_ID),
   };
 }
 
@@ -784,6 +845,75 @@ app.post("/api/mrv/acts", async (req, res) => {
     res.status(500).json({
       ok: false,
       error: "Oracle bazadan dalolatnomalarni olishda xatolik yuz berdi.",
+      detail: error.message,
+    });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeError) {
+        // No-op: close errors are secondary to the request result.
+      }
+    }
+  }
+});
+
+app.post("/api/mrv/working-group", async (req, res) => {
+  let connection;
+
+  try {
+    const payload = req.body || {};
+    const page = Math.max(Number(payload.page || 1), 1);
+    const pageSize = Math.min(Math.max(Number(payload.pageSize || 20), 1), 500);
+    const offset = (page - 1) * pageSize;
+    const { whereSql, binds } = buildWorkingGroupFilterQuery(payload);
+
+    connection = await getOracleConnection();
+
+    const rowsResult = await connection.execute(
+      `
+      select
+        m.ID,
+        m.CREATED_AT,
+        r.FULL_NAME,
+        m.STATUS_ID
+      from ins_smu.DOC_WORKING_GROUP m
+      left join adm_mnl.INFO_REGION r on m.REGION_ID = r.ID
+      where m.STATUS_ID != 5
+        ${whereSql}
+      order by m.ID desc
+      offset :offset rows fetch next :pageSize rows only
+      `,
+      { ...binds, offset, pageSize },
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+
+    const countResult = await connection.execute(
+      `
+      select count(*) as TOTAL
+      from ins_smu.DOC_WORKING_GROUP m
+      left join adm_mnl.INFO_REGION r on m.REGION_ID = r.ID
+      where m.STATUS_ID != 5
+        ${whereSql}
+      `,
+      binds,
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+
+    const total = Number(countResult.rows?.[0]?.TOTAL || 0);
+
+    res.json({
+      ok: true,
+      items: (rowsResult.rows || []).map(mapWorkingGroupRow),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(Math.ceil(total / pageSize), 1),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Oracle bazadan ishchi guruhi tarkibini olishda xatolik yuz berdi.",
       detail: error.message,
     });
   } finally {

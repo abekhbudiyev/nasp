@@ -51,10 +51,18 @@ const acceptedApplicationsShare = document.getElementById("acceptedApplicationsS
 const rejectedApplicationsShare = document.getElementById("rejectedApplicationsShare");
 const isLocalhostEnvironment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 const localApplicationsApiUrl = `${window.location.origin}/api/mrv/applications`;
+const localActsApiUrl = `${window.location.origin}/api/mrv/acts`;
+const localWorkingGroupApiUrl = `${window.location.origin}/api/mrv/working-group`;
 let applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr"));
 let applicationsApiLoadPromise = null;
 let applicationsApiLoaded = false;
 let applicationsApiAbortController = null;
+let actsApiLoadPromise = null;
+let actsApiLoaded = false;
+let actsApiAbortController = null;
+let workingGroupApiLoadPromise = null;
+let workingGroupApiLoaded = false;
+let workingGroupApiAbortController = null;
 const filterToggle = document.getElementById("filterToggle");
 const filterMenu = document.getElementById("filterMenu");
 const filterMenuClose = document.getElementById("filterMenuClose");
@@ -111,8 +119,17 @@ const applicationsReportView = document.getElementById("applicationsReportView")
 const compositionListView = document.getElementById("compositionListView");
 const compositionTableBody = document.getElementById("compositionTableBody");
 const compositionFilterButton = document.getElementById("compositionFilterButton");
+const compositionFilterMenu = document.getElementById("compositionFilterMenu");
+const compositionFilterMenuClose = document.getElementById("compositionFilterMenuClose");
 const compositionCreateButton = document.getElementById("compositionCreateButton");
 const compositionSearch = document.getElementById("compositionSearch");
+const compositionRegionFilter = document.getElementById("compositionRegionFilter");
+const compositionDateFromText = document.getElementById("compositionDateFromText");
+const compositionDateFromFilter = document.getElementById("compositionDateFromFilter");
+const compositionDateToText = document.getElementById("compositionDateToText");
+const compositionDateToFilter = document.getElementById("compositionDateToFilter");
+const compositionApplyFilters = document.getElementById("compositionApplyFilters");
+const compositionResetFilters = document.getElementById("compositionResetFilters");
 const compositionPaginationInfo = document.getElementById("compositionPaginationInfo");
 const compositionPaginationPrev = document.getElementById("compositionPaginationPrev");
 const compositionPaginationNext = document.getElementById("compositionPaginationNext");
@@ -230,8 +247,9 @@ const calendarLocaleLabels = {
   },
 };
 const tableState = { currentPage: 1, totalPages: 1, filteredRows: [], serverMode: false, serverTotalItems: 0, serverStats: null };
+const actsTableState = { loaded: false };
 const calendarState = { activeField: null, viewDate: null };
-const confirmState = { action: "", applicationId: "" };
+const confirmState = { action: "", applicationId: "", context: "application", itemId: "", compositionType: "", approveLabel: "" };
 let supportTicketCounter = 1025;
 let currentModule = "muruvvat";
 let currentLanguage = "uz";
@@ -3711,9 +3729,10 @@ const applicationStepLabels = {
   "132": "Ishchi guruh tomonidan bekor qilindi",
   "133": "Ishchi guruh tomonidan qabul qilindi",
   "134": "Komissiya tomonidan ko'rib chiqilmoqda",
-  "136": "Komissiya ko'rib chiqdi",
+  "136": "Komissiya tomonidan bekor qilindi",
   "171": "Navbatga tushdi",
   "172": "Ro'yxatga olindi",
+  accepted: "Qabul qilingan",
 };
 
 const applicationOrganizationTypeLabels = {
@@ -3753,9 +3772,8 @@ const applicationStaticFilterOptions = {
     { value: "132", label: "Ishchi guruh tomonidan bekor qilindi" },
     { value: "133", label: "Ishchi guruh tomonidan qabul qilindi" },
     { value: "134", label: "Komissiya tomonidan ko'rib chiqilmoqda" },
-    { value: "136", label: "Komissiya ko'rib chiqdi" },
-    { value: "171", label: "Navbatga tushdi" },
-    { value: "172", label: "Ro'yxatga olindi" },
+    { value: "136", label: "Komissiya tomonidan bekor qilindi" },
+    { value: "accepted", label: "Qabul qilingan" },
   ],
   organizationTypes: [
     { value: "25", label: "Erkaklar" },
@@ -3855,7 +3873,7 @@ const workingGroupMembersData = [
   { id: "IG-003", date: "05.04.2026", region: "Farg'ona", status: "Yuborilgan" },
   { id: "IG-004", date: "04.04.2026", region: "Qashqadaryo", status: "Tasdiqlangan" },
   { id: "IG-005", date: "03.04.2026", region: "Buxoro", status: "Rad etilgan" },
-  { id: "IG-006", date: "02.04.2026", region: "Andijon", status: "Yangi" },
+  { id: "IG-006", date: "02.04.2026", region: "Andijon", status: "Bekor qilingan" },
 ];
 const commissionMembersData = [
   { id: "KM-001", date: "07.04.2026", region: "Toshkent shahri", status: "Tasdiqlangan" },
@@ -3864,12 +3882,33 @@ const commissionMembersData = [
   { id: "KM-004", date: "04.04.2026", region: "Sirdaryo", status: "Yangi" },
   { id: "KM-005", date: "03.04.2026", region: "Qoraqalpog'iston R.", status: "Rad etilgan" },
 ];
+const actsData = [
+  { id: "DL-001", date: "07.04.2026", region: "Toshkent shahri", status: "Kelishish uchun yuborilgan" },
+  { id: "DL-002", date: "06.04.2026", region: "Samarqand", status: "Tasdiqlangan" },
+  { id: "DL-003", date: "05.04.2026", region: "Buxoro", status: "Tahrirlangan" },
+  { id: "DL-004", date: "04.04.2026", region: "Andijon", status: "Yangi" },
+  { id: "DL-005", date: "03.04.2026", region: "Qashqadaryo", status: "Kelishish uchun yuborilgan" },
+];
 let currentCompositionType = "workingGroup";
 const compositionTableState = {
   currentPage: 1,
   pageSize: 20,
   totalPages: 1,
   searchTerm: "",
+};
+const compositionDefaultFilters = {
+  region: "all",
+  dateFrom: "",
+  dateTo: "",
+};
+let compositionAppliedFilters = { ...compositionDefaultFilters };
+const actsListState = {
+  totalRows: actsData.length,
+  totalPages: 1,
+};
+const workingGroupListState = {
+  totalRows: workingGroupMembersData.length,
+  totalPages: 1,
 };
 
 function deriveApplicationStatusLabel(stepName = "") {
@@ -3878,6 +3917,7 @@ function deriveApplicationStatusLabel(stepName = "") {
   if (
     normalized === "ishchi guruh tomonidan bekor qilindi"
     || normalized === "komissiya ko'rib chiqdi"
+    || normalized === "komissiya tomonidan bekor qilindi"
   ) {
     return "Rad etilgan";
   }
@@ -3900,9 +3940,17 @@ function normalizeApplicationStepValue(stepValue = "", stepName = "") {
   if (normalizedName === "ishchi-guruhi-rad-etgan" || normalizedName === "ishchi guruh tomonidan bekor qilindi") return "132";
   if (normalizedName === "ishchi-guruhi-qabul-qilgan" || normalizedName === "ishchi guruh tomonidan qabul qilindi") return "133";
   if (normalizedName === "komissiya-korib-chiqmoqda" || normalizedName === "komissiya tomonidan ko'rib chiqilmoqda" || normalizedName === "komissiya tomonidan tomonidan ko'rib chiqilmoqda") return "134";
-  if (normalizedName === "komissiya-rad-etgan" || normalizedName === "komissiya ko'rib chiqdi") return "136";
-  if (normalizedName === "komissiya-qabul-qilgan" || normalizedName === "navbatga tushdi") return "171";
-  if (normalizedName === "ro'yxatga olindi") return "172";
+  if (
+    normalizedName === "komissiya-rad-etgan" ||
+    normalizedName === "komissiya ko'rib chiqdi" ||
+    normalizedName === "komissiya tomonidan bekor qilindi"
+  ) return "136";
+  if (
+    normalizedName === "komissiya-qabul-qilgan" ||
+    normalizedName === "navbatga tushdi" ||
+    normalizedName === "ro'yxatga olindi" ||
+    normalizedName === "qabul qilingan"
+  ) return "171";
   return "112";
 }
 
@@ -5088,7 +5136,11 @@ function getActionLabel(action) {
 function openConfirmModal(action, applicationId) {
   confirmState.action = action;
   confirmState.applicationId = applicationId;
+  confirmState.context = "application";
+  confirmState.itemId = applicationId;
+  confirmState.compositionType = "";
   const actionLabel = getActionLabel(action);
+  confirmState.approveLabel = actionLabel;
   confirmModal?.classList.toggle("confirm-modal--accept", action === "accept");
   if (confirmModalDescription) {
     confirmModalDescription.textContent = tformat(
@@ -5111,12 +5163,70 @@ function closeConfirmModal() {
   confirmModal?.classList.remove("confirm-modal--accept");
   if (confirmModalApprove) {
     confirmModalApprove.disabled = false;
-    confirmModalApprove.innerHTML = confirmState.action ? getActionLabel(confirmState.action) : tr("common.continue", "Davom etish");
+    confirmModalApprove.innerHTML = confirmState.approveLabel || (confirmState.action ? getActionLabel(confirmState.action) : tr("common.continue", "Davom etish"));
   }
   confirmModalCancel?.removeAttribute("disabled");
   confirmState.action = "";
   confirmState.applicationId = "";
+  confirmState.context = "application";
+  confirmState.itemId = "";
+  confirmState.compositionType = "";
+  confirmState.approveLabel = "";
 }
+
+function getCompositionActionConfirmLabel(action) {
+  return action;
+}
+
+function openCompositionConfirmModal(action, itemId, compositionType = currentCompositionType) {
+  confirmState.action = action;
+  confirmState.applicationId = "";
+  confirmState.context = "composition";
+  confirmState.itemId = itemId;
+  confirmState.compositionType = compositionType;
+  confirmState.approveLabel = getCompositionActionConfirmLabel(action);
+  confirmModal?.classList.toggle("confirm-modal--accept", action === "Tasdiqlash");
+  if (confirmModalDescription) {
+    confirmModalDescription.textContent = `${itemId} bo'yicha "${action}" amalini bajarishni tasdiqlaysizmi?`;
+  }
+  if (confirmModalApprove) {
+    confirmModalApprove.textContent = confirmState.approveLabel;
+  }
+  confirmModal?.removeAttribute("hidden");
+  window.requestAnimationFrame(() => {
+    confirmModalApprove?.focus();
+  });
+}
+
+function updateCompositionRowStatus(type, itemId, nextStatus) {
+  const rows = type === "commission" ? commissionMembersData : type === "acts" ? actsData : workingGroupMembersData;
+  const row = rows.find((item) => item.id === itemId);
+  if (row) {
+    row.status = nextStatus;
+  }
+}
+
+function getCompositionNextStatus(action) {
+  if (action === "Tasdiqlash") {
+    return "Tasdiqlangan";
+  }
+  if (action === "Bekor qilish") {
+    return "Tahrirlangan";
+  }
+  return "";
+}
+
+function applyCompositionConfirmedAction(action, itemId, compositionType) {
+  const nextStatus = getCompositionNextStatus(action);
+  if (!nextStatus) {
+    return;
+  }
+
+  updateCompositionRowStatus(compositionType, itemId, nextStatus);
+  renderCompositionTable(compositionType);
+  showToast(action, `${itemId} bo'yicha "${action}" amali muvaffaqiyatli bajarildi.`);
+}
+
 
 function getStatusBadgeClass(status) {
   const normalized = status.toLowerCase();
@@ -6162,7 +6272,7 @@ function getCompositionStatusClass(status) {
   if (status === "Tasdiqlangan") {
     return "status-badge--accepted";
   }
-  if (status === "Rad etilgan") {
+  if (status === "Rad etilgan" || status === "Bekor qilingan") {
     return "status-badge--rejected";
   }
   if (status === "Yangi") {
@@ -6171,7 +6281,15 @@ function getCompositionStatusClass(status) {
   return "status-badge--process";
 }
 
+function isCompositionServerBacked(type = currentCompositionType) {
+  return isLocalhostEnvironment && (type === "acts" || type === "workingGroup");
+}
+
 function buildCompositionActionList(status) {
+  if (currentCompositionType === "acts") {
+    return [{ label: "Ko'rish", tone: "default" }];
+  }
+
   const actions = [{ label: "Ko'rish", tone: "default" }];
 
   if (["Rad etilgan", "Yangi", "Tahrirlangan"].includes(status)) {
@@ -6192,6 +6310,169 @@ function buildCompositionActionList(status) {
   }
 
   return actions;
+}
+
+async function loadActsFromLocalApi({ force = false, showDemoOnError = false, page = compositionTableState.currentPage, pageSize = compositionTableState.pageSize, search = compositionTableState.searchTerm } = {}) {
+  if (!isLocalhostEnvironment) {
+    return false;
+  }
+
+  if (actsApiLoaded && !force) {
+    return true;
+  }
+
+  if (actsApiLoadPromise && !force) {
+    return actsApiLoadPromise;
+  }
+
+  actsApiLoadPromise = (async () => {
+    actsApiAbortController?.abort();
+    actsApiAbortController = new AbortController();
+
+    try {
+      const response = await fetch(localActsApiUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ page, pageSize, search, filters: { status: "", region: "", dateFrom: "", dateTo: "" } }),
+        signal: actsApiAbortController.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (!payload?.ok || !Array.isArray(payload.items)) {
+        throw new Error(payload?.error || "Invalid payload");
+      }
+
+      actsData.splice(
+        0,
+        actsData.length,
+        ...payload.items.map((item) => ({
+          id: String(item.id ?? "-"),
+          date: String(item.date ?? "-"),
+          region: String(item.region ?? "-"),
+          status: String(item.status ?? "-"),
+        })),
+      );
+      actsApiLoaded = true;
+      actsTableState.loaded = true;
+      actsListState.totalRows = Number(payload.total || payload.items.length || 0);
+      actsListState.totalPages = Math.max(Number(payload.totalPages || 1), 1);
+      compositionTableState.currentPage = Math.max(Number(payload.page || page || 1), 1);
+      compositionTableState.pageSize = Math.max(Number(payload.pageSize || pageSize || 20), 1);
+      compositionTableState.totalPages = actsListState.totalPages;
+      return true;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return false;
+      }
+
+      actsApiLoaded = false;
+      console.warn("Local acts API unavailable, demo data will be used.", error);
+      if (showDemoOnError) {
+        actsTableState.loaded = true;
+        actsListState.totalRows = actsData.length;
+        actsListState.totalPages = Math.max(Math.ceil(actsData.length / compositionTableState.pageSize), 1);
+      }
+      return false;
+    } finally {
+      actsApiAbortController = null;
+      actsApiLoadPromise = null;
+    }
+  })();
+
+  return actsApiLoadPromise;
+}
+
+async function loadWorkingGroupFromLocalApi({ force = false, showDemoOnError = false, page = compositionTableState.currentPage, pageSize = compositionTableState.pageSize, search = compositionTableState.searchTerm } = {}) {
+  if (!isLocalhostEnvironment) {
+    return false;
+  }
+
+  if (workingGroupApiLoaded && !force) {
+    return true;
+  }
+
+  if (workingGroupApiLoadPromise && !force) {
+    return workingGroupApiLoadPromise;
+  }
+
+  workingGroupApiLoadPromise = (async () => {
+    workingGroupApiAbortController?.abort();
+    workingGroupApiAbortController = new AbortController();
+
+    try {
+      const response = await fetch(localWorkingGroupApiUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          page,
+          pageSize,
+          search,
+          filters: {
+            status: "",
+            region: compositionAppliedFilters.region === "all" ? "" : compositionAppliedFilters.region,
+            dateFrom: compositionAppliedFilters.dateFrom,
+            dateTo: compositionAppliedFilters.dateTo,
+          },
+        }),
+        signal: workingGroupApiAbortController.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (!payload?.ok || !Array.isArray(payload.items)) {
+        throw new Error(payload?.error || "Invalid payload");
+      }
+
+      workingGroupMembersData.splice(
+        0,
+        workingGroupMembersData.length,
+        ...payload.items.map((item) => ({
+          id: String(item.id ?? "-"),
+          date: String(item.date ?? "-"),
+          region: String(item.region ?? "-"),
+          status: String(item.status ?? "-"),
+        })),
+      );
+
+      workingGroupApiLoaded = true;
+      workingGroupListState.totalRows = Number(payload.total || payload.items.length || 0);
+      workingGroupListState.totalPages = Math.max(Number(payload.totalPages || 1), 1);
+      compositionTableState.currentPage = Math.max(Number(payload.page || page || 1), 1);
+      compositionTableState.pageSize = Math.max(Number(payload.pageSize || pageSize || 20), 1);
+      compositionTableState.totalPages = workingGroupListState.totalPages;
+      return true;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return false;
+      }
+
+      workingGroupApiLoaded = false;
+      console.warn("Local working-group API unavailable, demo data will be used.", error);
+      if (showDemoOnError) {
+        workingGroupListState.totalRows = workingGroupMembersData.length;
+        workingGroupListState.totalPages = Math.max(Math.ceil(workingGroupMembersData.length / compositionTableState.pageSize), 1);
+      }
+      return false;
+    } finally {
+      workingGroupApiAbortController = null;
+      workingGroupApiLoadPromise = null;
+    }
+  })();
+
+  return workingGroupApiLoadPromise;
 }
 
 function getCompositionActionIcon(label) {
@@ -6217,25 +6498,41 @@ function renderCompositionTable(type = "workingGroup") {
     compositionTableState.currentPage = 1;
   }
   currentCompositionType = type;
-  const rows = type === "commission" ? commissionMembersData : workingGroupMembersData;
+  const rows = type === "commission" ? commissionMembersData : type === "acts" ? actsData : workingGroupMembersData;
   const normalizedSearch = normalizeForLookup(compositionTableState.searchTerm);
-  const filteredRows = normalizedSearch
-    ? rows.filter((row) =>
-        normalizeForLookup(`${row.id} ${row.date} ${row.region} ${row.status}`).includes(normalizedSearch)
-      )
-    : rows;
+  const filteredRows = type === "acts"
+    ? rows
+    : rows.filter((row) => {
+        const matchesSearch = normalizedSearch
+          ? normalizeForLookup(`${row.id} ${row.date} ${row.region} ${row.status}`).includes(normalizedSearch)
+          : true;
+        if (!matchesSearch) {
+          return false;
+        }
+        if (compositionAppliedFilters.region !== "all" && row.region !== compositionAppliedFilters.region) {
+          return false;
+        }
+        const rowDateValue = parseTypedDate(row.date);
+        if (compositionAppliedFilters.dateFrom && rowDateValue && rowDateValue < compositionAppliedFilters.dateFrom) {
+          return false;
+        }
+        if (compositionAppliedFilters.dateTo && rowDateValue && rowDateValue > compositionAppliedFilters.dateTo) {
+          return false;
+        }
+        return true;
+      });
 
   if (!compositionTableBody) {
     return;
   }
 
-  const totalRows = filteredRows.length;
-  const totalPages = Math.max(Math.ceil(totalRows / compositionTableState.pageSize), 1);
+  const totalRows = type === "acts" ? actsListState.totalRows : filteredRows.length;
+  const totalPages = type === "acts" ? Math.max(actsListState.totalPages, 1) : Math.max(Math.ceil(totalRows / compositionTableState.pageSize), 1);
   compositionTableState.totalPages = totalPages;
   compositionTableState.currentPage = Math.min(compositionTableState.currentPage, totalPages);
   const startIndex = (compositionTableState.currentPage - 1) * compositionTableState.pageSize;
-  const endIndex = Math.min(startIndex + compositionTableState.pageSize, totalRows);
-  const visibleRows = filteredRows.slice(startIndex, endIndex);
+  const endIndex = type === "acts" ? Math.min(startIndex + filteredRows.length, totalRows) : Math.min(startIndex + compositionTableState.pageSize, totalRows);
+  const visibleRows = type === "acts" ? filteredRows : filteredRows.slice(startIndex, endIndex);
 
   compositionTableBody.innerHTML = visibleRows
     .map((row) => {
@@ -6346,11 +6643,84 @@ function syncCompositionRowsPerPageUi() {
   });
 }
 
+function getCompositionRegionOptions(type = currentCompositionType) {
+  const rows = type === "commission" ? commissionMembersData : workingGroupMembersData;
+  return Array.from(new Set(rows.map((row) => row.region)))
+    .sort((left, right) => {
+      const leftIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(left)) ?? Number.MAX_SAFE_INTEGER;
+      const rightIndex = canonicalRegionOrderMap.get(getCanonicalRegionOrderToken(right)) ?? Number.MAX_SAFE_INTEGER;
+      return leftIndex - rightIndex || String(left).localeCompare(String(right), "uz");
+    });
+}
+
+function getCompositionFilterValues() {
+  return {
+    region: compositionRegionFilter?.value ?? "all",
+    dateFrom: compositionDateFromFilter?.value ?? "",
+    dateTo: compositionDateToFilter?.value ?? "",
+  };
+}
+
+function updateCompositionFilterOptionSets() {
+  setCustomSelectOptions(compositionRegionFilter, getCompositionRegionOptions(), (value) => value || tr("common.all", "Barchasi"));
+}
+
+function updateCompositionFilterControls() {
+  updateCompositionFilterOptionSets();
+  const currentFilters = getCompositionFilterValues();
+  const hasPendingChanges = Object.keys(compositionDefaultFilters).some(
+    (key) => currentFilters[key] !== compositionAppliedFilters[key],
+  );
+  const hasAppliedFilters = Object.keys(compositionDefaultFilters).some(
+    (key) => compositionAppliedFilters[key] !== compositionDefaultFilters[key],
+  );
+
+  if (compositionApplyFilters) {
+    compositionApplyFilters.disabled = !hasPendingChanges;
+  }
+
+  if (compositionResetFilters) {
+    compositionResetFilters.disabled = !(hasAppliedFilters || hasPendingChanges);
+  }
+}
+
+function applyCompositionFilters() {
+  compositionAppliedFilters = getCompositionFilterValues();
+  compositionTableState.currentPage = 1;
+  updateCompositionFilterControls();
+  renderCompositionTable(currentCompositionType);
+  compositionFilterButton?.closest(".table-menu")?.classList.remove("table-menu--open");
+  compositionFilterButton?.setAttribute("aria-expanded", "false");
+}
+
+function resetCompositionFiltersState() {
+  if (compositionRegionFilter) {
+    compositionRegionFilter.value = compositionDefaultFilters.region;
+    compositionRegionFilter.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  if (compositionDateFromFilter) {
+    compositionDateFromFilter.value = compositionDefaultFilters.dateFrom;
+    compositionDateFromFilter.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  if (compositionDateToFilter) {
+    compositionDateToFilter.value = compositionDefaultFilters.dateTo;
+    compositionDateToFilter.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  compositionAppliedFilters = { ...compositionDefaultFilters };
+  customSelects.forEach(syncCustomSelectUi);
+  dateFields.forEach(syncDateFieldUi);
+  closeCalendar();
+  updateCompositionFilterControls();
+  renderCompositionTable(currentCompositionType);
+}
+
 function showCompositionView() {
   document.body.classList.remove("route-modules");
   sidebar?.removeAttribute("hidden");
   compositionListView?.removeAttribute("hidden");
   applicationsListView?.setAttribute("hidden", "");
+  applicationsReportView?.setAttribute("hidden", "");
   modulesView?.setAttribute("hidden", "");
   cabinetNavigatorView?.setAttribute("hidden", "");
   disabilityReportView?.setAttribute("hidden", "");
@@ -6430,11 +6800,12 @@ async function navigateToView(title) {
   const isApplicationsList = normalizedTitle === "Arizalar - Arizalar ro'yxati";
   const isApplicationsReport = normalizedTitle === "Hisobotlar - Arizalar bo'yicha hisobot";
   const isWorkingGroupComposition = normalizedTitle === "Arizalar - Ishchi guruhi tarkibi";
+  const isActsView = normalizedTitle === "Arizalar - Dalolatnomalar";
   const isCommissionComposition = normalizedTitle === "Arizalar - Komissiya tarkibi";
   const isDisabilityReport = normalizedTitle === "Hisobotlar - Nogironligi bo'lgan shaxslar soni bo'yicha hisobot";
   const isSocialNavigator = normalizedTitle === "Ijtimoiy navigator";
 
-  if (!isModulesHub && !isHomeView && !isApplicationsList && !isApplicationsReport && !isWorkingGroupComposition && !isCommissionComposition && !isDisabilityReport && !isSocialNavigator) {
+  if (!isModulesHub && !isHomeView && !isApplicationsList && !isApplicationsReport && !isWorkingGroupComposition && !isActsView && !isCommissionComposition && !isDisabilityReport && !isSocialNavigator) {
     showEmptyView(normalizedTitle.split(" - ").pop() ?? normalizedTitle);
     return;
   }
@@ -6474,14 +6845,88 @@ async function navigateToView(title) {
   }
 
   if (isWorkingGroupComposition) {
-    renderCompositionTable("workingGroup");
     showCompositionView();
+    try {
+      compositionTableState.currentPage = 1;
+      compositionTableState.searchTerm = "";
+      compositionAppliedFilters = { ...compositionDefaultFilters };
+      if (compositionSearch) {
+        compositionSearch.value = "";
+      }
+      if (compositionRegionFilter) {
+        compositionRegionFilter.value = "all";
+      }
+      if (compositionDateFromFilter) {
+        compositionDateFromFilter.value = "";
+      }
+      if (compositionDateToFilter) {
+        compositionDateToFilter.value = "";
+      }
+      syncCompositionRowsPerPageUi();
+      updateCompositionFilterControls();
+      if (isLocalhostEnvironment) {
+        await loadWorkingGroupFromLocalApi({
+          force: true,
+          showDemoOnError: true,
+          page: 1,
+          pageSize: compositionTableState.pageSize,
+          search: "",
+        });
+      }
+      renderCompositionTable("workingGroup");
+    } catch (error) {
+      console.error("Failed to render working group composition", error);
+      showToast("Xatolik", "Ishchi guruhi tarkibini ochishda xatolik yuz berdi.", "error");
+    }
+    return;
+  }
+
+  if (isActsView) {
+    showCompositionView();
+    try {
+      compositionTableState.currentPage = 1;
+      compositionTableState.searchTerm = "";
+      compositionAppliedFilters = { ...compositionDefaultFilters };
+      if (compositionSearch) {
+        compositionSearch.value = "";
+      }
+      if (compositionRegionFilter) {
+        compositionRegionFilter.value = "all";
+      }
+      if (compositionDateFromFilter) {
+        compositionDateFromFilter.value = "";
+      }
+      if (compositionDateToFilter) {
+        compositionDateToFilter.value = "";
+      }
+      syncCompositionRowsPerPageUi();
+      updateCompositionFilterControls();
+      if (isLocalhostEnvironment) {
+        await loadActsFromLocalApi({
+          force: true,
+          showDemoOnError: true,
+          page: 1,
+          pageSize: compositionTableState.pageSize,
+          search: "",
+        });
+      }
+      renderCompositionTable("acts");
+    } catch (error) {
+      console.error("Failed to render acts view", error);
+      showToast("Xatolik", "Dalolatnomalarni ochishda xatolik yuz berdi.", "error");
+    }
     return;
   }
 
   if (isCommissionComposition) {
-    renderCompositionTable("commission");
     showCompositionView();
+    try {
+      updateCompositionFilterControls();
+      renderCompositionTable("commission");
+    } catch (error) {
+      console.error("Failed to render commission composition", error);
+      showToast("Xatolik", "Komissiya tarkibini ochishda xatolik yuz berdi.", "error");
+    }
     return;
   }
 
@@ -6530,11 +6975,22 @@ cabinetNavigatorView?.addEventListener("click", async (event) => {
 });
 
 compositionFilterButton?.addEventListener("click", () => {
-  const title =
-    currentCompositionType === "commission"
-      ? "Komissiya tarkibi filtri"
-      : "Ishchi guruhi tarkibi filtri";
-  showToast(title, "Filter logikasi keyingi bosqichda backend bilan bog'lanadi.");
+  if (currentCompositionType === "acts") {
+    showToast("Dalolatnomalar filtri", "Filter logikasi keyingi bosqichda backend bilan bog'lanadi.");
+    return;
+  }
+
+  const filterContainer = compositionFilterButton.closest(".table-menu");
+  if (!filterContainer) {
+    return;
+  }
+
+  const isOpen = filterContainer.classList.contains("table-menu--open");
+  filterContainer.classList.toggle("table-menu--open", !isOpen);
+  compositionFilterButton.setAttribute("aria-expanded", String(!isOpen));
+  if (!isOpen) {
+    syncTableMenuMaxHeight(compositionFilterButton, compositionFilterMenu);
+  }
 });
 
 compositionCreateButton?.addEventListener("click", () => {
@@ -6545,9 +7001,48 @@ compositionCreateButton?.addEventListener("click", () => {
   showToast(title, "Yaratish formasi uchun starter view keyingi bosqichda qo'shiladi.");
 });
 
-compositionSearch?.addEventListener("input", () => {
+compositionSearch?.addEventListener("input", async () => {
+  if ((currentCompositionType === "acts" || currentCompositionType === "workingGroup") && isLocalhostEnvironment) {
+    return;
+  }
   compositionTableState.searchTerm = compositionSearch.value.trim();
   compositionTableState.currentPage = 1;
+  renderCompositionTable(currentCompositionType);
+});
+
+[compositionRegionFilter, compositionDateFromFilter, compositionDateToFilter].forEach((field) => {
+  field?.addEventListener("change", () => {
+    if (currentCompositionType === "acts") {
+      return;
+    }
+    updateCompositionFilterControls();
+  });
+});
+
+compositionSearch?.addEventListener("keydown", async (event) => {
+  if (event.key !== "Enter") {
+    return;
+  }
+  compositionTableState.searchTerm = compositionSearch.value.trim();
+  compositionTableState.currentPage = 1;
+  if (currentCompositionType === "workingGroup" && isLocalhostEnvironment) {
+    await loadWorkingGroupFromLocalApi({
+      force: true,
+      showDemoOnError: true,
+      page: 1,
+      pageSize: compositionTableState.pageSize,
+      search: compositionTableState.searchTerm,
+    });
+  }
+  if (currentCompositionType === "acts" && isLocalhostEnvironment) {
+    await loadActsFromLocalApi({
+      force: true,
+      showDemoOnError: true,
+      page: 1,
+      pageSize: compositionTableState.pageSize,
+      search: compositionTableState.searchTerm,
+    });
+  }
   renderCompositionTable(currentCompositionType);
 });
 
@@ -6568,10 +7063,15 @@ compositionTableBody?.addEventListener("click", (event) => {
     menu.querySelector(".row-menu__toggle")?.setAttribute("aria-expanded", "false");
   });
 
+  if (["Tasdiqlash", "Bekor qilish"].includes(action)) {
+    openCompositionConfirmModal(action, itemId, currentCompositionType);
+    return;
+  }
+
   showToast(action, `${itemId} bo'yicha "${action}" amali demo rejimda tayyorlandi.`);
 });
 
-compositionPaginationPages?.addEventListener("click", (event) => {
+compositionPaginationPages?.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-composition-page]");
   if (!(button instanceof HTMLButtonElement)) {
     return;
@@ -6583,32 +7083,71 @@ compositionPaginationPages?.addEventListener("click", (event) => {
   }
 
   compositionTableState.currentPage = nextPage;
+  if (currentCompositionType === "workingGroup" && isLocalhostEnvironment) {
+    await loadWorkingGroupFromLocalApi({ force: true, showDemoOnError: true, page: nextPage, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
+  if (currentCompositionType === "acts" && isLocalhostEnvironment) {
+    await loadActsFromLocalApi({ force: true, showDemoOnError: true, page: nextPage, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
   renderCompositionTable(currentCompositionType);
 });
 
-compositionPaginationPrev?.addEventListener("click", () => {
+compositionPaginationPrev?.addEventListener("click", async () => {
   if (compositionTableState.currentPage <= 1) {
     return;
   }
 
   compositionTableState.currentPage -= 1;
+  if (currentCompositionType === "workingGroup" && isLocalhostEnvironment) {
+    await loadWorkingGroupFromLocalApi({ force: true, showDemoOnError: true, page: compositionTableState.currentPage, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
+  if (currentCompositionType === "acts" && isLocalhostEnvironment) {
+    await loadActsFromLocalApi({ force: true, showDemoOnError: true, page: compositionTableState.currentPage, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
   renderCompositionTable(currentCompositionType);
 });
 
-compositionPaginationNext?.addEventListener("click", () => {
+compositionPaginationNext?.addEventListener("click", async () => {
   if (compositionTableState.currentPage >= compositionTableState.totalPages) {
     return;
   }
 
   compositionTableState.currentPage += 1;
+  if (currentCompositionType === "workingGroup" && isLocalhostEnvironment) {
+    await loadWorkingGroupFromLocalApi({ force: true, showDemoOnError: true, page: compositionTableState.currentPage, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
+  if (currentCompositionType === "acts" && isLocalhostEnvironment) {
+    await loadActsFromLocalApi({ force: true, showDemoOnError: true, page: compositionTableState.currentPage, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
   renderCompositionTable(currentCompositionType);
 });
 
-compositionRowsPerPage?.addEventListener("change", () => {
+compositionRowsPerPage?.addEventListener("change", async () => {
   compositionTableState.pageSize = Number(compositionRowsPerPage.value || "20");
   compositionTableState.currentPage = 1;
   syncCompositionRowsPerPageUi();
+  if (currentCompositionType === "workingGroup" && isLocalhostEnvironment) {
+    await loadWorkingGroupFromLocalApi({ force: true, showDemoOnError: true, page: 1, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
+  if (currentCompositionType === "acts" && isLocalhostEnvironment) {
+    await loadActsFromLocalApi({ force: true, showDemoOnError: true, page: 1, pageSize: compositionTableState.pageSize, search: compositionTableState.searchTerm });
+  }
   renderCompositionTable(currentCompositionType);
+});
+
+compositionApplyFilters?.addEventListener("click", () => {
+  applyCompositionFilters();
+});
+
+compositionResetFilters?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  resetCompositionFiltersState();
+});
+
+compositionFilterMenuClose?.addEventListener("click", () => {
+  compositionFilterButton?.closest(".table-menu")?.classList.remove("table-menu--open");
+  compositionFilterButton?.setAttribute("aria-expanded", "false");
 });
 
 function formatSupportTimestamp() {
@@ -6670,6 +7209,9 @@ function getApplicationRegionLabel(value) {
 }
 
 function getApplicationStepLabel(value) {
+  if (["171", "172", "accepted"].includes(String(value))) {
+    return tl(applicationStepLabels.accepted);
+  }
   return tl(applicationStepLabels[value] ?? value);
 }
 
@@ -6994,7 +7536,7 @@ function updateApplicationFilterOptionSets() {
           return ["112", "131", "133", "134"].includes(item.value);
         }
         if (statusValue === "qabul qilingan") {
-          return ["171", "172"].includes(item.value);
+          return ["accepted"].includes(item.value);
         }
         if (statusValue === "rad etilgan") {
           return ["132", "136"].includes(item.value);
@@ -7097,6 +7639,7 @@ function getApplicationFilterActiveCount() {
 function updateApplicationFilterControls() {
   const activeCount = getApplicationFilterActiveCount();
   const currentFilters = getApplicationFilterValues();
+  const hasSearch = Boolean(applicationSearch?.value.trim());
   const hasPendingChanges = Object.keys(applicationDefaultFilters).some(
     (key) => currentFilters[key] !== applicationAppliedFilters[key],
   );
@@ -7109,7 +7652,7 @@ function updateApplicationFilterControls() {
   }
 
   if (resetFilters) {
-    resetFilters.disabled = !(hasAppliedFilters || hasPendingChanges);
+    resetFilters.disabled = !(hasAppliedFilters || hasPendingChanges || hasSearch);
   }
 
   if (filterToggle) {
@@ -7287,7 +7830,6 @@ function resetApplicationsReportFiltersState() {
   resetSelectValue(applicationsReportAgeFilter, applicationsReportDefaultFilters.age);
   resetDateValue(applicationsReportDateFromFilter, applicationsReportDefaultFilters.dateFrom);
   resetDateValue(applicationsReportDateToFilter, applicationsReportDefaultFilters.dateTo);
-
   applicationsReportAppliedFilters = { ...applicationsReportDefaultFilters };
   applicationsReportState.level = "region";
   applicationsReportState.selectedRegionKey = null;
@@ -7708,6 +8250,13 @@ document.addEventListener("click", (event) => {
     }
   }
 
+  if (compositionFilterButton && compositionFilterMenu) {
+    const compositionFilterContainer = compositionFilterButton.closest(".table-menu");
+    if (compositionFilterContainer && !compositionFilterContainer.contains(target)) {
+      // Composition filter stays open until user explicitly closes it.
+    }
+  }
+
   if (rowsPerPageMenu && !rowsPerPageMenu.contains(target)) {
     rowsPerPageMenu.classList.remove("pagination-select--open");
     rowsPerPageTrigger?.setAttribute("aria-expanded", "false");
@@ -7896,7 +8445,7 @@ function applyTableFilters() {
     const matchesSearch = !searchValue || rowSearch.includes(searchValue);
     const matchesStatus = statusValue === "all" || rowStatus === statusValue;
     const matchesRegion = regionValue === "all" || rowRegion === regionValue;
-    const matchesStep = stepValue === "all" || rowStep === stepValue;
+    const matchesStep = stepValue === "all" || (stepValue === "accepted" ? ["171", "172"].includes(rowStep) : rowStep === stepValue);
     const matchesDistrict = districtValue === "all" || rowDistrict === districtValue;
     const matchesOrganizationType = organizationTypeValue === "all" || rowOrganizationType === organizationTypeValue;
     const matchesOrganization = organizationValue === "all" || rowOrganization === organizationValue;
@@ -8013,7 +8562,22 @@ function resetAndApplyFilters() {
   applyTableFilters();
 }
 
-applicationSearch?.addEventListener("input", resetAndApplyFilters);
+applicationSearch?.addEventListener("input", () => {
+  updateApplicationFilterControls();
+  if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+    return;
+  }
+  resetAndApplyFilters();
+});
+
+applicationSearch?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") {
+    return;
+  }
+  if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+    resetAndApplyFilters();
+  }
+});
 rowsPerPage?.addEventListener("change", () => {
   tableState.currentPage = 1;
   if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
@@ -8653,6 +9217,7 @@ reportResetFilters?.addEventListener("click", () => {
   if (reportGenderFilter) reportGenderFilter.value = "all";
   if (reportAgeFilter) reportAgeFilter.value = "all";
   if (reportDateFilter) reportDateFilter.value = "";
+  if (reportSearchInput) reportSearchInput.value = "";
   reportState.level = "region";
   reportState.selectedRegionKey = null;
   customSelects.forEach(syncCustomSelectUi);
@@ -8900,17 +9465,23 @@ detailRejectButton?.addEventListener("click", () => {
 });
 
 confirmModalApprove?.addEventListener("click", () => {
-  if (!confirmState.action || !confirmState.applicationId) {
+  if (!confirmState.action || (!confirmState.applicationId && !confirmState.itemId)) {
     return;
   }
 
-  const { action, applicationId } = confirmState;
-  const actionLabel = getActionLabel(action);
+  const { action, applicationId, context, itemId, compositionType } = confirmState;
+  const actionLabel = context === "composition" ? (confirmState.approveLabel || action) : getActionLabel(action);
   confirmModalApprove.disabled = true;
   confirmModalApprove.innerHTML = `<span class="confirm-modal__button-spinner" aria-hidden="true"></span><span>${tr("common.submitting", "Yuborilmoqda...")}</span>`;
   confirmModalCancel?.setAttribute("disabled", "true");
 
   window.setTimeout(() => {
+    if (context === "composition") {
+      closeConfirmModal();
+      applyCompositionConfirmedAction(action, itemId, compositionType || currentCompositionType);
+      return;
+    }
+
     closeConfirmModal();
     closeDetailModal();
     if (applicationId === "AR-000123") {
@@ -8935,6 +9506,9 @@ confirmModalApprove?.addEventListener("click", () => {
 });
 
 resetFilters?.addEventListener("click", () => {
+  if (applicationSearch) {
+    applicationSearch.value = "";
+  }
   if (statusFilter) {
     statusFilter.value = "all";
   }

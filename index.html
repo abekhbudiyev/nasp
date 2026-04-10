@@ -857,10 +857,6 @@
           </div>
           <div class="table-pagination">
             <div class="table-pagination__left">
-              
-            </div>
-            <div class="table-pagination__info" id="paginationInfo">1-12 / 12 ta yozuv</div>
-            <div class="table-pagination__right">
               <div class="pagination-select-group">
                 <span class="pagination-select__hint">Sahifada</span>
                 <div class="pagination-select" id="rowsPerPageMenu">
@@ -885,6 +881,9 @@
                   </select>
                 </div>
               </div>
+              <div class="table-pagination__info" id="paginationInfo">1-12 / 12 ta yozuv</div>
+            </div>
+            <div class="table-pagination__right">
               <button class="pagination__button pagination__button--icon" id="paginationPrev" type="button" disabled aria-label="Oldingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <div class="pagination" id="paginationPages" aria-label="Sahifalar"></div>
               <button class="pagination__button pagination__button--icon" id="paginationNext" type="button" aria-label="Keyingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -903,9 +902,62 @@
               </div>
             </div>
             <div class="filter-panel__actions">
-              <button class="table-action table-action--icon" id="compositionFilterButton" type="button" aria-label="Filter">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-              </button>
+              <div class="table-menu">
+                <button class="table-action table-action--icon" id="compositionFilterButton" type="button" aria-label="Filter" aria-expanded="false">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                </button>
+                <div class="table-dropdown table-dropdown--filters" id="compositionFilterMenu">
+                  <div class="application-filter-panel">
+                    <div class="application-filter-panel__header">
+                      <strong class="application-filter-panel__title">Filterlar</strong>
+                      <button class="application-filter-panel__close" id="compositionFilterMenuClose" type="button" aria-label="Filter oynasini yopish">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="application-filter-grid report-filter-panel">
+                      <label class="filter-stack">
+                        <span>Hudud</span>
+                        <div class="custom-select" data-custom-select>
+                          <button class="custom-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+                            <span>Barchasi</span>
+                            <svg viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+                          <div class="custom-select__dropdown" role="listbox">
+                            <button class="custom-select__option custom-select__option--active" type="button" role="option" data-value="all" aria-selected="true">Barchasi</button>
+                          </div>
+                          <select class="custom-select__native" id="compositionRegionFilter" aria-hidden="true" tabindex="-1">
+                            <option value="all">Barchasi</option>
+                          </select>
+                        </div>
+                      </label>
+                      <label class="filter-stack">
+                        <span>Boshlanish sanasi</span>
+                        <div class="custom-date" data-date-field>
+                          <input class="custom-date__native" id="compositionDateFromFilter" type="date" aria-hidden="true" tabindex="-1">
+                          <input class="custom-date__text-input" id="compositionDateFromText" type="text" inputmode="numeric" maxlength="10" placeholder="Sanani kiriting" aria-label="Boshlanish sanasi">
+                          <button class="custom-date__button" type="button" aria-label="Kalendarni ochish">
+                            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                          </button>
+                        </div>
+                      </label>
+                      <label class="filter-stack">
+                        <span>Tugash sanasi</span>
+                        <div class="custom-date" data-date-field>
+                          <input class="custom-date__native" id="compositionDateToFilter" type="date" aria-hidden="true" tabindex="-1">
+                          <input class="custom-date__text-input" id="compositionDateToText" type="text" inputmode="numeric" maxlength="10" placeholder="Sanani kiriting" aria-label="Tugash sanasi">
+                          <button class="custom-date__button" type="button" aria-label="Kalendarni ochish">
+                            <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M8 3.5v3M16 3.5v3M4 9.5h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                          </button>
+                        </div>
+                      </label>
+                    </div>
+                    <div class="application-filter-actions">
+                      <button class="table-action table-action--block" id="compositionApplyFilters" type="button" disabled>Qo'llash</button>
+                      <button class="table-action table-action--block" id="compositionResetFilters" type="button" disabled>Tozalash</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button class="table-action table-action--primary" id="compositionCreateButton" type="button">Yaratish</button>
             </div>
           </div>
@@ -925,9 +977,6 @@
           </div>
           <div class="table-pagination">
             <div class="table-pagination__left">
-              <div class="table-pagination__info" id="compositionPaginationInfo">1-6 / 6 ta yozuv</div>
-            </div>
-            <div class="table-pagination__right">
               <div class="pagination-select-group">
                 <span class="pagination-select__hint">Sahifada</span>
                 <div class="pagination-select" id="compositionRowsPerPageMenu">
@@ -952,6 +1001,9 @@
                   </select>
                 </div>
               </div>
+              <div class="table-pagination__info" id="compositionPaginationInfo">1-6 / 6 ta yozuv</div>
+            </div>
+            <div class="table-pagination__right">
               <button class="pagination__button pagination__button--icon" id="compositionPaginationPrev" type="button" disabled aria-label="Oldingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <div class="pagination" id="compositionPaginationPages" aria-label="Sahifalar"></div>
               <button class="pagination__button pagination__button--icon" id="compositionPaginationNext" type="button" aria-label="Keyingi sahifa"><svg viewBox="0 0 24 24" fill="none"><path d="m9.5 6 6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>

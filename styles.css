@@ -5899,7 +5899,8 @@ body.theme-dark .detail-summary-chip {
   }
 
   .pagination-select-group {
-    margin-left: auto;
+    margin-left: 0;
+    margin-right: auto;
   }
 }
 
@@ -6043,11 +6044,11 @@ body.theme-dark .detail-summary-chip {
   }
 
   #applicationsListView .table-pagination__right {
-    justify-content: center;
+    justify-content: flex-end;
   }
 
   #applicationsListView .pagination {
-    justify-content: center;
+    justify-content: flex-end;
   }
 
   #applicationsListView .table-pagination {
