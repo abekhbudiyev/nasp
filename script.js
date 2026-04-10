@@ -49,7 +49,12 @@ const totalApplicationsShare = document.getElementById("totalApplicationsShare")
 const processApplicationsShare = document.getElementById("processApplicationsShare");
 const acceptedApplicationsShare = document.getElementById("acceptedApplicationsShare");
 const rejectedApplicationsShare = document.getElementById("rejectedApplicationsShare");
+const isLocalhostEnvironment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const localApplicationsApiUrl = "http://localhost:3000/api/mrv/applications";
 let applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr"));
+let applicationsApiLoadPromise = null;
+let applicationsApiLoaded = false;
+let applicationsApiAbortController = null;
 const filterToggle = document.getElementById("filterToggle");
 const filterMenu = document.getElementById("filterMenu");
 const filterMenuClose = document.getElementById("filterMenuClose");
@@ -223,7 +228,7 @@ const calendarLocaleLabels = {
     weekdays: ["date.week.mo", "date.week.tu", "date.week.we", "date.week.th", "date.week.fr", "date.week.sa", "date.week.su"],
   },
 };
-const tableState = { currentPage: 1, totalPages: 1, filteredRows: [] };
+const tableState = { currentPage: 1, totalPages: 1, filteredRows: [], serverMode: false, serverTotalItems: 0, serverStats: null };
 const calendarState = { activeField: null, viewDate: null };
 const confirmState = { action: "", applicationId: "" };
 let supportTicketCounter = 1025;
@@ -3765,7 +3770,7 @@ const applicationStaticFilterOptions = {
     { value: "1", label: "1" },
     { value: "2", label: "2" },
     { value: "3", label: "3" },
-    { value: "nbb", label: "NBB" },
+    { value: "4", label: "NBB" },
   ],
   genders: [
     { value: "erkak", label: "Erkak" },
@@ -3944,11 +3949,13 @@ function buildApplicationTableRow(item) {
   const organizationValue = String(item.organizationId || organizationLabel).trim();
   const organizationTypeValue = String(item.organizationTypeId || "").trim();
   const numericSeed = Number.parseInt(String(item.id || "").replace(/\D/g, ""), 10) || 0;
-  const genderLabel = inferGenderFromPersonName(item.fullName || "");
-  const genderValue = genderLabel.toLowerCase();
-  const ageGroupValue = ["0-3", "3-7", "7-18", "18-55/60", "55/60+"][numericSeed % 5];
+  const genderLabel = item.genderValue
+    ? getApplicationGenderLabel(item.genderValue)
+    : inferGenderFromPersonName(item.fullName || "");
+  const genderValue = String(item.genderValue || genderLabel.toLowerCase()).trim();
+  const ageGroupValue = String(item.ageGroupValue || ["0-3", "3-7", "7-18", "18-55/60", "55/60+"][numericSeed % 5]).trim();
   const diagnosisValue = getApplicationDiagnosisValue(item, numericSeed);
-  const disabilityGroupValue = getApplicationDisabilityGroupValue(item, numericSeed, ageGroupValue);
+  const disabilityGroupValue = String(item.disabilityGroupValue || getApplicationDisabilityGroupValue(item, numericSeed, ageGroupValue)).trim();
   const [dayPart = "", monthPart = "", yearPart = ""] = String(item.date || "").split(".");
   const dateIso = dayPart && monthPart && yearPart
     ? `${yearPart}-${monthPart.padStart(2, "0")}-${dayPart.padStart(2, "0")}`
@@ -4005,6 +4012,181 @@ function ensureApplicationRowsSeeded() {
   tbody.dataset.seeded = "true";
   applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr:not(.table-empty)"));
   rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+}
+
+function replaceApplicationTableRows(items) {
+  const tbody = document.querySelector("#applicationsTable tbody");
+  const emptyRow = document.getElementById("tableEmptyRow");
+  if (!tbody || !emptyRow) {
+    return;
+  }
+
+  Array.from(tbody.querySelectorAll("tr:not(.table-empty)")).forEach((row) => {
+    row.remove();
+  });
+
+  items.forEach((item) => {
+    emptyRow.insertAdjacentHTML("beforebegin", buildApplicationTableRow(item));
+  });
+
+  tbody.dataset.seeded = "true";
+  tbody.dataset.source = items.length ? "api" : "api-empty";
+  applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr:not(.table-empty)"));
+  rowMenuToggles = document.querySelectorAll(".row-menu__toggle");
+}
+
+function refreshApplicationsDataUi() {
+  bindRowMenuToggles();
+  enrichApplicationRows();
+  updateApplicationFilterOptionSets();
+  updateApplicationFilterControls();
+  updateApplicationsReportFilterControls();
+  applyTableFilters();
+  renderApplicationsReportTable();
+  applyReportFilters();
+  enhanceProcessRowActions();
+  enhanceApplicationViewActions();
+}
+
+function hasActiveApplicationSearchOrFilters() {
+  const hasSearch = Boolean(applicationSearch?.value.trim());
+  const hasAppliedFilters = Object.keys(applicationDefaultFilters).some(
+    (key) => applicationAppliedFilters[key] !== applicationDefaultFilters[key],
+  );
+  return hasSearch || hasAppliedFilters;
+}
+
+function hasLocalOnlyApplicationFilters() {
+  return Boolean(
+    applicationAppliedFilters.diagnosis !== applicationDefaultFilters.diagnosis
+    || applicationAppliedFilters.disabilityGroup !== applicationDefaultFilters.disabilityGroup
+    || applicationAppliedFilters.gender !== applicationDefaultFilters.gender
+    || applicationAppliedFilters.age !== applicationDefaultFilters.age,
+  );
+}
+
+function normalizeApplicationPayloadFilterValue(value) {
+  if (value === "all" || value === "") {
+    return null;
+  }
+
+  return value ?? null;
+}
+
+function mapApplicationPayloadFilterValue(key, value) {
+  const normalizedValue = normalizeApplicationPayloadFilterValue(value);
+  if (normalizedValue == null) {
+    return null;
+  }
+
+  if (key === "status") {
+    if (normalizedValue === "jarayonda") return "1";
+    if (normalizedValue === "qabul qilingan") return "2";
+    if (normalizedValue === "rad etilgan") return "3";
+  }
+
+  if (key === "gender") {
+    if (normalizedValue === "erkak") return "1";
+    if (normalizedValue === "ayol") return "2";
+  }
+
+  if (key === "age") {
+    if (normalizedValue === "0-3") return "1";
+    if (normalizedValue === "3-7") return "2";
+    if (normalizedValue === "7-18") return "3";
+    if (normalizedValue === "18-55/60") return "4";
+    if (normalizedValue === "55/60+") return "5";
+  }
+
+  return normalizedValue;
+}
+
+function buildLocalApplicationsApiPayload() {
+  return {
+    route: getCurrentRoutePath(),
+    requestedAt: new Date().toISOString(),
+    page: tableState.currentPage,
+    pageSize: Number(rowsPerPage?.value ?? "20"),
+    search: applicationSearch?.value.trim() || null,
+    filters: Object.fromEntries(
+      Object.entries(applicationAppliedFilters).map(([key, value]) => [
+        key,
+        mapApplicationPayloadFilterValue(key, value),
+      ]),
+    ),
+  };
+}
+
+async function loadApplicationsFromLocalApi({ force = false, showDemoOnError = false } = {}) {
+  if (!isLocalhostEnvironment) {
+    return false;
+  }
+
+  if (applicationsApiLoaded && !force) {
+    return true;
+  }
+
+  if (applicationsApiLoadPromise && !force) {
+    return applicationsApiLoadPromise;
+  }
+
+  applicationsApiLoadPromise = (async () => {
+    applicationsApiAbortController?.abort();
+    applicationsApiAbortController = new AbortController();
+
+    try {
+      const response = await fetch(localApplicationsApiUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(buildLocalApplicationsApiPayload()),
+        signal: applicationsApiAbortController.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (!payload?.ok || !Array.isArray(payload.items)) {
+        throw new Error(payload?.error || "Invalid payload");
+      }
+
+      tableState.serverMode = true;
+      tableState.serverTotalItems = Number(payload.total || payload.items.length || 0);
+      tableState.serverStats = payload.stats || null;
+      tableState.totalPages = Math.max(Number(payload.totalPages || 1), 1);
+      tableState.currentPage = Math.max(Number(payload.page || tableState.currentPage || 1), 1);
+      replaceApplicationTableRows(payload.items);
+      refreshApplicationsDataUi();
+      applicationsApiLoaded = true;
+      return true;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return false;
+      }
+
+      applicationsApiLoaded = false;
+      tableState.serverMode = false;
+      tableState.serverTotalItems = 0;
+      tableState.serverStats = null;
+      console.warn("Local applications API unavailable, demo data will be used.", error);
+
+      if (showDemoOnError) {
+        ensureApplicationRowsSeeded();
+        refreshApplicationsDataUi();
+      }
+
+      return false;
+    } finally {
+      applicationsApiAbortController = null;
+      applicationsApiLoadPromise = null;
+    }
+  })();
+
+  return applicationsApiLoadPromise;
 }
 
 const reportColumnKeys = [
@@ -6268,6 +6450,9 @@ async function navigateToView(title) {
   }
 
   if (isApplicationsList) {
+    if (isLocalhostEnvironment) {
+      await loadApplicationsFromLocalApi({ showDemoOnError: true });
+    }
     showApplicationsView();
     return;
   }
@@ -6735,6 +6920,9 @@ function enrichApplicationRows() {
       ?? districtSecondary?.textContent?.trim()
       ?? "";
     const status = row.getAttribute("data-status") ?? "";
+    const existingDistrictId = String(row.getAttribute("data-district") ?? "").trim();
+    const existingOrganizationTypeId = String(row.getAttribute("data-organization-type") ?? "").trim();
+    const existingOrganizationId = String(row.getAttribute("data-organization") ?? "").trim();
     const organizationTypeMatch = organization.match(/\(([^)]+)\)\s*$/);
     const organizationType = organizationTypeMatch?.[1]?.trim().toLowerCase() ?? "";
     const stepValue = normalizeApplicationStepValue(metadata.step || getDefaultStepForStatus(status), "");
@@ -6755,13 +6943,13 @@ function enrichApplicationRows() {
     if (stepValue) {
       row.setAttribute("data-step", stepValue);
     }
-    if (district) {
+    if (!existingDistrictId && district) {
       row.setAttribute("data-district", district.toLowerCase());
     }
-    if (organizationType) {
+    if (!existingOrganizationTypeId && organizationType) {
       row.setAttribute("data-organization-type", organizationType);
     }
-    if (organization) {
+    if (!existingOrganizationId && organization) {
       row.setAttribute("data-organization", organization.toLowerCase());
       row.setAttribute(
         "data-search",
@@ -7668,6 +7856,7 @@ function applyTableFilters() {
   const dateFromValue = applicationAppliedFilters.dateFrom;
   const dateToValue = applicationAppliedFilters.dateTo;
   const limit = Number(rowsPerPage?.value ?? "20");
+  const useServerPagination = tableState.serverMode && !hasLocalOnlyApplicationFilters();
   const matchedRows = [];
   let processCount = 0;
   let acceptedCount = 0;
@@ -7734,48 +7923,65 @@ function applyTableFilters() {
   tableState.filteredRows = matchedRows;
   let startIndex = 0;
   let endIndex = matchedRows.length;
-  tableState.totalPages = Math.max(1, Math.ceil(matchedRows.length / limit));
-  tableState.currentPage = Math.min(tableState.currentPage, tableState.totalPages);
-  startIndex = (tableState.currentPage - 1) * limit;
-  endIndex = startIndex + limit;
-  matchedRows.slice(startIndex, endIndex).forEach((row) => {
-    row.style.display = "";
-  });
+  if (useServerPagination) {
+    tableState.totalPages = Math.max(1, Math.ceil((tableState.serverTotalItems || 0) / limit));
+    startIndex = matchedRows.length > 0 ? ((tableState.currentPage - 1) * limit) : 0;
+    endIndex = startIndex + matchedRows.length;
+    matchedRows.forEach((row) => {
+      row.style.display = "";
+    });
+  } else {
+    tableState.totalPages = Math.max(1, Math.ceil(matchedRows.length / limit));
+    tableState.currentPage = Math.min(tableState.currentPage, tableState.totalPages);
+    startIndex = (tableState.currentPage - 1) * limit;
+    endIndex = startIndex + limit;
+    matchedRows.slice(startIndex, endIndex).forEach((row) => {
+      row.style.display = "";
+    });
+  }
 
   updateApplicationsEmptyState(matchedRows.length);
 
-  const totalBase = matchedRows.length || 1;
+  const totalCount = useServerPagination ? tableState.serverTotalItems : matchedRows.length;
+  const statsSource = useServerPagination && tableState.serverStats
+    ? tableState.serverStats
+    : {
+        process: processCount,
+        accepted: acceptedCount,
+        rejected: rejectedCount,
+      };
+  const totalBase = totalCount || 1;
   const percent = (value) => `${Math.round((value / totalBase) * 100)}%`;
   if (totalApplicationsStat) {
-    totalApplicationsStat.textContent = String(matchedRows.length);
+    totalApplicationsStat.textContent = String(totalCount);
   }
   if (totalApplicationsShare) {
     totalApplicationsShare.textContent = totalBase > 0 ? "100%" : "0%";
   }
   if (processApplicationsStat) {
-    processApplicationsStat.textContent = String(processCount);
+    processApplicationsStat.textContent = String(statsSource.process || 0);
   }
   if (processApplicationsShare) {
-    processApplicationsShare.textContent = totalBase > 0 ? percent(processCount) : "0%";
+    processApplicationsShare.textContent = totalBase > 0 ? percent(Number(statsSource.process || 0)) : "0%";
   }
   if (acceptedApplicationsStat) {
-    acceptedApplicationsStat.textContent = String(acceptedCount);
+    acceptedApplicationsStat.textContent = String(statsSource.accepted || 0);
   }
   if (acceptedApplicationsShare) {
-    acceptedApplicationsShare.textContent = totalBase > 0 ? percent(acceptedCount) : "0%";
+    acceptedApplicationsShare.textContent = totalBase > 0 ? percent(Number(statsSource.accepted || 0)) : "0%";
   }
   if (rejectedApplicationsStat) {
-    rejectedApplicationsStat.textContent = String(rejectedCount);
+    rejectedApplicationsStat.textContent = String(statsSource.rejected || 0);
   }
   if (rejectedApplicationsShare) {
-    rejectedApplicationsShare.textContent = totalBase > 0 ? percent(rejectedCount) : "0%";
+    rejectedApplicationsShare.textContent = totalBase > 0 ? percent(Number(statsSource.rejected || 0)) : "0%";
   }
 
   if (paginationInfo) {
     const from = matchedRows.length > 0 ? startIndex + 1 : 0;
-    const to = matchedRows.length > 0 ? Math.min(endIndex, matchedRows.length) : 0;
-    paginationInfo.textContent = matchedRows.length > 0
-      ? formatPaginationInfo(from, to, matchedRows.length)
+    const to = matchedRows.length > 0 ? Math.min(endIndex, totalCount) : 0;
+    paginationInfo.textContent = totalCount > 0
+      ? formatPaginationInfo(from, to, totalCount)
       : formatPaginationInfo(0, 0, 0);
   }
 
@@ -7784,11 +7990,22 @@ function applyTableFilters() {
 
 function resetAndApplyFilters() {
   tableState.currentPage = 1;
+  if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+    loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+    return;
+  }
   applyTableFilters();
 }
 
 applicationSearch?.addEventListener("input", resetAndApplyFilters);
-rowsPerPage?.addEventListener("change", resetAndApplyFilters);
+rowsPerPage?.addEventListener("change", () => {
+  tableState.currentPage = 1;
+  if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+    loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+    return;
+  }
+  applyTableFilters();
+});
 
 downloadActions.forEach((button) => {
   button.addEventListener("click", () => {
@@ -8029,7 +8246,11 @@ applyFilters?.addEventListener("click", () => {
   applicationAppliedFilters = { ...getApplicationFilterValues() };
   updateApplicationFilterControls();
   tableState.currentPage = 1;
-  applyTableFilters();
+  if (tableState.serverMode) {
+    loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+  } else {
+    applyTableFilters();
+  }
   filterToggle?.closest(".table-menu")?.classList.remove("table-menu--open");
   filterToggle?.setAttribute("aria-expanded", "false");
 });
@@ -8073,7 +8294,12 @@ if (rowsPerPageMenu && rowsPerPageTrigger && rowsPerPage) {
 
       rowsPerPage.value = value;
       syncRowsPerPageUi();
-      resetAndApplyFilters();
+      tableState.currentPage = 1;
+      if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+        loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+      } else {
+        applyTableFilters();
+      }
       rowsPerPageMenu.classList.remove("pagination-select--open");
       rowsPerPageTrigger.setAttribute("aria-expanded", "false");
     });
@@ -8736,7 +8962,11 @@ resetFilters?.addEventListener("click", () => {
   tableState.currentPage = 1;
   closeCalendar();
   updateApplicationFilterControls();
-  applyTableFilters();
+  if (tableState.serverMode) {
+    loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+  } else {
+    applyTableFilters();
+  }
 });
 
 tableEmptyAction?.addEventListener("click", () => {
@@ -8748,11 +8978,19 @@ tableEmptyAction?.addEventListener("click", () => {
 
 paginationPrev?.addEventListener("click", () => {
   tableState.currentPage = Math.max(1, tableState.currentPage - 1);
+  if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+    loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+    return;
+  }
   applyTableFilters();
 });
 
 paginationNext?.addEventListener("click", () => {
   tableState.currentPage = Math.min(tableState.totalPages, tableState.currentPage + 1);
+  if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+    loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+    return;
+  }
   applyTableFilters();
 });
 
@@ -8768,6 +9006,10 @@ paginationPages?.addEventListener("click", (event) => {
   }
 
   tableState.currentPage = page;
+  if (tableState.serverMode && !hasLocalOnlyApplicationFilters()) {
+    loadApplicationsFromLocalApi({ force: true, showDemoOnError: true });
+    return;
+  }
   applyTableFilters();
 });
 
@@ -8820,13 +9062,6 @@ if (getCurrentRoutePath() === "/auth" || !isAuthenticated()) {
   showAppView();
 }
 syncPasswordToggleUi();
-bindRowMenuToggles();
-enrichApplicationRows();
-updateApplicationFilterOptionSets();
-updateApplicationFilterControls();
-updateApplicationsReportFilterControls();
-applyTableFilters();
-applyReportFilters();
 syncCompositionRowsPerPageUi();
 syncApplicationsReportColumnControls();
 applyApplicationsReportColumnVisibility();
@@ -8834,8 +9069,8 @@ syncReportFrozenColumn();
 syncRowsPerPageUi();
 customSelects.forEach(syncCustomSelectUi);
 dateFields.forEach(syncDateFieldUi);
-enhanceProcessRowActions();
-enhanceApplicationViewActions();
+refreshApplicationsDataUi();
+loadApplicationsFromLocalApi();
 
 async function applyRouteFromHash() {
   const currentPath = getCurrentRoutePath();

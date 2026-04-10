@@ -5,3 +5,4 @@ src/
 vuetify/
 mrv/
 .DS_Store
+.env
