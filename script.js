@@ -50,7 +50,7 @@ const processApplicationsShare = document.getElementById("processApplicationsSha
 const acceptedApplicationsShare = document.getElementById("acceptedApplicationsShare");
 const rejectedApplicationsShare = document.getElementById("rejectedApplicationsShare");
 const isLocalhostEnvironment = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-const localApplicationsApiUrl = "http://localhost:3000/api/mrv/applications";
+const localApplicationsApiUrl = `${window.location.origin}/api/mrv/applications`;
 let applicationRows = Array.from(document.querySelectorAll("#applicationsTable tbody tr"));
 let applicationsApiLoadPromise = null;
 let applicationsApiLoaded = false;
@@ -112,6 +112,7 @@ const compositionListView = document.getElementById("compositionListView");
 const compositionTableBody = document.getElementById("compositionTableBody");
 const compositionFilterButton = document.getElementById("compositionFilterButton");
 const compositionCreateButton = document.getElementById("compositionCreateButton");
+const compositionSearch = document.getElementById("compositionSearch");
 const compositionPaginationInfo = document.getElementById("compositionPaginationInfo");
 const compositionPaginationPrev = document.getElementById("compositionPaginationPrev");
 const compositionPaginationNext = document.getElementById("compositionPaginationNext");
@@ -2830,7 +2831,7 @@ function getApplicationsReportUiText(key, fallback = "") {
 }
 
 function getRegionTotalLabel(name) {
-  const regionName = translateDisplayValue(name);
+  const regionName = name;
   const suffix = getApplicationsReportUiText("regionTotalSuffix", "bo'yicha jami");
 
   if (currentLanguage === "ru") {
@@ -2959,7 +2960,9 @@ function applyStaticTranslations() {
   if (statLabels[2]) statLabels[2].textContent = tr("status.accepted", "Qabul qilingan");
   if (statLabels[3]) statLabels[3].textContent = tr("status.rejected", "Rad etilgan");
 
-  if (applicationSearch) applicationSearch.placeholder = tr("applications.searchPlaceholder", "ID, F.I.Sh. yoki PINFL");
+  if (applicationSearch) applicationSearch.placeholder = "Qidirish";
+  if (reportSnapshotDate) reportSnapshotDate.placeholder = "Qidirish";
+  if (applicationsReportSnapshotDate) applicationsReportSnapshotDate.placeholder = "Qidirish";
   const staticSelectTranslations = [
     { select: statusFilter, map: { all: tr("common.all", "Barchasi"), "jarayonda": tr("status.process", "Jarayonda"), "qabul qilingan": tr("status.accepted", "Qabul qilingan"), "rad etilgan": tr("status.rejected", "Rad etilgan") } },
     { select: reportDiagnosisFilter, map: { all: tr("common.all", "Barchasi") } },
@@ -3866,6 +3869,7 @@ const compositionTableState = {
   currentPage: 1,
   pageSize: 20,
   totalPages: 1,
+  searchTerm: "",
 };
 
 function deriveApplicationStatusLabel(stepName = "") {
@@ -3990,8 +3994,8 @@ function buildApplicationTableRow(item) {
       <td class="actions-cell">${applicationRowMenuMarkup}</td>
       <td><div class="stacked-cell stacked-cell--application"><strong>${escapeHtml(item.id)}</strong><span>${escapeHtml(item.date || "-")}</span></div></td>
       <td><div class="stacked-cell"><strong>${escapeHtml(item.fullName || "-")}</strong><span>${escapeHtml(item.pinfl || "-")}</span></div></td>
-      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(organizationLabel)}">${translateDisplayValue(organizationLabel)}</strong><span data-raw-value="${escapeHtml(organizationRegionLabel)}">${translateDisplayValue(organizationRegionLabel)}</span></div></td>
-      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(regionLabel)}">${translateDisplayValue(regionLabel)}</strong><span data-raw-value="${escapeHtml(districtLabel)}">${translateDisplayValue(districtLabel)}</span></div></td>
+      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(organizationLabel)}">${escapeHtml(organizationLabel)}</strong><span data-raw-value="${escapeHtml(organizationRegionLabel)}">${escapeHtml(organizationRegionLabel)}</span></div></td>
+      <td><div class="stacked-cell"><strong data-raw-value="${escapeHtml(regionLabel)}">${escapeHtml(regionLabel)}</strong><span data-raw-value="${escapeHtml(districtLabel)}">${escapeHtml(districtLabel)}</span></div></td>
       <td><span class="status-badge ${statusClass}">${escapeHtml(statusLabel)}</span></td>
     </tr>
   `;
@@ -4564,7 +4568,7 @@ function getReportSummarySource() {
         ...selectedRegion,
         totals,
       },
-      label: `${translateDisplayValue(selectedRegion.name)} bo'yicha jami`,
+        label: `${selectedRegion.name} bo'yicha jami`,
     };
   }
 
@@ -4715,7 +4719,7 @@ function renderReportTable() {
     .join("");
   const bodyMarkup = rows
     .map((row) => {
-      const rowLabel = translateDisplayValue(row.name);
+        const rowLabel = row.name;
       const firstCell =
         reportState.level === "region"
           ? `<button class="report-region-button" type="button" data-report-region="${escapeHtml(row.key)}">${escapeHtml(rowLabel)}</button>`
@@ -4771,7 +4775,7 @@ function renderApplicationsReportTable() {
 
   const bodyMarkup = rows
     .map((row) => {
-      const rowLabel = translateDisplayValue(row.name);
+        const rowLabel = row.name;
       const firstCell = applicationsReportState.level === "region"
         ? `<button class="report-region-button" type="button" data-applications-report-region="${escapeHtml(row.key)}">${escapeHtml(rowLabel)}</button>`
         : `<span>${escapeHtml(rowLabel)}</span>`;
@@ -6214,18 +6218,24 @@ function renderCompositionTable(type = "workingGroup") {
   }
   currentCompositionType = type;
   const rows = type === "commission" ? commissionMembersData : workingGroupMembersData;
+  const normalizedSearch = normalizeForLookup(compositionTableState.searchTerm);
+  const filteredRows = normalizedSearch
+    ? rows.filter((row) =>
+        normalizeForLookup(`${row.id} ${row.date} ${row.region} ${row.status}`).includes(normalizedSearch)
+      )
+    : rows;
 
   if (!compositionTableBody) {
     return;
   }
 
-  const totalRows = rows.length;
+  const totalRows = filteredRows.length;
   const totalPages = Math.max(Math.ceil(totalRows / compositionTableState.pageSize), 1);
   compositionTableState.totalPages = totalPages;
   compositionTableState.currentPage = Math.min(compositionTableState.currentPage, totalPages);
   const startIndex = (compositionTableState.currentPage - 1) * compositionTableState.pageSize;
   const endIndex = Math.min(startIndex + compositionTableState.pageSize, totalRows);
-  const visibleRows = rows.slice(startIndex, endIndex);
+  const visibleRows = filteredRows.slice(startIndex, endIndex);
 
   compositionTableBody.innerHTML = visibleRows
     .map((row) => {
@@ -6533,6 +6543,12 @@ compositionCreateButton?.addEventListener("click", () => {
       ? "Komissiya tarkibini yaratish"
       : "Ishchi guruhi tarkibini yaratish";
   showToast(title, "Yaratish formasi uchun starter view keyingi bosqichda qo'shiladi.");
+});
+
+compositionSearch?.addEventListener("input", () => {
+  compositionTableState.searchTerm = compositionSearch.value.trim();
+  compositionTableState.currentPage = 1;
+  renderCompositionTable(currentCompositionType);
 });
 
 compositionTableBody?.addEventListener("click", (event) => {
@@ -6927,18 +6943,18 @@ function enrichApplicationRows() {
     const organizationType = organizationTypeMatch?.[1]?.trim().toLowerCase() ?? "";
     const stepValue = normalizeApplicationStepValue(metadata.step || getDefaultStepForStatus(status), "");
 
-    if (organizationPrimary) {
-      organizationPrimary.textContent = translateDisplayValue(organization);
-    }
-    if (organizationSecondary) {
-      organizationSecondary.textContent = translateDisplayValue(organizationRegion);
-    }
-    if (regionPrimary) {
-      regionPrimary.textContent = translateDisplayValue(regionLabel);
-    }
-    if (districtSecondary) {
-      districtSecondary.textContent = translateDisplayValue(district);
-    }
+      if (organizationPrimary) {
+        organizationPrimary.textContent = organization;
+      }
+      if (organizationSecondary) {
+        organizationSecondary.textContent = organizationRegion;
+      }
+      if (regionPrimary) {
+        regionPrimary.textContent = regionLabel;
+      }
+      if (districtSecondary) {
+        districtSecondary.textContent = district;
+      }
 
     if (stepValue) {
       row.setAttribute("data-step", stepValue);
@@ -9066,11 +9082,13 @@ syncCompositionRowsPerPageUi();
 syncApplicationsReportColumnControls();
 applyApplicationsReportColumnVisibility();
 syncReportFrozenColumn();
-syncRowsPerPageUi();
-customSelects.forEach(syncCustomSelectUi);
-dateFields.forEach(syncDateFieldUi);
-refreshApplicationsDataUi();
-loadApplicationsFromLocalApi();
+  syncRowsPerPageUi();
+  customSelects.forEach(syncCustomSelectUi);
+  dateFields.forEach(syncDateFieldUi);
+  refreshApplicationsDataUi();
+  if (getCurrentRoutePath() === "/mrv/applications/applicationList") {
+    loadApplicationsFromLocalApi();
+  }
 
 async function applyRouteFromHash() {
   const currentPath = getCurrentRoutePath();

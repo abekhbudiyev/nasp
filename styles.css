@@ -1409,16 +1409,16 @@ body.theme-dark .login-hero__card {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
-  width: 100%;
+  width: auto;
 }
 
 .report-date-picker {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
-  max-width: 100%;
+  max-width: none;
 }
 
 .report-toolbar .table-actions,
@@ -1782,7 +1782,7 @@ body.theme-dark .login-hero__card {
 
 .filter-panel {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
@@ -1790,13 +1790,28 @@ body.theme-dark .login-hero__card {
   align-items: end;
 }
 
+.filter-panel--report {
+  align-items: center;
+}
+
 #applicationsListView .filter-panel {
-  grid-template-columns: minmax(280px, 680px) auto;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) auto;
+  justify-content: stretch;
+}
+
+#compositionListView .filter-panel,
+#compositionListView .filter-panel__actions {
+  overflow: visible;
+}
+
+.filter-field--search {
+  min-width: 0;
+  width: 100%;
 }
 
 .filter-input-wrap {
   position: relative;
+  width: 100%;
 }
 
 .filter-input__icon {
@@ -2212,6 +2227,19 @@ body.theme-dark .login-hero__card {
   flex: 1 1 auto;
   margin-left: auto;
   gap: 6px;
+}
+
+.pagination-select-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-select__hint {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .table-wrap {
@@ -3054,8 +3082,8 @@ body[data-theme="classic-dark"] .report-selection__stat {
 
 .pagination-select {
   position: relative;
-  width: 84px;
-  min-width: 84px;
+  width: 92px;
+  min-width: 92px;
 }
 
 .pagination__button--icon {
@@ -3092,14 +3120,18 @@ body[data-theme="classic-dark"] .report-selection__stat {
 .pagination-select__trigger {
   width: 100%;
   height: 34px;
-  padding: 0 10px;
+  padding: 0 11px;
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--ink);
+  background: var(--surface);
 }
 
 .pagination-select__dropdown {
   bottom: calc(100% + 8px);
+  border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  background: color-mix(in srgb, var(--surface) 96%, var(--line) 4%);
+  box-shadow: 0 10px 20px rgba(15, 20, 15, 0.08);
 }
 
 @keyframes spin {
@@ -5866,7 +5898,7 @@ body.theme-dark .detail-summary-chip {
     flex-wrap: wrap;
   }
 
-  .pagination-select {
+  .pagination-select-group {
     margin-left: auto;
   }
 }

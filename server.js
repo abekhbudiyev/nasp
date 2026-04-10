@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const oracledb = require("oracledb");
 const dotenv = require("dotenv");
+const path = require("path");
 
 dotenv.config();
 
@@ -10,6 +11,7 @@ const port = Number(process.env.PORT || 3000);
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname, { extensions: ["html"] }));
 
 const dbConfig = {
   user: process.env.ORACLE_USER,
@@ -38,6 +40,26 @@ async function getOraclePool() {
 async function getOracleConnection() {
   const pool = await getOraclePool();
   return pool.getConnection();
+}
+
+async function runSelectListQuery(query, binds = {}) {
+  let connection;
+
+  try {
+    connection = await getOracleConnection();
+    const result = await connection.execute(query, binds, {
+      outFormat: oracledb.OUT_FORMAT_OBJECT,
+    });
+    return result.rows || [];
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeError) {
+        // No-op: close errors are secondary to the request result.
+      }
+    }
+  }
 }
 
 function buildApplicationsDataQuery(usage) {
@@ -290,6 +312,68 @@ function mapApplicationRow(row) {
   };
 }
 
+function mapActStatus(statusId) {
+  const value = Number(statusId);
+  if (value === 1) return "Yangi";
+  if (value === 4) return "Tahrirlangan";
+  if (value === 17) return "Tasdiqlangan";
+  if (value === 35) return "Kelishish uchun yuborilgan";
+  return String(statusId ?? "");
+}
+
+function buildActsFilterQuery(payload = {}) {
+  const filters = payload.filters || {};
+  const binds = {};
+  const clauses = [];
+  const search = String(payload.search || "").trim();
+
+  const statusValue = parseNumericFilterValue(filters.status);
+  if (statusValue != null) {
+    binds.statusId = statusValue;
+    clauses.push("a.STATUS_ID = :statusId");
+  }
+
+  const regionValue = parseNumericFilterValue(filters.region);
+  if (regionValue != null) {
+    binds.regionId = regionValue;
+    clauses.push("a.REGION_ID = :regionId");
+  }
+
+  if (filters.dateFrom) {
+    binds.dateFrom = filters.dateFrom;
+    clauses.push("trunc(a.CREATED_AT) >= to_date(:dateFrom, 'YYYY-MM-DD')");
+  }
+
+  if (filters.dateTo) {
+    binds.dateTo = filters.dateTo;
+    clauses.push("trunc(a.CREATED_AT) <= to_date(:dateTo, 'YYYY-MM-DD')");
+  }
+
+  if (search) {
+    binds.search = `%${search.toUpperCase()}%`;
+    clauses.push(`(
+      upper(to_char(a.ID)) like :search
+      or upper(nvl(r.SHORT_NAME, '')) like :search
+    )`);
+  }
+
+  return {
+    whereSql: clauses.length ? ` and ${clauses.join(" and ")}` : "",
+    binds,
+  };
+}
+
+function mapActRow(row) {
+  return {
+    id: Number(row.ID),
+    date: formatDate(row.CREATED_AT),
+    region: String(row.SHORT_NAME || "").trim(),
+    regionId: Number(row.REGION_ID || 0),
+    statusId: Number(row.STATUS_ID || 0),
+    status: mapActStatus(row.STATUS_ID),
+  };
+}
+
 function buildApplicationsFilterQuery(payload = {}) {
   const filters = payload.filters || {};
   const binds = {};
@@ -474,6 +558,114 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+app.get("/api/select-lists/regions", async (req, res) => {
+  try {
+    const items = await runSelectListQuery(`
+      select
+        ID,
+        SHORT_NAME,
+        ORDER_CODE
+      from ADM_MNL.INFO_REGION
+      where STATE_ID = 1
+      order by ORDER_CODE
+    `);
+
+    res.json({
+      ok: true,
+      items: items.map((row) => ({
+        id: Number(row.ID),
+        shortName: row.SHORT_NAME || "",
+        orderCode: Number(row.ORDER_CODE || 0),
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Regionlar ro'yxatini olishda xatolik yuz berdi.",
+      detail: error.message,
+    });
+  }
+});
+
+app.get("/api/select-lists/districts", async (req, res) => {
+  try {
+    const regionId = parseNumericFilterValue(req.query.regionId);
+    const binds = {};
+    const regionClause = regionId != null ? " and REGION_ID = :regionId" : "";
+    if (regionId != null) {
+      binds.regionId = regionId;
+    }
+
+    const items = await runSelectListQuery(`
+      select
+        ID,
+        SHORT_NAME,
+        REGION_ID,
+        ORDER_CODE
+      from ADM_MNL.INFO_DISTRICT
+      where STATE_ID = 1
+      ${regionClause}
+      order by ORDER_CODE
+    `, binds);
+
+    res.json({
+      ok: true,
+      items: items.map((row) => ({
+        id: Number(row.ID),
+        shortName: row.SHORT_NAME || "",
+        regionId: Number(row.REGION_ID || 0),
+        orderCode: Number(row.ORDER_CODE || 0),
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Tumanlar ro'yxatini olishda xatolik yuz berdi.",
+      detail: error.message,
+    });
+  }
+});
+
+app.get("/api/select-lists/mrv-organizations", async (req, res) => {
+  try {
+    const classificationId = parseNumericFilterValue(req.query.classificationId);
+    const binds = {};
+    const classificationClause = classificationId != null
+      ? " and ORGANIZATION_CLASSIFICATION_ID = :classificationId"
+      : " and ORGANIZATION_CLASSIFICATION_ID in (25, 26, 27)";
+
+    if (classificationId != null) {
+      binds.classificationId = classificationId;
+    }
+
+    const items = await runSelectListQuery(`
+      select
+        ID,
+        SHORT_NAME,
+        ORGANIZATION_CLASSIFICATION_ID
+      from ADM_MNL.INFO_ORGANIZATION
+      where STATE_ID = 1
+      ${classificationClause}
+      order by ORGANIZATION_CLASSIFICATION_ID, SHORT_NAME
+    `, binds);
+
+    res.json({
+      ok: true,
+      items: items.map((row) => ({
+        id: Number(row.ID),
+        shortName: row.SHORT_NAME || "",
+        organizationClassificationId: Number(row.ORGANIZATION_CLASSIFICATION_ID || 0),
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "MRV tashkilotlari ro'yxatini olishda xatolik yuz berdi.",
+      detail: error.message,
+    });
+  }
+});
+
 app.post("/api/mrv/applications", async (req, res) => {
   let connection;
 
@@ -531,6 +723,87 @@ app.post("/api/mrv/applications", async (req, res) => {
       }
     }
   }
+});
+
+app.post("/api/mrv/acts", async (req, res) => {
+  let connection;
+
+  try {
+    const payload = req.body || {};
+    const page = Math.max(Number(payload.page || 1), 1);
+    const pageSize = Math.min(Math.max(Number(payload.pageSize || 20), 1), 500);
+    const offset = (page - 1) * pageSize;
+    const { whereSql, binds } = buildActsFilterQuery(payload);
+
+    connection = await getOracleConnection();
+
+    const rowsResult = await connection.execute(
+      `
+      select
+        a.ID,
+        a.CREATED_AT,
+        a.REGION_ID,
+        r.SHORT_NAME,
+        a.STATUS_ID
+      from ins_smu.DOC_SMU_ACT a
+      left join adm_mnl.INFO_REGION r on a.REGION_ID = r.ID
+      where a.IS_NEW_VERSION != 1
+        and a.STATUS_ID != 5
+        ${whereSql}
+      order by a.ID desc
+      offset :offset rows fetch next :pageSize rows only
+      `,
+      { ...binds, offset, pageSize },
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+
+    const countResult = await connection.execute(
+      `
+      select count(*) as TOTAL
+      from ins_smu.DOC_SMU_ACT a
+      left join adm_mnl.INFO_REGION r on a.REGION_ID = r.ID
+      where a.IS_NEW_VERSION != 1
+        and a.STATUS_ID != 5
+        ${whereSql}
+      `,
+      binds,
+      { outFormat: oracledb.OUT_FORMAT_OBJECT },
+    );
+
+    const total = Number(countResult.rows?.[0]?.TOTAL || 0);
+
+    res.json({
+      ok: true,
+      items: (rowsResult.rows || []).map(mapActRow),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(Math.ceil(total / pageSize), 1),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: "Oracle bazadan dalolatnomalarni olishda xatolik yuz berdi.",
+      detail: error.message,
+    });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeError) {
+        // No-op: close errors are secondary to the request result.
+      }
+    }
+  }
+});
+
+app.get(/^(?!\/api\/).*/, (req, res) => {
+  if (req.path.startsWith("/api/")) {
+    res.status(404).json({ ok: false, error: "API route not found." });
+    return;
+  }
+
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.listen(port, () => {
