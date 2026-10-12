@@ -1192,7 +1192,7 @@ export const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Dashboard'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Umumiy ko‘rsatkichlar'],
         },
       },
       {
@@ -1201,11 +1201,11 @@ export const routes: RouteRecordRaw[] = [
         component: TransportBenefitsPage,
         props: { pageKey: 'contingents' },
         meta: {
-          title: 'Kontingent',
+          title: 'Imtiyoz oluvchilar',
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Kontingent'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Imtiyoz oluvchilar'],
         },
       },
       {
@@ -1214,11 +1214,11 @@ export const routes: RouteRecordRaw[] = [
         component: TransportBenefitsPage,
         props: { pageKey: 'mvp-plan' },
         meta: {
-          title: 'MVP reja va rollar',
+          title: 'Ish rejasi va vazifalar',
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'MVP reja va rollar'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ish rejasi va vazifalar'],
         },
       },
       {
@@ -1227,11 +1227,11 @@ export const routes: RouteRecordRaw[] = [
         component: TransportBenefitsPage,
         props: { pageKey: 'eligibility' },
         meta: {
-          title: 'Moslik va rezerv',
+          title: 'Imtiyozni tekshirish',
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Moslik va rezerv'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Imtiyozni tekshirish'],
         },
       },
       {
@@ -1240,11 +1240,11 @@ export const routes: RouteRecordRaw[] = [
         component: TransportBenefitsPage,
         props: { pageKey: 'ticket-events' },
         meta: {
-          title: 'Chipta eventlari',
+          title: 'Chipta amallari',
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Chipta eventlari'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Chipta amallari'],
         },
       },
       {
@@ -1253,11 +1253,11 @@ export const routes: RouteRecordRaw[] = [
         component: TransportBenefitsPage,
         props: { pageKey: 'settlements' },
         meta: {
-          title: 'Reyestr va claim',
+          title: 'Buyurtmanomalar va to‘lovlar',
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Reyestr va claim'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Buyurtmanomalar va to‘lovlar'],
         },
       },
       {
@@ -1283,11 +1283,11 @@ export const routes: RouteRecordRaw[] = [
         component: TransportBenefitsPage,
         props: { pageKey: 'reference-policies' },
         meta: {
-          title: 'Imtiyoz siyosatlari',
+          title: 'Imtiyoz qoidalari',
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ma’lumotnomalar', 'Imtiyoz siyosatlari'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ma’lumotnomalar', 'Imtiyoz qoidalari'],
         },
       },
       {

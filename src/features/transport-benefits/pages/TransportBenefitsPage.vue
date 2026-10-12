@@ -15,7 +15,6 @@ import {
   CircleDollarSign,
   Clock3,
   Code2,
-  Copy,
   Database,
   FileCheck2,
   Landmark,
@@ -61,15 +60,16 @@ import { useAuthStore } from '@/stores/auth'
 import PageContainer from '@/shared/components/PageContainer.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Input } from '@/shared/ui/shadcn/input'
+import ReimbursementPanel from './ReimbursementPanel.vue'
+import { userLabel } from '../ui-labels'
+import { financeApiDefinitions } from '../finance-api-contracts'
+import IntegrationExplorer from './IntegrationExplorer.vue'
 
 type ContingentEventType = 'RIGHT_GRANTED' | 'RIGHT_CORRECTED' | 'RIGHT_REVOKED' | 'RIGHT_REINSTATED'
 type ContingentEventStatus = 'Qo‘llandi' | 'Tekshiruvda' | 'Xatolik'
 type TicketEventType = 'ISSUED' | 'RETURNED' | 'CARRIER_CANCELLED' | 'VOIDED' | 'RESCHEDULED' | 'TRAVELLED' | 'NO_SHOW'
 type TicketEventStatus = 'Qabul qilindi' | 'Qayta ishlanmoqda' | 'Rad etildi'
 type TransportMode = 'RAIL' | 'AIR' | 'BUS'
-type SettlementStage = 'DRAFT' | 'VALIDATING' | 'READY_TO_SUBMIT' | 'CLAIM_CREATED'
-type ClaimStatus = 'SUBMITTED' | 'PARTIALLY_ACCEPTED' | 'ACCEPTED' | 'REJECTED' | 'ADJUSTMENT_REQUIRED' | 'CLOSED'
-type FinanceHandoffStatus = 'NOT_READY' | 'CREATED' | 'QUEUED' | 'SUBMITTED' | 'ACKNOWLEDGED' | 'REJECTED' | 'RETRYING'
 type FeedbackTone = 'success' | 'error' | 'info'
 type ReservationStatus = 'HELD' | 'CONSUMED' | 'RESTORE_REVIEW' | 'RELEASED' | 'RESTORED'
 type EntitlementLegState = 'AVAILABLE' | 'HELD' | 'CONSUMED' | 'RESTORE_REVIEW' | 'RESTORED'
@@ -150,24 +150,6 @@ interface TicketEvent {
   status: TicketEventStatus
 }
 
-interface Settlement {
-  id: string
-  settlementStage: SettlementStage
-  claimId?: string
-  claimVersion?: number
-  claimStatus?: ClaimStatus
-  financeHandoffId?: string
-  financeHandoffStatus?: FinanceHandoffStatus
-  period: string
-  carrier: string
-  transportMode: TransportMode
-  lines: number
-  requestedAmount: number
-  acceptedAmount: number
-  deadline: string
-  submittedAt?: string
-  paymentDueAt?: string
-}
 
 interface ManualVerificationCase {
   id: string
@@ -246,6 +228,7 @@ interface ApiDefinition {
   consumers: string
   variants: string[]
   sample: string
+  response?: string
 }
 
 const props = withDefaults(defineProps<{
@@ -1772,83 +1755,13 @@ function decideReturnReview(event: TicketEvent, decision: 'APPROVED' | 'REJECTED
     : 'Return review rad etildi: huquq CONSUMED bo‘lib qoldi; claimability D-03 metodikasigacha aniqlanmaydi.')
 }
 
-const settlements = ref<Settlement[]>([
-  {
-    id: 'SET-2026-10-UTY',
-    settlementStage: 'VALIDATING',
-    financeHandoffStatus: 'NOT_READY',
-    period: 'Oktabr 2026',
-    carrier: 'O‘zbekiston temir yo‘llari',
-    transportMode: 'RAIL',
-    lines: 1842,
-    requestedAmount: 1842600000,
-    acceptedAmount: 0,
-    deadline: '10.11.2026',
-    submittedAt: '06.11.2026 14:30 · ERI',
-    paymentDueAt: '20.11.2026 · 10 ish kuni',
-  },
-  {
-    id: 'SET-2026-10-HY',
-    settlementStage: 'VALIDATING',
-    financeHandoffStatus: 'NOT_READY',
-    period: 'Oktabr 2026',
-    carrier: 'Uzbekistan Airways',
-    transportMode: 'AIR',
-    lines: 628,
-    requestedAmount: 986400000,
-    acceptedAmount: 0,
-    deadline: '10.11.2026',
-    submittedAt: '09.11.2026 09:15 · ERI',
-    paymentDueAt: '23.11.2026 · 10 ish kuni',
-  },
-  {
-    id: 'SET-2026-10-AV',
-    settlementStage: 'VALIDATING',
-    financeHandoffStatus: 'NOT_READY',
-    period: 'Oktabr 2026',
-    carrier: 'Hududiy avtovokzallar',
-    transportMode: 'BUS',
-    lines: 2731,
-    requestedAmount: 713840000,
-    acceptedAmount: 0,
-    deadline: '10.11.2026',
-    submittedAt: '—',
-    paymentDueAt: 'Imzolangan hujjatlar kelgach hisoblanadi',
-  },
-])
-const settlementStatusFilter = ref('Barchasi')
-const filteredSettlements = computed(() => settlementStatusFilter.value === 'Barchasi'
-  ? settlements.value
-  : settlements.value.filter((settlement) => (settlement.claimStatus ?? settlement.settlementStage) === settlementStatusFilter.value))
-const totalRequested = computed(() => settlements.value.reduce((sum, item) => sum + item.requestedAmount, 0))
-
-function createSettlementDraft() {
-  if (settlements.value.some((item) => item.id === 'SET-2026-11-DRAFT')) {
-    showFeedback('info', 'Noyabr davri uchun draft avval yaratilgan.')
-    return
-  }
-  settlements.value.unshift({
-    id: 'SET-2026-11-DRAFT',
-    settlementStage: 'DRAFT',
-    period: 'Noyabr 2026',
-    carrier: 'Yangi settlement draft',
-    transportMode: 'RAIL',
-    lines: 0,
-    requestedAmount: 0,
-    acceptedAmount: 0,
-    deadline: '10.12.2026',
-    submittedAt: '—',
-    paymentDueAt: 'Hujjat topshirilgach +10 ish kuni',
-  })
-  showFeedback('success', 'Noyabr uchun yangi settlement draft yaratildi.')
-}
 
 const apiDefinitions: ApiDefinition[] = [
   {
     id: 'contingent',
     method: 'POST',
     endpoint: '/v1/beneficiary-events',
-    title: 'Kontingent eventlari',
+    title: 'Imtiyoz oluvchilar eventlari',
     description: 'Barcha manba idoralar, toifalar va huquq o‘zgarishlari uchun bitta kontrakt.',
     consumers: '6 ta manba tashkilot',
     variants: ['RIGHT_GRANTED', 'RIGHT_CORRECTED', 'RIGHT_REVOKED', 'RIGHT_REINSTATED', '/v1/beneficiary-snapshots/batches'],
@@ -1868,7 +1781,7 @@ const apiDefinitions: ApiDefinition[] = [
     id: 'eligibility',
     method: 'POST',
     endpoint: '/v1/entitlements/check-and-reserve',
-    title: 'Moslik va rezerv qarori',
+    title: 'Imtiyozni tekshirish qarori',
     description: 'Rail, air va bus uchun bir xil request; farq transport_mode va policy orqali boshqariladi.',
     consumers: 'Barcha tashuvchilar va kassalar',
     variants: ['/v1/eligibility/check', '/v1/entitlements/check-and-reserve', 'MANUAL_AUTHORIZATION'],
@@ -1924,37 +1837,7 @@ const apiDefinitions: ApiDefinition[] = [
   "evidence_refs": ["TICKET-COPY-9431", "ROUTE-SHEET-9431"]
 }`,
   },
-  {
-    id: 'settlement',
-    method: 'POST',
-    endpoint: '/v1/settlements',
-    title: 'Reyestr, immutable claim va moliya handoff',
-    description: 'Barcha tashuvchilar uchun yagona settlement aggregate; line, attachment, submit va claim handoff aniq action endpointlarida.',
-    consumers: 'Tashuvchilar, Agentlik va moliya AT',
-    variants: ['/v1/settlements/{id}/lines/batch', '/v1/settlements/{id}/attachments', '/v1/settlements/{id}/submit', '/v1/claims/{claim_id}/payment-submit'],
-    sample: `{
-  "period": "2026-10",
-  "carrier_id": "UTY",
-  "registry_due": "2026-11-10",
-  "claim": {
-    "claim_id": "CLM-2026-10-UTY",
-    "version": 1,
-    "payload_hash": "sha256:...",
-    "signature_ref": "ERI-REF-..."
-  },
-  "lines": [
-    {
-      "ticket_id": "UTY-78394510",
-      "settlement_basis": "<approved_settlement_basis_code>",
-      "actual_amount_minor": 24800000,
-      "preferential_amount_minor": 0,
-      "currency": "UZS",
-      "currency_exponent": 2
-    }
-  ],
-  "handoff_boundary": "FINANCE_SYSTEM_ACK"
-}`,
-  },
+  ...financeApiDefinitions,
   {
     id: 'reference-data',
     method: 'GET',
@@ -1981,19 +1864,6 @@ const apiDefinitions: ApiDefinition[] = [
 }`,
   },
 ]
-const selectedApiId = ref('contingent')
-const defaultApi = apiDefinitions[0]!
-const selectedApi = computed<ApiDefinition>(() => apiDefinitions.find((api) => api.id === selectedApiId.value) ?? defaultApi)
-
-async function copyApiSample() {
-  try {
-    await navigator.clipboard.writeText(selectedApi.value.sample)
-    showFeedback('success', `${selectedApi.value.endpoint} namunasi nusxalandi.`)
-  }
-  catch {
-    showFeedback('error', 'Brauzer clipboardga ruxsat bermadi.')
-  }
-}
 
 const architectureModules = [
   {
@@ -2051,19 +1921,19 @@ const decisionGates = [
 ]
 
 const mvpInScope = [
-  'Versiyalangan ma’lumotnoma va policylar, D-01…D-06 runtime gate’lari',
-  '6 manbadan snapshot/delta kontingent, identity resolution va huquq tarixi',
-  'Eligibility, atomar global ledger, rezerv, hamroh va manual fallback',
-  'Chipta issue/lifecycle, dalillar, qaytarish review va reconciliation',
-  'Oylik reyestr, line-level tekshiruv, ERI va immutable claim versiyasi',
-  'Qabul qilingan claimni moliya ATiga idempotent handoff va ACK/NACK',
+  'Imtiyoz oluvchilar va ularning huquqlari haqidagi ma’lumotlarni yuritish',
+  'Imtiyozni tekshirish va safar uchun vaqtincha band qilish',
+  'Chipta berish, qaytarish va almashtirish ma’lumotlarini yuritish',
+  'Tashuvchilarning oylik buyurtmanomalari va hujjatlarini qabul qilish',
+  'Chiptalarni tekshirish va qoplanadigan summani tasdiqlash',
+  'Buyurtmanomani subsidiya tizimiga yuborish va to‘lov javobini olish',
+  'To‘lov holatini tashkilotga yetkazish va raqam orqali qidirish',
 ]
 
 const mvpOutOfScope = [
-  'Bank hisobida pul o‘tkazmasini bajarish va treasury/bank reconciliation',
-  'PAYMENT_ORDER_CREATED/PROCESSING/PAID/REVERSED post-payment webhook va monitoring UI',
-  '2027-01-01 Social Card real-time payment kanalini productionda faollashtirish',
-  'Tashuvchi inventari, joy tanlash va oddiy tijoriy tarif engine’i',
+  'Ijtimoiy karta orqali real vaqt to‘lovlarini 2027-yil 1-yanvardan yo‘lga qo‘yish',
+  'Bank bilan bajarilgan to‘lovlarni solishtirish imkoniyatlarini kengaytirish',
+  'Tashuvchining joy tanlash va oddiy chipta sotish xizmatlari',
 ]
 
 const mvpRoleStreams = [
@@ -2126,10 +1996,10 @@ const mvpRoleStreams = [
 const mvpPhases = [
   { id: 'P0', period: '2–3 kun', title: 'Contract va gate freeze', owner: 'Legal/Product + Architect', exit: 'OpenAPI/event schema, D-owner, threat model va scope sign-off' },
   { id: 'P1', period: '1-hafta', title: 'Platforma va master-data', owner: 'Backend + DevOps + Security', exit: 'DB migration, IAM, audit/outbox va approved-effective reference API' },
-  { id: 'P2', period: '1–2-hafta', title: 'Kontingent registri', owner: 'Backend + Data + Source teams', exit: 'Snapshot/delta, bitemporal rights, quarantine va source certification' },
+  { id: 'P2', period: '1–2-hafta', title: 'Imtiyoz oluvchilar registri', owner: 'Backend + Data + Source teams', exit: 'Snapshot/delta, bitemporal rights, quarantine va source certification' },
   { id: 'P3', period: '2–3-hafta', title: 'Eligibility va global ledger', owner: 'Backend + Policy + Carrier teams', exit: 'Atomic reserve, TTL/release, companion/manual va concurrency testlari' },
   { id: 'P4', period: '3–4-hafta', title: 'Chipta va review', owner: 'Backend + Frontend + QA', exit: 'Issue/lifecycle, evidence, return/reschedule va reconciliation E2E' },
-  { id: 'P5', period: '4–5-hafta', title: 'Reyestr, claim va handoff', owner: 'Finance + Backend + Integration', exit: 'Immutable claim, ERI, maker-checker va moliya AT ACK/NACK' },
+  { id: 'P5', period: '4–5-hafta', title: 'Buyurtmanomalar va to‘lovlar', owner: 'Moliya va integratsiya mas’ullari', exit: 'Tekshiruv, tasdiqlash, to‘lovga yuborish va natijani olish' },
   { id: 'P6', period: '5–6-hafta', title: 'Hardening va pilot', owner: 'QA + SRE + Security + Business', exit: 'Load/security/DR, carrier certification va go-live sign-off' },
 ]
 
@@ -2251,18 +2121,18 @@ function selectReferenceCatalog(id: string) {
 }
 
 const pipelineSteps = computed(() => [
-  { title: 'Kontingent', value: '24 812', caption: 'target demo', icon: UsersRound, route: '/apps/transport-benefits/contingents', tone: 'primary' },
-  { title: 'Moslik', value: '1 426', caption: 'target demo', icon: ShieldCheck, route: '/apps/transport-benefits/eligibility', tone: 'primary' },
-  { title: 'Rezerv', value: '319', caption: 'target demo', icon: Zap, route: '/apps/transport-benefits/eligibility', tone: 'warning' },
-  { title: 'Chiptalar', value: '1 107', caption: 'target demo', icon: TicketCheck, route: '/apps/transport-benefits/ticket-events', tone: 'primary' },
-  { title: 'Claim → handoff', value: 'BLOCKED', caption: 'D-03 fail-closed', icon: CircleDollarSign, route: '/apps/transport-benefits/settlements', tone: 'warning' },
+  { title: 'Imtiyoz oluvchilar', value: '24 812', caption: 'Namunaviy ma’lumot', icon: UsersRound, route: '/apps/transport-benefits/contingents', tone: 'primary' },
+  { title: 'Moslik', value: '1 426', caption: 'Namunaviy ma’lumot', icon: ShieldCheck, route: '/apps/transport-benefits/eligibility', tone: 'primary' },
+  { title: 'Rezerv', value: '319', caption: 'Namunaviy ma’lumot', icon: Zap, route: '/apps/transport-benefits/eligibility', tone: 'warning' },
+  { title: 'Chiptalar', value: '1 107', caption: 'Namunaviy ma’lumot', icon: TicketCheck, route: '/apps/transport-benefits/ticket-events', tone: 'primary' },
+  { title: 'Buyurtmanomalar va to‘lovlar', value: 'Ko‘rish', caption: 'Oylik hisob-kitob va to‘lov natijalari', icon: CircleDollarSign, route: '/apps/transport-benefits/settlements', tone: 'warning' },
 ])
 
 const dashboardMetrics = computed(() => [
   { label: 'Faol kontingent · demo', value: '24 812', delta: '6 rasmiy manba', icon: UsersRound, bars: [42, 56, 48, 64, 62, 74, 81] },
   { label: 'API so‘rovlari · demo', value: '3 284', delta: 'go-live ssenariysi', icon: Activity, bars: [38, 45, 62, 54, 72, 68, 88] },
   { label: 'Faol rezervlar · demo', value: '319', delta: 'atomar global ledger', icon: Clock3, bars: [71, 62, 78, 57, 69, 51, 45] },
-  { label: 'Claimga handoff · target', value: '0', delta: 'D-03 ochiq · fail-closed', icon: Banknote, bars: [8, 8, 8, 8, 8, 8, 8] },
+  { label: 'To‘lovga yuborilgan · namuna', value: '0', delta: 'Buyurtmanomalar bo‘limida yuritiladi', icon: Banknote, bars: [8, 8, 8, 8, 8, 8, 8] },
 ])
 
 function transportLabel(mode: TransportMode) {
@@ -2289,12 +2159,6 @@ function ticketStatusClass(status: TicketEventStatus) {
   return 'border-destructive/20 bg-destructive/10 text-destructive'
 }
 
-function settlementStatusClass(status?: ClaimStatus | FinanceHandoffStatus | SettlementStage) {
-  if (status === 'ACCEPTED' || status === 'ACKNOWLEDGED' || status === 'CLOSED') return 'border-primary/20 bg-primary/10 text-primary'
-  if (status === 'VALIDATING' || status === 'QUEUED' || status === 'SUBMITTED') return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300'
-  if (status === 'PARTIALLY_ACCEPTED' || status === 'RETRYING' || status === 'CREATED') return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-  return 'border-border bg-muted text-muted-foreground'
-}
 
 function eligibilityResultClass(result: EligibilityDecision['result']) {
   if (result === 'ELIGIBLE') return 'border-primary/25 bg-primary/[0.055]'
@@ -2332,7 +2196,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <div class="flex shrink-0 items-center gap-2">
           <span class="inline-flex h-7 items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 text-xs font-medium text-amber-700 dark:text-amber-300">
             <Boxes class="h-3.5 w-3.5" />
-            MVP target · moliya ATiga handoffgacha · D-01…D-06 OPEN
+            MVP ishga tushirilgan · Moliyaviy jarayonlar
           </span>
         </div>
       </div>
@@ -2363,9 +2227,9 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <div class="flex items-start gap-3">
           <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
           <div>
-            <p class="text-sm font-semibold text-foreground">Normativ asos — VMQ-440</p>
+            <p class="text-sm font-semibold text-foreground">440-son qaror asosida</p>
             <p class="mt-0.5 text-xs leading-5 text-muted-foreground">
-              Tartib 2026-yil 1-oktabrdan. Qarorda yopiq “11 toifa” katalogi yo‘q; C01–C11 faqat texnik normalizatsiya. Bu ekran backendga ulanmagan prototip: D-01…D-06 yopilmaguncha natijalar production huquqi yoki qoplash asosi emas.
+              Ushbu tartib 2026-yil 1-oktabrdan amal qiladi. Imtiyoz oluvchilar va chiptalarni yuritishdan keyin oylik buyurtmanomalarni qabul qilish, xarajatlarni qoplash va to‘lov holatini kuzatish bosqichi boshlanadi.
             </p>
           </div>
         </div>
@@ -2409,8 +2273,8 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5">
               <div>
-                <h2 class="text-sm font-semibold text-foreground">MVP operatsion oqimi</h2>
-                <p class="mt-0.5 text-xs text-muted-foreground">Kontingentdan immutable claim va moliya ATiga handoffgacha</p>
+                <h2 class="text-sm font-semibold text-foreground">Kundalik ish jarayoni</h2>
+                <p class="mt-0.5 text-xs text-muted-foreground">Imtiyoz oluvchilar va chiptalardan buyurtmanoma hamda to‘lov natijasigacha</p>
               </div>
               <RouterLink
                 to="/apps/transport-benefits/integrations"
@@ -2467,12 +2331,12 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <div class="border-b border-border px-4 py-3.5">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-sm font-semibold text-foreground">MVP target holati</h2>
+                  <h2 class="text-sm font-semibold text-foreground">Moliyaviy jarayon bosqichlari</h2>
                   <p class="mt-0.5 text-xs text-muted-foreground">Ishlab chiqarish monitoringi emas</p>
                 </div>
                 <span class="inline-flex items-center gap-1.5 text-xs font-medium text-primary">
                   <span class="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_15%,transparent)]" />
-                  Konseptual demo
+                  Jarayon ko‘rinishi
                 </span>
               </div>
             </div>
@@ -2481,7 +2345,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <div class="flex items-center gap-2.5">
                   <UploadCloud class="h-4 w-4 text-primary" />
                   <div>
-                    <p class="text-sm font-medium">Kontingent API</p>
+                    <p class="text-sm font-medium">Imtiyoz oluvchilar API</p>
                     <p class="text-xs text-muted-foreground">6 rasmiy manba · common contract</p>
                   </div>
                 </div>
@@ -2492,10 +2356,10 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                   <ShieldCheck class="h-4 w-4 text-primary" />
                   <div>
                     <p class="text-sm font-medium">Eligibility API</p>
-                    <p class="text-xs text-muted-foreground">check + atomic reserve · target contract</p>
+                    <p class="text-xs text-muted-foreground">Imtiyozni tekshirish va vaqtincha band qilish</p>
                   </div>
                 </div>
-                <span class="text-xs font-medium text-primary">MVP</span>
+                <span class="text-xs font-medium text-primary">Amaldagi jarayon</span>
               </div>
               <div class="flex items-center justify-between gap-3 py-3.5">
                 <div class="flex items-center gap-2.5">
@@ -2505,17 +2369,17 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                     <p class="text-xs text-muted-foreground">rail · air · intercity bus</p>
                   </div>
                 </div>
-                <span class="text-xs font-medium text-primary">MVP</span>
+                <span class="text-xs font-medium text-primary">Amaldagi jarayon</span>
               </div>
               <div class="flex items-center justify-between gap-3 py-3.5">
                 <div class="flex items-center gap-2.5">
                   <Landmark class="h-4 w-4 text-amber-600" />
                   <div>
                     <p class="text-sm font-medium">Moliya adapteri</p>
-                    <p class="text-xs text-muted-foreground">Immutable claim handoff · target</p>
+                    <p class="text-xs text-muted-foreground">Buyurtmanoma va to‘lov holatini kuzatish</p>
                   </div>
                 </div>
-                <span class="text-xs font-medium text-amber-700 dark:text-amber-300">MVP boundary</span>
+                <span class="text-xs font-medium text-amber-700 dark:text-amber-300">Moliyaviy jarayon</span>
               </div>
             </div>
           </section>
@@ -2551,7 +2415,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <table class="w-full min-w-[760px] text-left text-sm">
               <thead class="bg-muted/45 text-xs text-muted-foreground">
                 <tr>
-                  <th class="px-4 py-2.5 font-medium">Event</th>
+                  <th class="px-4 py-2.5 font-medium">Amal</th>
                   <th class="px-4 py-2.5 font-medium">Manba</th>
                   <th class="px-4 py-2.5 font-medium">Shaxs</th>
                   <th class="px-4 py-2.5 font-medium">Amal</th>
@@ -2584,9 +2448,9 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <div class="flex items-start gap-3">
               <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><ListChecks class="h-5 w-5" /></div>
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">MVP-1 chegarasi</p>
-                <h2 class="mt-1 text-lg font-semibold">Kontingentdan moliya ATiga ishonchli handoffgacha</h2>
-                <p class="mt-2 max-w-4xl text-xs leading-5 text-muted-foreground">Markaziy modul reyestrni tekshiradi, ERI bilan imzolangan immutable claim versiyasini yaratadi va aynan shu versiyani moliya ATiga idempotent yuboradi. Bankdagi pul harakati tashqi moliya/bank tizimining javobgarligi.</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Amaldagi ish jarayoni</p>
+                <h2 class="mt-1 text-lg font-semibold">Buyurtmanomadan to‘lov natijasigacha</h2>
+                <p class="mt-2 max-w-4xl text-xs leading-5 text-muted-foreground">Transport tashkiloti oylik buyurtmanomani yuboradi. Tizim uni chipta ma’lumotlari bilan tekshiradi, qoplanadigan summani tasdiqlashga taqdim etadi va subsidiya tizimiga yuboradi. Olingan to‘lov holati tashkilotga yetkaziladi.</p>
               </div>
             </div>
             <div class="mt-4 grid gap-2 sm:grid-cols-2">
@@ -2598,13 +2462,13 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           </section>
 
           <section class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-5 shadow-sm">
-            <div class="flex items-center gap-2"><AlertTriangle class="h-4 w-4 text-amber-700 dark:text-amber-300" /><h2 class="text-sm font-semibold">MVP-1 tarkibida emas</h2></div>
+            <div class="flex items-center gap-2"><AlertTriangle class="h-4 w-4 text-amber-700 dark:text-amber-300" /><h2 class="text-sm font-semibold">Keyingi rivojlantirish ishlari</h2></div>
             <div class="mt-3 space-y-2">
               <div v-for="item in mvpOutOfScope" :key="item" class="rounded-lg border border-amber-500/20 bg-background/70 p-3 text-xs leading-5 text-muted-foreground">{{ item }}</div>
             </div>
             <div class="mt-4 rounded-lg border border-border bg-background/70 p-3 text-xs leading-5">
               <strong class="text-foreground">Muhim:</strong>
-              <span class="text-muted-foreground"> finance handoff texnik ACK/NACKda tugaydi; post-payment status kontrakti faqat keyingi bosqich uchun hujjatlashtiriladi, runtime listener va 2027 Social Card faollashtirilmaydi.</span>
+              <span class="text-muted-foreground"> Moliyaviy jarayon to‘lov tizimining qabul javobi bilan yakunlanmaydi: to‘lov natijasi olinadi, buyurtmanomaga bog‘lanadi va tashkilotga yetkaziladi.</span>
             </div>
           </section>
         </div>
@@ -2647,7 +2511,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
 
         <div class="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
           <section class="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <div class="flex items-center gap-2"><ShieldCheck class="h-4 w-4 text-primary" /><h2 class="text-sm font-semibold">MVP qabul gate’lari</h2></div>
+            <div class="flex items-center gap-2"><ShieldCheck class="h-4 w-4 text-primary" /><h2 class="text-sm font-semibold">Hisoblash va tekshirish qoidalari</h2></div>
             <div class="mt-3 grid gap-2 sm:grid-cols-2">
               <div v-for="gate in mvpAcceptanceGates" :key="gate" class="flex items-start gap-2 rounded-lg border border-border bg-muted/25 p-3 text-xs leading-5">
                 <BadgeCheck class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /><span>{{ gate }}</span>
@@ -2695,14 +2559,14 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <p class="mt-1 text-xs text-muted-foreground">6 ta rasmiy manba tizim</p>
           </div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <p class="text-xs text-muted-foreground">Quarantine</p>
+            <p class="text-xs text-muted-foreground">Tekshirish kerak</p>
             <p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">17</p>
             <p class="mt-1 text-xs text-muted-foreground">1,32% tekshiruvda</p>
           </div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p class="text-xs text-muted-foreground">Oxirgi yangilanish</p>
             <p class="mt-1 text-2xl font-semibold">10:48</p>
-            <p class="mt-1 text-xs text-primary">High-water mark faol</p>
+            <p class="mt-1 text-xs text-primary">Yangilanishlar kuzatib borilmoqda</p>
           </div>
         </div>
 
@@ -2710,7 +2574,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <div class="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative max-w-md flex-1">
               <Search class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input v-model="contingentSearch" placeholder="Event, JShShIR, F.I.Sh. yoki toifa" class="pl-8" />
+              <Input v-model="contingentSearch" placeholder="Yozuv raqami, JShShIR, F.I.Sh. yoki toifa" class="pl-8" />
             </div>
             <div class="flex flex-wrap gap-2">
               <select v-model="contingentSourceFilter" :class="fieldClass" class="w-auto min-w-44">
@@ -2732,11 +2596,11 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <table class="w-full min-w-[1080px] text-left text-sm">
               <thead class="bg-muted/45 text-xs text-muted-foreground">
                 <tr>
-                  <th class="px-4 py-2.5 font-medium">Event / vaqt</th>
+                  <th class="px-4 py-2.5 font-medium">Yozuv / vaqt</th>
                   <th class="px-4 py-2.5 font-medium">Manba</th>
                   <th class="px-4 py-2.5 font-medium">Shaxs</th>
                   <th class="px-4 py-2.5 font-medium">Toifa va asos</th>
-                  <th class="px-4 py-2.5 font-medium">Event turi</th>
+                  <th class="px-4 py-2.5 font-medium">Amal turi</th>
                   <th class="px-4 py-2.5 font-medium">Versiya</th>
                   <th class="px-4 py-2.5 font-medium">Holat</th>
                 </tr>
@@ -2761,7 +2625,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                   </td>
                   <td class="px-4 py-3">
                     <p class="text-xs font-medium">{{ eventTypeLabel(event.eventType) }}</p>
-                    <p class="mt-0.5 font-mono text-[11px] text-muted-foreground">{{ event.eventType }}</p>
+                    <p class="mt-0.5 font-mono text-[11px] text-muted-foreground">{{ userLabel(event.eventType) }}</p>
                   </td>
                   <td class="px-4 py-3 font-mono text-xs">v{{ event.version }}</td>
                   <td class="px-4 py-3">
@@ -2805,7 +2669,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <div class="space-y-1.5"><span class="text-xs font-medium text-foreground">Rezidentlik snapshoti</span><div class="rounded-md border border-border bg-muted/35 px-3 py-2 text-xs leading-5"><strong>Server-derived</strong> · identity/residency registri yoki tasdiqlangan hujjat; requestdagi erkin flagga ishonilmaydi.</div></div>
               </div>
               <label class="block space-y-1.5">
-                <span class="text-xs font-medium text-foreground">{{ eligibilityForm.applicantRole === 'COMPANION' ? 'Hamroh JShShIRi' : 'Benefitsiar JShShIRi' }}</span>
+                <span class="text-xs font-medium text-foreground">{{ eligibilityForm.applicantRole === 'COMPANION' ? 'Hamroh JShShIRi' : 'Imtiyoz oluvchining JShShIRi' }}</span>
                 <Input v-model="eligibilityForm.pinfl" placeholder="14 xonali JShShIR" maxlength="14" />
               </label>
               <div v-if="eligibilityForm.applicantRole === 'LEGAL_REPRESENTATIVE'" class="grid gap-3 rounded-lg border border-border bg-muted/25 p-3 sm:grid-cols-2">
@@ -2816,7 +2680,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <p class="text-xs leading-5 text-muted-foreground sm:col-span-2">Vakolatning to‘liq intervali chipta rasmiylashtirish va safar sanasida tekshiriladi.</p>
               </div>
               <div v-if="eligibilityForm.applicantRole === 'COMPANION'" class="rounded-lg border border-amber-500/20 bg-amber-500/[0.055] p-3">
-                <div class="grid gap-3 sm:grid-cols-2"><label class="block space-y-1.5"><span class="text-xs font-medium">Asosiy benefitsiar JShShIRi</span><Input v-model="eligibilityForm.principalPinfl" maxlength="14" placeholder="I guruh asosiy benefitsiar" /></label><label class="block space-y-1.5"><span class="text-xs font-medium">Principal rezerv / safar ID</span><Input v-model="eligibilityForm.principalReservationId" placeholder="RSV-PRINCIPAL-..." /></label></div>
+                <div class="grid gap-3 sm:grid-cols-2"><label class="block space-y-1.5"><span class="text-xs font-medium">Asosiy imtiyoz oluvchi JShShIRi</span><Input v-model="eligibilityForm.principalPinfl" maxlength="14" placeholder="I guruhdagi imtiyoz oluvchi" /></label><label class="block space-y-1.5"><span class="text-xs font-medium">Asosiy yo‘lovchining band qilish raqami</span><Input v-model="eligibilityForm.principalReservationId" placeholder="RSV-PRINCIPAL-..." /></label></div>
                 <p class="mt-2 text-xs leading-5 text-muted-foreground">Hamroh mustaqil kontingent emas; principalning ayni service/date journey’siga companion_link bilan bog‘lanadi va faqat I guruh uchun tekshiriladi.</p>
               </div>
               <div class="grid gap-3 sm:grid-cols-3">
@@ -2877,7 +2741,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                   >
                     <input v-model="eligibilityForm.intent" type="radio" value="CHECK_AND_RESERVE" class="sr-only" />
                     <span class="block text-sm font-medium">Tekshirish va rezerv</span>
-                    <span class="mt-0.5 block text-xs text-muted-foreground">Global limit atomar band qilinadi</span>
+                    <span class="mt-0.5 block text-xs text-muted-foreground">Safar uchun imtiyoz vaqtincha band qilinadi</span>
                   </label>
                 </div>
               </fieldset>
@@ -2919,12 +2783,12 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                     </div>
                     <div>
                       <p class="text-xs font-medium text-muted-foreground">{{ eligibilityResult.id }}</p>
-                      <h3 class="mt-1 text-lg font-semibold">{{ eligibilityResult.result === 'ELIGIBLE' ? 'Sandbox natijasi: ELIGIBLE' : eligibilityResult.result === 'MANUAL_DOCUMENT_REQUIRED' ? 'Sandbox: tasdiqlovchi hujjat talab qilinadi' : 'Sandbox: huquq tasdiqlanmadi' }}</h3>
+                      <h3 class="mt-1 text-lg font-semibold">{{ eligibilityResult.result === 'ELIGIBLE' ? 'Imtiyozdan foydalanishi mumkin' : eligibilityResult.result === 'MANUAL_DOCUMENT_REQUIRED' ? 'Tasdiqlovchi hujjat kerak' : 'Imtiyoz huquqi tasdiqlanmadi' }}</h3>
                       <p class="mt-1 text-sm text-muted-foreground">{{ eligibilityResult.person }} · {{ eligibilityResult.pinfl }}</p>
                     </div>
                   </div>
                   <span :class="['rounded-md border px-2 py-1 font-mono text-xs font-semibold', eligibilityBadgeClass(eligibilityResult.result)]">
-                    {{ eligibilityResult.result }}
+                    {{ userLabel(eligibilityResult.result) }}
                   </span>
                 </div>
                 <div class="mt-4 grid gap-3 border-t border-current/10 pt-4 sm:grid-cols-2">
@@ -2947,9 +2811,9 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 </div>
                 <div v-if="eligibilityResult.legalBasis || eligibilityResult.ruleSummary || eligibilityResult.principal" class="mt-4 space-y-2 rounded-lg border border-border bg-background/70 p-3 text-xs leading-5">
                   <p v-if="eligibilityResult.legalBasis"><span class="text-muted-foreground">Huquqiy asos:</span> <strong>{{ eligibilityResult.legalBasis }}</strong></p>
-                  <p v-if="eligibilityResult.principal"><span class="text-muted-foreground">Asosiy benefitsiar:</span> <span class="font-mono">{{ eligibilityResult.principal }}</span></p>
-                  <p v-if="eligibilityResult.principalReservationId"><span class="text-muted-foreground">Principal safar/rezerv:</span> <span class="font-mono">{{ eligibilityResult.principalReservationId }}</span></p>
-                  <p v-if="eligibilityResult.bundleId"><span class="text-muted-foreground">Global bundle / leg:</span> <span class="font-mono">{{ eligibilityResult.bundleId }} · {{ eligibilityResult.requestedLeg }}</span></p>
+                  <p v-if="eligibilityResult.principal"><span class="text-muted-foreground">Asosiy imtiyoz oluvchi:</span> <span class="font-mono">{{ eligibilityResult.principal }}</span></p>
+                  <p v-if="eligibilityResult.principalReservationId"><span class="text-muted-foreground">Asosiy yo‘lovchining safari:</span> <span class="font-mono">{{ eligibilityResult.principalReservationId }}</span></p>
+                  <p v-if="eligibilityResult.bundleId"><span class="text-muted-foreground">Safar raqami / borish yoki qaytish:</span> <span class="font-mono">{{ eligibilityResult.bundleId }} · {{ userLabel(eligibilityResult.requestedLeg ?? '') }}</span></p>
                   <p v-if="eligibilityResult.ruleSummary"><span class="text-muted-foreground">Qoida:</span> {{ eligibilityResult.ruleSummary }}</p>
                 </div>
                 <Button v-if="eligibilityResult.result === 'MANUAL_DOCUMENT_REQUIRED'" class="mt-4 w-full" type="button" @click="isManualCaseDialogOpen = true">
@@ -2958,17 +2822,17 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 </Button>
                 <div v-if="eligibilityResult.reservationId" class="mt-4 flex items-center justify-between gap-3 rounded-lg border border-primary/20 bg-background/70 p-3">
                   <div>
-                    <p class="text-xs text-muted-foreground">Rezerv identifikatori</p>
+                    <p class="text-xs text-muted-foreground">Band qilish raqami</p>
                     <p class="mt-0.5 font-mono text-sm font-semibold text-primary">{{ eligibilityResult.reservationId }}</p>
                   </div>
                   <div class="text-right">
-                    <p class="text-xs font-medium text-foreground">TTL · 15 daqiqa</p>
+                    <p class="text-xs font-medium text-foreground">Amal qilish muddati: 15 daqiqa</p>
                     <p class="mt-0.5 break-all text-xs text-muted-foreground">{{ eligibilityResult.reservationExpiresAt ?? 'Rezerv yaratilmagan' }}</p>
                   </div>
                 </div>
                 <div v-if="eligibilityResult.result === 'ELIGIBLE'" class="mt-4 grid gap-2 sm:grid-cols-3">
                   <div class="rounded-lg border border-border bg-background/70 p-3">
-                    <p class="text-[11px] text-muted-foreground">Policy versiyasi</p>
+                    <p class="text-[11px] text-muted-foreground">Qoida tahriri</p>
                     <p class="mt-1 font-mono text-xs font-medium">POL-2026.10-v3</p>
                   </div>
                   <div class="rounded-lg border border-border bg-background/70 p-3">
@@ -2999,7 +2863,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <div class="overflow-x-auto">
             <table class="w-full min-w-[820px] text-left text-sm">
               <thead class="bg-muted/45 text-xs text-muted-foreground">
-                <tr><th class="px-4 py-2.5 font-medium">Qaror</th><th class="px-4 py-2.5 font-medium">Shaxs</th><th class="px-4 py-2.5 font-medium">Safar</th><th class="px-4 py-2.5 font-medium">Transport</th><th class="px-4 py-2.5 font-medium">Natija</th><th class="px-4 py-2.5 font-medium">Rezerv</th></tr>
+                <tr><th class="px-4 py-2.5 font-medium">Qaror</th><th class="px-4 py-2.5 font-medium">Shaxs</th><th class="px-4 py-2.5 font-medium">Safar</th><th class="px-4 py-2.5 font-medium">Transport</th><th class="px-4 py-2.5 font-medium">Natija</th><th class="px-4 py-2.5 font-medium">Vaqtincha band qilish</th></tr>
               </thead>
               <tbody class="divide-y divide-border">
                 <tr v-for="decision in recentDecisions.slice(0, 5)" :key="decision.id" class="hover:bg-muted/30">
@@ -3057,10 +2921,10 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           </div>
           <form class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4" @submit.prevent="submitTicketEvent">
             <label class="space-y-1.5"><span class="text-xs font-medium">Chipta ID</span><Input v-model="ticketDraft.ticketId" placeholder="UTY-78394510" /></label>
-            <label class="space-y-1.5"><span class="text-xs font-medium">Rezerv ID</span><Input v-model="ticketDraft.reservationId" placeholder="RSV-PRINCIPAL-001" /></label>
+            <label class="space-y-1.5"><span class="text-xs font-medium">Band qilish raqami</span><Input v-model="ticketDraft.reservationId" placeholder="RSV-PRINCIPAL-001" /></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Yo‘lovchi JShShIRi</span><Input v-model="ticketDraft.passengerPinfl" maxlength="14" /></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Yo‘lovchi roli</span><select v-model="ticketDraft.passengerRole" :class="fieldClass"><option v-for="option in ticketPassengerRoleOptions" :key="option.code" :value="option.code">{{ option.code }} · {{ option.label }}</option></select></label>
-            <label class="space-y-1.5"><span class="text-xs font-medium">Event turi</span><select v-model="ticketDraft.eventType" :class="fieldClass"><option v-for="option in ticketEventTypeOptions" :key="option.code" :value="option.code">{{ option.code }}</option></select></label>
+            <label class="space-y-1.5"><span class="text-xs font-medium">Amal turi</span><select v-model="ticketDraft.eventType" :class="fieldClass"><option v-for="option in ticketEventTypeOptions" :key="option.code" :value="option.code">{{ userLabel(option.code) }}</option></select></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Safar segmenti</span><select v-model="ticketDraft.legType" :class="fieldClass"><option v-for="option in legTypeOptions" :key="option.code" :value="option.code">{{ option.code }} · {{ option.label }}</option></select></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Transport</span><select v-model="ticketDraft.transportMode" :class="fieldClass"><option v-for="option in transportModeOptions" :key="option.code" :value="option.code">{{ option.label }}</option></select></label>
             <div class="rounded-lg border border-primary/15 bg-primary/[0.045] p-3 text-xs leading-5 md:col-span-2 xl:col-span-4"><template v-if="selectedTicketAuthorization"><strong class="text-foreground">Server authorization snapshot:</strong> {{ selectedTicketAuthorization.carrierCode }} · {{ selectedTicketAuthorization.offerId }} · {{ selectedTicketAuthorization.policySnapshot }} · leg={{ selectedTicketAuthorization.legType }} · state={{ selectedTicketAuthorization.status }}<br><span class="text-muted-foreground">Journey: {{ selectedTicketAuthorization.departureDate }} · {{ selectedTicketAuthorization.serviceNumber }} · hold_expires={{ selectedTicketAuthorization.expiresAt ?? 'n/a' }}. Allowed base classes: {{ selectedTicketAuthorization.allowedFareClasses.join(', ') }} · discount={{ selectedTicketAuthorization.discountPercent }}% · eligible_base cap={{ formatMoney(selectedTicketAuthorization.maxEligibleBase) }} UZS. Carrier mTLS/token claimidan olinadi; policy va hisoblangan summalar requestdan qabul qilinmaydi.</span></template><span v-else class="text-muted-foreground">Server snapshotini ko‘rish uchun mavjud reservation_id kiriting.</span></div>
@@ -3078,14 +2942,14 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <label v-if="ticketDraft.eventType === 'RESCHEDULED'" class="space-y-1.5"><span class="text-xs font-medium">Server reschedule authorization</span><Input v-model="ticketDraft.rescheduleAuthorizationRef" placeholder="RAUTH-DEMO-11FC04" /></label>
             <label v-if="ticketDraft.eventType === 'RESCHEDULED'" class="space-y-1.5"><span class="text-xs font-medium">Eski chipta ID</span><Input v-model="ticketDraft.previousTicketId" placeholder="OLD-TICKET-..." /></label>
             <div class="flex items-end xl:col-span-2"><div class="w-full rounded-lg border border-border bg-muted/35 px-3 py-2 text-xs leading-5"><span class="text-muted-foreground">To‘lov:</span> <strong class="font-mono">MONTHLY_CLAIM</strong><span class="text-muted-foreground"> · authorization_source rezerv yoki bir martalik manual token orqali serverda aniqlanadi.</span></div></div>
-            <div class="flex items-end"><Button type="submit" class="w-full"><Send class="h-4 w-4" />Event yuborish</Button></div>
+            <div class="flex items-end"><Button type="submit" class="w-full"><Send class="h-4 w-4" />Ma’lumotni yuborish</Button></div>
           </form>
         </section>
 
         <div class="grid gap-3 lg:grid-cols-3">
           <div class="rounded-xl border border-border bg-card p-4 text-xs leading-5 shadow-sm"><p class="font-semibold text-foreground">Qaytarish va limit</p><p class="mt-1 text-muted-foreground">Faqat tasdiqlangan texnik, tabiiy yoki boshqa qualifying nonuse hamda qatnov to‘xtaganidan bir hafta ichidagi qaytarish limitni tiklashga nomzod. Yo‘lovchi talabi avtomatik restore emas.</p><p class="mt-2 font-mono" :class="canDecideReturnReview ? 'text-primary' : 'text-amber-700 dark:text-amber-300'">Reviewer session: {{ canDecideReturnReview ? 'AUTHORIZED · permission + org + ERI claim' : 'READ_ONLY · joriy operator tiklay olmaydi' }}</p></div>
           <div class="rounded-xl border border-border bg-card p-4 text-xs leading-5 shadow-sm"><p class="font-semibold text-foreground">Klass va upgrade</p><p class="mt-1 text-muted-foreground">Havo — ekonom; temir yo‘l — ekonom, platskart yoki kupe. Yuqori klass farqi tasdiqlangan metodika bo‘yicha fuqaro zimmasida.</p></div>
-          <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 text-xs leading-5 shadow-sm"><p class="font-semibold text-foreground">D-03 OPEN</p><p class="mt-1 text-muted-foreground">Return/no-show/deemed-provided va transport-spetsifik settlement_basis productiondan oldin tasdiqlanadi.</p></div>
+          <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 text-xs leading-5 shadow-sm"><p class="font-semibold text-foreground">Hisoblash qoidalari tasdiqlanishi kutilmoqda</p><p class="mt-1 text-muted-foreground">Qaytarilgan va foydalanilmagan chiptalarni qoplash qoidalari ishga tushirishdan oldin tasdiqlanishi kerak.</p></div>
         </div>
 
         <section class="min-h-0 rounded-xl border border-border bg-card shadow-sm">
@@ -3095,13 +2959,13 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           </div>
           <div class="overflow-x-auto">
             <table class="w-full min-w-[1580px] text-left text-sm">
-              <thead class="bg-muted/45 text-xs text-muted-foreground"><tr><th class="px-4 py-2.5 font-medium">Event</th><th class="px-4 py-2.5 font-medium">Chipta / rezerv / shaxs</th><th class="px-4 py-2.5 font-medium">Tashuvchi / kanal</th><th class="px-4 py-2.5 font-medium">Safar / segment / klass</th><th class="px-4 py-2.5 text-right font-medium">Tarif / yo‘lovchi / qoplash</th><th class="px-4 py-2.5 font-medium">Dalil / qaytarish / chain</th><th class="px-4 py-2.5 font-medium">Ledger / settlement</th><th class="px-4 py-2.5 font-medium">Holat</th></tr></thead>
+              <thead class="bg-muted/45 text-xs text-muted-foreground"><tr><th class="px-4 py-2.5 font-medium">Amal</th><th class="px-4 py-2.5 font-medium">Chipta / band qilish / shaxs</th><th class="px-4 py-2.5 font-medium">Transport tashkiloti / to‘lov usuli</th><th class="px-4 py-2.5 font-medium">Safar / yo‘nalish qismi / chipta turi</th><th class="px-4 py-2.5 text-right font-medium">Narx / yo‘lovchi to‘lovi / qoplash</th><th class="px-4 py-2.5 font-medium">Hujjat / qaytarish / almashtirish</th><th class="px-4 py-2.5 font-medium">Imtiyoz va hisob-kitob holati</th><th class="px-4 py-2.5 font-medium">Holat</th></tr></thead>
               <tbody class="divide-y divide-border">
                 <tr v-for="event in filteredTicketEvents" :key="event.id" class="hover:bg-muted/30">
                   <td class="px-4 py-3"><p class="font-mono text-xs">{{ event.id }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ event.occurredAt }}</p></td>
                   <td class="px-4 py-3"><p class="font-mono text-xs font-medium">{{ event.ticketId }}</p><p class="mt-0.5 font-mono text-[11px] text-primary">{{ event.reservationId }} · {{ event.authorizationSource }}</p><p class="mt-1 font-mono text-[11px] text-muted-foreground">{{ event.passenger }} · {{ event.passengerRole }}</p><p class="mt-1 text-[11px] text-muted-foreground">{{ event.benefitSnapshot }}</p></td>
-                  <td class="px-4 py-3"><div class="flex items-center gap-2"><component :is="transportIcon(event.transportMode)" class="h-4 w-4 text-muted-foreground" /><span>{{ event.carrier }}</span></div><p class="mt-1 font-mono text-[11px] text-primary">{{ event.paymentChannel }}</p></td>
-                  <td class="px-4 py-3"><p>{{ event.route }}</p><p class="mt-1 text-xs text-muted-foreground">{{ event.departureAt }} · {{ event.serviceNumber }} · {{ event.ticketClass }}</p><p class="mt-1 font-mono text-[11px]">{{ event.legType }} · event={{ event.eventType }} · state={{ event.ticketState }}</p><p v-if="event.principalLink" class="mt-1 font-mono text-[11px] text-primary">principal: {{ event.principalLink }}</p></td>
+                  <td class="px-4 py-3"><div class="flex items-center gap-2"><component :is="transportIcon(event.transportMode)" class="h-4 w-4 text-muted-foreground" /><span>{{ event.carrier }}</span></div><p class="mt-1 font-mono text-[11px] text-primary">{{ userLabel(event.paymentChannel) }}</p></td>
+                  <td class="px-4 py-3"><p>{{ event.route }}</p><p class="mt-1 text-xs text-muted-foreground">{{ event.departureAt }} · {{ event.serviceNumber }} · {{ event.ticketClass }}</p><p class="mt-1 font-mono text-[11px]">{{ userLabel(event.legType) }} · {{ userLabel(event.eventType) }} · {{ userLabel(event.ticketState) }}</p><p v-if="event.principalLink" class="mt-1 font-mono text-[11px] text-primary">principal: {{ event.principalLink }}</p></td>
                   <td class="px-4 py-3 text-right font-medium tabular-nums"><p>Tarif {{ formatMoney(event.amount) }}</p><p class="mt-1 text-[11px] text-muted-foreground">Imtiyozli {{ formatMoney(event.preferentialAmount) }} · upgrade {{ formatMoney(event.upgradeSurcharge) }}</p><p class="mt-1 text-xs text-amber-700 dark:text-amber-300">Yo‘lovchi {{ formatMoney(event.passengerPaidAmount) }}</p><p class="mt-1 text-xs text-primary">Qoplash {{ formatMoney(event.compensationRequested) }} UZS</p></td>
                   <td class="max-w-[19rem] px-4 py-3"><p class="truncate font-mono text-[11px]">{{ event.evidenceRef }}</p><p v-if="event.reason" class="mt-1 text-xs text-muted-foreground">{{ event.reason }}</p><p v-if="event.serviceCancelledAt" class="mt-1 text-xs text-muted-foreground">Nonuse sanasi: {{ event.serviceCancelledAt }}</p><p v-if="event.returnedAt" class="mt-1 text-xs text-muted-foreground">Qaytarildi: {{ event.returnedAt }}</p><p v-if="event.returnDeadline" class="mt-1 text-xs text-amber-700 dark:text-amber-300">1 haftalik deadline: {{ event.returnDeadline }}</p><p v-if="event.rescheduleChainId" class="mt-1 font-mono text-[11px] text-primary">{{ event.rescheduleChainId }} · {{ event.previousTicketId }} → {{ event.ticketId }}</p><p v-if="event.rescheduleAuthorizationRef" class="mt-1 font-mono text-[11px] text-muted-foreground">auth={{ event.rescheduleAuthorizationRef }}</p></td>
                   <td class="max-w-[17rem] px-4 py-3"><p class="font-mono text-[11px] text-primary">{{ event.ledgerEffect }}</p><p class="mt-1 font-mono text-[11px] text-muted-foreground">{{ event.settlementAction }}</p></td>
@@ -3114,52 +2978,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
       </template>
 
       <template v-else-if="isSettlements">
-        <div class="flex flex-col gap-3 rounded-xl border border-primary/15 bg-primary/[0.045] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-3">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Code2 class="h-4.5 w-4.5" /></div>
-            <div><p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/settlements</span></p><p class="mt-0.5 text-xs text-muted-foreground">Yagona settlement aggregate · lines/batch · attachments · submit · immutable claim handoff</p></div>
-          </div>
-          <Button @click="createSettlementDraft"><Plus class="h-4 w-4" />Yangi davr drafti</Button>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Reyestr qatorlari</p><p class="mt-1 text-2xl font-semibold">6 636</p><p class="mt-1 text-xs text-primary">3 transport turi</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Claim candidate · sandbox</p><p class="mt-1 text-2xl font-semibold">{{ (totalRequested / 1_000_000_000).toFixed(2) }} mlrd</p><p class="mt-1 text-xs text-muted-foreground">D-03 metodikasi kutilmoqda</p></div>
-          <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 shadow-sm"><p class="text-xs text-muted-foreground">Handoffga tayyor</p><p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">0</p><p class="mt-1 text-xs text-muted-foreground">D-03 ochiq · fail-closed</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Birinchi reyestr muddati</p><p class="mt-1 text-2xl font-semibold">10.11.2026</p><p class="mt-1 text-xs text-amber-700 dark:text-amber-300">Oktabr 2026 target ssenariysi</p></div>
-        </div>
-
-        <section class="rounded-xl border border-border bg-card shadow-sm">
-          <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 class="text-sm font-semibold">Oylik reyestr va claim candidate’lar</h2><p class="mt-0.5 text-xs text-muted-foreground">Hisob eligibility so‘rovlari sonidan emas, tasdiqlangan settlement_basisli yaroqli chipta qatorlaridan tuziladi. Hozirgi qatorlar demo va PRE-CLAIM.</p></div>
-            <select v-model="settlementStatusFilter" :class="fieldClass" class="w-auto min-w-48"><option>Barchasi</option><option value="DRAFT">Settlement · DRAFT</option><option value="VALIDATING">Settlement · VALIDATING</option><option value="SUBMITTED">Claim · SUBMITTED</option><option value="PARTIALLY_ACCEPTED">Claim · PARTIALLY_ACCEPTED</option><option value="ACCEPTED">Claim · ACCEPTED</option></select>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full min-w-[1640px] text-left text-sm">
-              <thead class="bg-muted/45 text-xs text-muted-foreground"><tr><th class="px-4 py-2.5 font-medium">Settlement / davr</th><th class="px-4 py-2.5 font-medium">Claim / immutable versiya</th><th class="px-4 py-2.5 font-medium">Tashuvchi</th><th class="px-4 py-2.5 font-medium">Qatorlar</th><th class="px-4 py-2.5 text-right font-medium">Talab / qabul</th><th class="px-4 py-2.5 font-medium">Reyestr muddati</th><th class="px-4 py-2.5 font-medium">Imzolangan hujjat kelgan</th><th class="px-4 py-2.5 font-medium">Normativ 10 ish kuni</th><th class="px-4 py-2.5 font-medium">Claim holati</th><th class="px-4 py-2.5 font-medium">Moliya ATiga handoff</th></tr></thead>
-              <tbody class="divide-y divide-border">
-                <tr v-for="settlement in filteredSettlements" :key="settlement.id" class="hover:bg-muted/30">
-                  <td class="px-4 py-3"><p class="font-mono text-xs font-medium">{{ settlement.id }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ settlement.period }}</p><span :class="['mt-1 inline-flex rounded border px-1.5 py-0.5 font-mono text-[10px]', settlementStatusClass(settlement.settlementStage)]">{{ settlement.settlementStage }}</span></td>
-                  <td class="px-4 py-3"><template v-if="settlement.claimId"><p class="font-mono text-xs font-medium text-primary">{{ settlement.claimId }}</p><p class="mt-0.5 font-mono text-[11px] text-muted-foreground">version={{ settlement.claimVersion }} · payload_hash/ERI</p></template><p v-else class="text-xs text-muted-foreground">Imzolangan immutable claim hali yaratilmagan</p></td>
-                  <td class="px-4 py-3"><div class="flex items-center gap-2"><component :is="transportIcon(settlement.transportMode)" class="h-4 w-4 text-muted-foreground" /><span>{{ settlement.carrier }}</span></div></td>
-                  <td class="px-4 py-3 font-medium tabular-nums">{{ formatMoney(settlement.lines) }}</td>
-                  <td class="px-4 py-3 text-right font-medium tabular-nums"><p>{{ formatMoney(settlement.requestedAmount) }}</p><p class="mt-1 text-xs text-primary">{{ formatMoney(settlement.acceptedAmount) }}</p></td>
-                  <td class="px-4 py-3">{{ settlement.deadline }}</td>
-                  <td class="px-4 py-3 text-xs">{{ settlement.submittedAt ?? '—' }}</td>
-                  <td class="px-4 py-3 text-xs">{{ settlement.paymentDueAt ?? '—' }}</td>
-                  <td class="px-4 py-3"><span v-if="settlement.claimStatus" :class="['rounded-md border px-2 py-1 font-mono text-xs font-medium', settlementStatusClass(settlement.claimStatus)]">{{ settlement.claimStatus }}</span><span v-else class="text-xs text-muted-foreground">PRE-CLAIM · settlement tekshiruvi</span></td>
-                  <td class="px-4 py-3"><template v-if="settlement.financeHandoffId"><p class="font-mono text-[11px]">{{ settlement.financeHandoffId }}</p><span :class="['mt-1 inline-flex rounded-md border px-2 py-1 font-mono text-xs font-medium', settlementStatusClass(settlement.financeHandoffStatus)]">{{ settlement.financeHandoffStatus }}</span></template><span v-else :class="['inline-flex rounded-md border px-2 py-1 font-mono text-xs font-medium', settlementStatusClass(settlement.financeHandoffStatus)]">{{ settlement.financeHandoffStatus ?? 'NOT_READY' }}</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <div class="grid gap-4 lg:grid-cols-3">
-          <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 shadow-sm"><div class="flex items-center gap-2"><FileCheck2 class="h-4 w-4 text-amber-700 dark:text-amber-300" /><p class="text-sm font-semibold">1. Reyestr tekshiruvi · D-03</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Qator faqat chipta segmenti + normativ hujjat + tasdiqlangan transport-spetsifik settlement_basis bilan claimable. Eligibility so‘rovlari soni hisob asosi emas.</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><BadgeCheck class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">2. Imzolangan claim</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Har bir correction yangi o‘zgarmas claim versiyasini yaratadi; oldingi versiya saqlanadi.</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Landmark class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">3. Moliya ATiga handoff</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Handoff aynan qabul qilingan claim_id + immutable versiya + payload_hash + summaga bog‘lanadi. Modul bank transferini bajarmaydi; tashqi ACK/NACKni saqlaydi. 10 ish kuni hujjatlar rasmiy kelgan vaqtdan hisoblanadi.</p></div>
-        </div>
+        <ReimbursementPanel :tickets="ticketEvents" />
       </template>
 
       <template v-else-if="isReferences">
@@ -3280,55 +3099,15 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <div class="grid gap-3 lg:grid-cols-3">
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Database class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Universal registr + typed domenlar</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Oddiy klassifikatorlar katalog/entry/immutable revisionda umumiy saqlanadi. Policy, provider, bank-account, calendar, huquq, ledger, chipta va claim kuchli invariantli typed schema/jadvallarda yuritiladi.</p></div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><ShieldCheck class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Boshqariladigan o‘zgarish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground"><span class="font-mono">POST /v1/reference-data/change-requests</span> yangi revision draftini yaratadi. Normativ yozuv aktivatsiyasi vakolat, ERI, approver va D-gate talab qiladi.</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Layers3 class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Tizim bo‘ylab qayta foydalanish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Kontingent, moslik va chipta formalaridagi select/classifier qiymatlari shu registrdan olinadi; demo tranzaksiya yozuvlari master-data hisoblanmaydi.</p></div>
+          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Layers3 class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Tizim bo‘ylab qayta foydalanish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Imtiyoz oluvchilar, moslik va chipta formalaridagi select/classifier qiymatlari shu registrdan olinadi; demo tranzaksiya yozuvlari master-data hisoblanmaydi.</p></div>
         </div>
       </template>
 
       <template v-else-if="isIntegrations">
-        <div class="rounded-xl border border-primary/20 bg-primary/[0.05] px-4 py-3 text-xs leading-5 text-muted-foreground">
-          <strong class="text-foreground">Majburiy almashinuv kanali:</strong> kontingent va tashuvchi trafiklari Idoralararo integratsiyalashuv platformasi orqali uzatiladi; tashkilotlar bilan alohida point-to-point endpointlar yaratilmaydi.
-        </div>
-        <section class="rounded-xl border border-border bg-card shadow-sm">
-          <div class="border-b border-border px-4 py-3.5">
-            <h2 class="text-sm font-semibold">Umumlashtirilgan tashqi APIlar</h2>
-            <p class="mt-0.5 text-xs text-muted-foreground">Bir xil biznes amali — bitta kanonik contract family. Tashkilot, toifa va transport payload/policy orqali farqlanadi; boshqa invariantli actionlar alohida endpoint bo‘lishi mumkin.</p>
-          </div>
-          <div class="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-5">
-            <button
-              v-for="api in apiDefinitions"
-              :key="api.id"
-              type="button"
-              :class="[
-                'rounded-lg border p-3.5 text-left transition-all',
-                selectedApiId === api.id ? 'border-primary/35 bg-primary/[0.06] shadow-sm' : 'border-border hover:border-primary/25 hover:bg-muted/35',
-              ]"
-              @click="selectedApiId = api.id"
-            >
-              <span class="inline-flex rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">{{ api.method }}</span>
-              <p class="mt-2 truncate font-mono text-xs font-semibold">{{ api.endpoint }}</p>
-              <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ api.title }}</p>
-            </button>
-          </div>
-          <div class="grid border-t border-border lg:grid-cols-[minmax(18rem,0.7fr)_minmax(0,1.3fr)]">
-            <div class="border-b border-border p-4 lg:border-b-0 lg:border-r">
-              <div class="flex items-center gap-2"><span class="rounded bg-primary/10 px-2 py-1 font-mono text-[11px] font-semibold text-primary">{{ selectedApi.method }}</span><code class="text-sm font-semibold">{{ selectedApi.endpoint }}</code></div>
-              <h3 class="mt-4 text-base font-semibold">{{ selectedApi.title }}</h3>
-              <p class="mt-1 text-sm leading-6 text-muted-foreground">{{ selectedApi.description }}</p>
-              <div class="mt-4 rounded-lg border border-border bg-muted/35 p-3">
-                <p class="text-xs text-muted-foreground">Iste’molchilar</p>
-                <p class="mt-1 text-sm font-medium">{{ selectedApi.consumers }}</p>
-              </div>
-              <div class="mt-4">
-                <p class="text-xs font-medium text-muted-foreground">Family operatsiyalari va variantlari</p>
-                <div class="mt-2 flex flex-wrap gap-1.5"><span v-for="variant in selectedApi.variants" :key="variant" class="rounded-md border border-border bg-background px-2 py-1 font-mono text-[10px] text-foreground">{{ variant }}</span></div>
-              </div>
-            </div>
-            <div class="min-w-0 bg-[#0f1714] p-4 text-[#d9e7df] dark:bg-black/35">
-              <div class="mb-3 flex items-center justify-between gap-3"><div class="flex items-center gap-2"><Code2 class="h-4 w-4 text-emerald-400" /><span class="text-xs font-medium text-emerald-100">Request namunasi</span></div><button type="button" class="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-emerald-100 transition-colors hover:bg-white/10" @click="copyApiSample"><Copy class="h-3.5 w-3.5" />Nusxalash</button></div>
-              <pre class="overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs leading-5 text-[#c8d8cf]">{{ selectedApi.sample }}</pre>
-            </div>
-          </div>
-        </section>
+        <IntegrationExplorer :apis="apiDefinitions" />
+        <details class="rounded-xl border border-border bg-card p-4">
+          <summary class="cursor-pointer text-sm font-semibold">Arxitektura va qo‘shimcha texnik ma’lumotlar</summary>
+          <div class="mt-4 space-y-4">
 
         <section class="rounded-xl border border-amber-500/25 bg-amber-500/[0.04] shadow-sm">
           <div class="flex flex-col gap-2 border-b border-amber-500/20 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
@@ -3387,19 +3166,21 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <div class="flex shrink-0 items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.05] px-3 py-2 text-xs font-medium text-primary"><CheckCircle2 class="h-4 w-4" />Configuration over duplication</div>
           </div>
         </section>
+          </div>
+        </details>
       </template>
     </div>
 
     <div v-if="isContingentDialogOpen" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" @click.self="isContingentDialogOpen = false">
       <div class="w-full max-w-xl rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl">
         <div class="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
-          <div><h2 class="text-base font-semibold">Kontingent eventini yuborish</h2><p class="mt-1 text-xs text-muted-foreground">Yagona kanonik payloadning interaktiv namunasi</p></div>
+          <div><h2 class="text-base font-semibold">Imtiyoz oluvchilar eventini yuborish</h2><p class="mt-1 text-xs text-muted-foreground">Yagona kanonik payloadning interaktiv namunasi</p></div>
           <Button variant="ghost" size="icon" aria-label="Yopish" @click="isContingentDialogOpen = false"><X class="h-4 w-4" /></Button>
         </div>
         <form class="space-y-4 p-5" @submit.prevent="submitContingentEvent">
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="space-y-1.5"><span class="text-xs font-medium">Manba tashkilot</span><select v-model="contingentDraft.source" :class="fieldClass"><option v-for="source in sourceOptions" :key="source">{{ source }}</option></select></label>
-            <label class="space-y-1.5"><span class="text-xs font-medium">Event turi</span><select v-model="contingentDraft.eventType" :class="fieldClass"><option v-for="option in contingentEventTypeOptions" :key="option.code" :value="option.code">{{ option.code }}</option></select></label>
+            <label class="space-y-1.5"><span class="text-xs font-medium">Amal turi</span><select v-model="contingentDraft.eventType" :class="fieldClass"><option v-for="option in contingentEventTypeOptions" :key="option.code" :value="option.code">{{ userLabel(option.code) }}</option></select></label>
           </div>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="space-y-1.5"><span class="text-xs font-medium">JShShIR</span><Input v-model="contingentDraft.pinfl" maxlength="14" placeholder="14 xonali raqam" /></label>
