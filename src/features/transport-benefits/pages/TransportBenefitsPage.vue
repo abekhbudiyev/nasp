@@ -2192,7 +2192,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
 <template>
   <PageContainer>
     <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-0.5">
-      <div class="flex justify-end">
+      <div v-if="!isIntegrations && !isSettlements" class="flex justify-end">
         <div class="flex shrink-0 items-center gap-2">
           <span class="inline-flex h-7 items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 text-xs font-medium text-amber-700 dark:text-amber-300">
             <Boxes class="h-3.5 w-3.5" />
@@ -2223,7 +2223,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         </div>
       </Transition>
 
-      <div class="flex flex-col gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.055] px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <div v-if="!isIntegrations && !isSettlements" class="flex flex-col gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.055] px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-start gap-3">
           <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
           <div>

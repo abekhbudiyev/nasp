@@ -47,32 +47,31 @@ async function copy() { try { await navigator.clipboard.writeText(`Request\n${se
 <template>
   <div class="space-y-5">
     <section class="rounded-2xl border bg-card p-5 sm:p-6">
-      <p class="text-xs font-semibold uppercase tracking-widest text-primary">Integratsiya qo‘llanmasi</p>
-      <h2 class="mt-2 text-xl font-semibold">Qaysi API qachon ishlatiladi?</h2>
-      <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Quyidagi bosqichdan boshlang. Har bir API uchun chaqiruvchi tomon, foydalanish vaqti va keyingi qadam ko‘rsatilgan.</p>
-      <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <h2 class="text-lg font-semibold">APIlar · Bosqichni tanlang</h2>
+      <div class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <button v-for="(step,i) in financeFlow" :key="step.id" type="button" :aria-pressed="groupId === step.id" @click="chooseGroup(step.id)" :class="['relative rounded-xl border p-4 text-left transition-colors', groupId === step.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/40']">
           <div class="flex items-center justify-between"><span class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{{ i + 1 }}</span><component :is="step.icon" class="h-4 w-4 text-muted-foreground" /></div>
           <p class="mt-3 text-sm font-semibold">{{ step.title }}</p><p class="mt-1 text-xs leading-5 text-muted-foreground">{{ step.caption }}</p>
         </button>
       </div>
-      <p class="mt-4 text-xs leading-5 text-muted-foreground">Fayllar alohida yuklanadi; buyurtmanomada faqat file_id beriladi. Tekshirish va summani tasdiqlash — tizimning ichki jarayoni. Summalar tiyinda ko‘rsatilgan.</p>
     </section>
     <div class="grid items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
       <nav aria-label="API bo‘limlari" class="rounded-xl border bg-card p-2 lg:sticky lg:top-0"><button v-for="g in groups" :key="g.id" type="button" :aria-pressed="groupId === g.id" @click="chooseGroup(g.id)" :class="['flex w-full items-center gap-3 rounded-lg p-3 text-left text-sm transition-colors', groupId === g.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted']"><component :is="g.icon" class="h-4 w-4 shrink-0" /><span class="flex-1">{{ g.title }}</span><span class="text-xs text-muted-foreground">{{ g.ids.length }}</span></button></nav>
       <div class="min-w-0 space-y-4">
-        <section class="rounded-xl border bg-card p-5"><h2 class="text-lg font-semibold">{{ group.title }}</h2><p class="mt-1 text-xs font-medium text-primary">{{ group.caption }}</p><div class="mt-4 grid gap-4 md:grid-cols-2"><div><p class="text-xs font-semibold text-muted-foreground">QACHON?</p><p class="mt-1 text-sm leading-6">{{ group.when }}</p></div><div><p class="text-xs font-semibold text-muted-foreground">NATIJA</p><p class="mt-1 text-sm leading-6">{{ group.result }}</p></div></div></section>
+        <div class="px-1"><h2 class="text-base font-semibold">{{ group.title }}</h2><p class="mt-1 text-xs text-muted-foreground">{{ group.caption }}</p></div>
         <div class="grid gap-3 sm:grid-cols-2"><button v-for="api in groupApis" :key="api.id" type="button" :aria-pressed="selected.id === api.id" @click="apiId = api.id" :class="['min-w-0 rounded-xl border bg-card p-4 text-left transition-colors', selected.id === api.id ? 'border-primary ring-1 ring-primary/20' : 'hover:bg-muted/30']"><div class="flex items-center justify-between gap-2"><span :class="['rounded px-2 py-1 text-xs font-semibold', api.method === 'GET' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300' : 'bg-primary/10 text-primary']">{{ api.method }}</span><ChevronRight class="h-4 w-4 text-muted-foreground" /></div><p class="mt-3 text-sm font-semibold">{{ api.title.replace(/^\d+\. /, '') }}</p><p class="mt-2 break-all font-mono text-[11px] leading-5 text-muted-foreground">{{ api.endpoint }}</p></button></div>
         <section class="min-w-0 overflow-hidden rounded-xl border bg-card">
           <div class="space-y-4 p-5"><div class="flex flex-wrap items-start justify-between gap-3"><div class="min-w-0"><h3 class="font-semibold">{{ selected.title.replace(/^\d+\. /, '') }}</h3><p class="mt-2 break-all font-mono text-xs leading-5 text-primary">{{ selected.method }} {{ selected.endpoint }}</p></div><button class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs hover:bg-muted" @click="copy"><Check v-if="copied" class="h-3.5 w-3.5" /><Copy v-else class="h-3.5 w-3.5" />{{ copied ? 'Nusxalandi' : 'Request va Response nusxalash' }}</button></div>
-            <p class="text-sm leading-6 text-muted-foreground">{{ selected.description }}</p>
+            <details :key="selected.id + '-description'" class="text-sm"><summary class="cursor-pointer text-xs text-muted-foreground">Batafsil izoh</summary><p class="mt-2 text-sm leading-6 text-muted-foreground">{{ selected.description }}</p><p class="mt-2 text-xs text-muted-foreground">Fayllar alohida yuklanadi, buyurtmanomada file_id beriladi. Summalar tiyinda.</p></details>
             <div class="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm"><ArrowRight class="h-4 w-4 shrink-0 text-primary" /><span>{{ selected.consumers }}</span></div>
             <div class="grid gap-4 sm:grid-cols-2"><div><p class="text-xs font-semibold text-muted-foreground">QACHON CHAQIRILADI?</p><p class="mt-1 text-sm leading-6">{{ usage[selected.id]?.when }}</p></div><div><p class="text-xs font-semibold text-muted-foreground">KEYINGI QADAM</p><p class="mt-1 text-sm leading-6">{{ usage[selected.id]?.next }}</p></div></div>
             <p v-if="copyError" role="status" class="text-xs text-destructive">{{ copyError }}</p>
           </div>
-          <div class="flex items-center gap-1 border-t bg-muted/30 px-4 pt-2" role="tablist" aria-label="API namunalari"><button role="tab" :aria-selected="sampleTab === 'request'" @click="sampleTab = 'request'" :class="['border-b-2 px-4 py-3 text-sm', sampleTab === 'request' ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground']">Request · yuboriladigan ma’lumot</button><button v-if="selected.response" role="tab" :aria-selected="sampleTab === 'response'" @click="sampleTab = 'response'" :class="['border-b-2 px-4 py-3 text-sm', sampleTab === 'response' ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground']">Response · qaytadigan javob</button></div>
-          <pre class="max-h-[34rem] overflow-auto bg-[#101b18] p-5 font-mono text-xs leading-6 text-[#d3e7de]" role="tabpanel">{{ sample }}</pre>
+          <details :key="selected.id + '-samples'" class="border-t"><summary class="cursor-pointer px-5 py-4 text-sm font-medium">Request / Response namunalari</summary>
+          <div class="flex items-center gap-1 bg-muted/30 px-4 pt-2" role="tablist" aria-label="API namunalari"><button role="tab" :aria-selected="sampleTab === 'request'" @click="sampleTab = 'request'" :class="['border-b-2 px-4 py-3 text-sm', sampleTab === 'request' ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground']">Request</button><button v-if="selected.response" role="tab" :aria-selected="sampleTab === 'response'" @click="sampleTab = 'response'" :class="['border-b-2 px-4 py-3 text-sm', sampleTab === 'response' ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground']">Response</button></div>
+          <pre class="max-h-[24rem] overflow-auto bg-[#101b18] p-5 font-mono text-xs leading-6 text-[#d3e7de]" role="tabpanel">{{ sample }}</pre>
           <details v-if="selected.id === 'reimbursement-status'" class="border-t p-4 text-xs"><summary class="cursor-pointer font-medium">Tuzatish kerak bo‘lgandagi javob</summary><pre class="mt-3 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs leading-5">{{ correctionStatusSample }}</pre></details>
+          </details>
         </section>
       </div>
     </div>

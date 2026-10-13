@@ -2,15 +2,16 @@ import { documentTypes } from './reimbursement'
 
 const json = (value: unknown) => JSON.stringify(value, null, 2)
 const ref = (id: number, code: string) => ({ id, code })
-const documents = documentTypes.map((type, i) => ({ type: ref(type.id, type.code), file_id: `FILE-00${i + 1}` }))
-const lines = [{ line_id: '1', ticket_id: 'UTY-78394510', requested_amount_minor: 24800000 }, { line_id: '2', ticket_id: 'UTY-78394418', requested_amount_minor: 31200000 }]
+const documents = [{ type: ref(3, 'COST_CALCULATION'), file_id: 'FILE-003' }]
+const lineDocuments = (page: number) => [{ type: ref(1, 'TICKET_COPY'), file_id: 'FILE-001', page }, { type: ref(2, 'ROUTE_SHEET'), file_id: 'FILE-002' }]
+const lines = [{ line_id: '1', ticket_id: 'UTY-78394510', requested_amount_minor: 24800000, documents: lineDocuments(1) }, { line_id: '2', ticket_id: 'UTY-78394418', requested_amount_minor: 31200000, documents: lineDocuments(2) }]
 export const financeApiDefinitions = [
   {
     id: 'file-config', method: 'GET', endpoint: '/v1/file-configs?purpose_code=TRANSPORT_REIMBURSEMENT',
     title: '1. Kerakli fayllar ro‘yxatini olish', consumers: 'Transport tashkiloti → bizning tizim',
     description: 'Hujjat nomlari, ruxsat etilgan kengaytmalar va majburiylik shartlari qaytadi. Frontend yuklash maydonlarini shu javobdan shakllantiradi. Kengaytmalar namuna, yakuniy ro‘yxat ma’lumotnomada boshqariladi.',
     variants: ['GET · fayl sozlamalari'], sample: 'Query: purpose_code=TRANSPORT_REIMBURSEMENT\nRequest body talab qilinmaydi.',
-    response: json({ purpose: ref(1, 'TRANSPORT_REIMBURSEMENT'), files: documentTypes.map((type, i) => ({ id: type.id, code: type.code, name: type.name, extensions: i === 0 ? ['pdf', 'zip'] : ['pdf', 'xlsx', 'xls'], required: true, ...(i === 1 ? { required_when: { electronic_tickets: true } } : {}) })) }),
+    response: json({ purpose: ref(1, 'TRANSPORT_REIMBURSEMENT'), files: documentTypes.map((type, i) => ({ id: type.id, code: type.code, name: type.name, scope: type.scope, extensions: type.extensions, required: true, ...(i === 1 ? { required_when: { electronic_tickets: true } } : {}) })) }),
   },
   {
     id: 'file-create', method: 'POST', endpoint: '/v1/files', title: '2. Faylni alohida yuklash', consumers: 'Transport tashkiloti → fayl xizmati',
@@ -20,7 +21,7 @@ export const financeApiDefinitions = [
   },
   {
     id: 'reimbursement-create', method: 'POST', endpoint: '/v1/reimbursement-requests', title: '3. Oylik buyurtmanomani yuborish', consumers: 'Transport tashkiloti → bizning tizim',
-    description: 'Davr, bank rekvizitlari, chipta qatorlari va fayl raqamlari yuboriladi. Summalar tiyinda: 24800000 = 248 000 so‘m. Qabul javobi to‘lov tasdiqlanganini anglatmaydi.', variants: ['Yagona API · barcha transportlar'],
+    description: 'Umumiy documents hisob-kitobni, lines[].documents chipta nusxasi va qaydnomani bildiradi. Bitta file_id bir nechta qatorga bog‘lanishi mumkin; PDF uchun page ixtiyoriy. Summalar tiyinda. Qabul javobi to‘lov tasdiqlanganini anglatmaydi.', variants: ['Yagona API · barcha transportlar'],
     sample: json({ source_request_id: 'BUY-2026-10-001', period: '2026-10', bank_account: { account_number: '20208000000000000001', bank_code: '00444' }, currency: ref(1, 'UZS'), lines, documents }),
     response: json({ request_id: 'REQ-001', source_request_id: 'BUY-2026-10-001', version: 1, request_status: ref(1, 'RECEIVED'), payment_status: ref(1, 'NOT_SENT'), requested_amount_minor: 56000000, received_at: '2026-11-05T10:00:00+05:00' }),
   },

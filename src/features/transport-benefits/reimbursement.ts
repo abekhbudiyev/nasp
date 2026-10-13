@@ -1,10 +1,9 @@
 import { userLabel } from './ui-labels'
 
 export const requestStatuses = [
-  { id: 1, code: 'RECEIVED', name: 'Qabul qilindi' },
-  { id: 2, code: 'NEEDS_CORRECTION', name: 'Tuzatish kerak' },
-  { id: 3, code: 'VALIDATED', name: 'Tekshirildi' },
+  { id: 1, code: 'RECEIVED', name: 'Tasdiqlash kutilmoqda' },
   { id: 4, code: 'APPROVED', name: 'Tasdiqlandi' },
+  { id: 5, code: 'CANCELLED', name: 'Bekor qilindi' },
 ] as const
 export const paymentStatuses = [
   { id: 1, code: 'NOT_SENT', name: 'Yuborilmagan' },
@@ -13,27 +12,37 @@ export const paymentStatuses = [
   { id: 4, code: 'FAILED', name: 'To‘lov bajarilmadi' },
 ] as const
 export type RequestStatus = typeof requestStatuses[number]['code']
+// Older prototype review stages become pending; historical entries remain untouched.
+export function normalizeRequestStatus(status: string): RequestStatus {
+  if (status === 'NEEDS_CORRECTION' || status === 'VALIDATED') return 'RECEIVED'
+  return requestStatuses.find(item => item.code === status)?.code || 'RECEIVED'
+}
 export type PaymentStatus = typeof paymentStatuses[number]['code']
 export interface ReimbursementTicket {
   id: string; ticketId: string; carrier: string; occurredAt: string; transportMode: string
   ticketState: string; amount: number; preferentialAmount: number; compensationRequested: number
   evidenceRef: string; paymentChannel: string; route: string; previousTicketId?: string
 }
-export interface ClaimLine { ticketId: string; requested: number; error?: string }
+export interface ClaimLine { ticketId: string; requested: number; error?: string; documents?: RequestDocument[] }
 export const documentTypes = [
-  { id: 1, code: 'TICKET_COPY', name: 'Chipta nusxalari' },
-  { id: 2, code: 'ROUTE_SHEET', name: 'Yo‘nalish qaydnomasi (elektron chiptalar uchun)' },
-  { id: 3, code: 'COST_CALCULATION', name: 'So‘ralayotgan summa hisob-kitobi' },
+  { id: 1, code: 'TICKET_COPY', name: 'Chipta nusxasi', scope: 'LINE', extensions: ['pdf', 'zip'] },
+  { id: 2, code: 'ROUTE_SHEET', name: 'Yo‘nalish qaydnomasi', scope: 'LINE', extensions: ['pdf', 'xlsx', 'xls'] },
+  { id: 3, code: 'COST_CALCULATION', name: 'Umumiy hisob-kitob', scope: 'REQUEST', extensions: ['pdf', 'xlsx', 'xls'] },
 ] as const
-export interface RequestDocument { type: { id: number; code: string }; file_id: string }
+export interface RequestDocument { type: { id: number; code: string }; file_id: string; page?: number }
 export interface RegisteredFile {
-  id: string; name: string; carrier: string; size: number; uploadedAt: string; sample: boolean
+  id: string; name: string; carrier: string; size: number; uploadedAt: string; sample: boolean; typeCode?: string
 }
 export interface ReimbursementRequest {
   id: string; sourceId: string; carrier: string; period: string; account: string
+  carrierCode?: string; transportMode?: string
   documents: RequestDocument[]; lines: ClaimLine[]; status: RequestStatus; payment: PaymentStatus
   receivedAt: string; approvedAmount: number; paymentId?: string; paymentDocument?: string
   paidAt?: string; history: { at: string; text: string }[]; notifications: { at: string; status: string }[]
+  electronicTickets?: boolean
+  demoCase?: string
+  demoTickets?: ReimbursementTicket[]
+  validation?: { valid: boolean; checkedAt: string; message: string }
 }
 export function eventMonth(value: string): string {
   const match = value.match(/^(\d{2})\.(\d{2})\.(\d{4})/)
@@ -58,6 +67,7 @@ export function validateLines(request: ReimbursementRequest, events: Reimburseme
     let error = ''
     if (!ticket) error = 'Chipta reyestrda topilmadi'
     else if (ticket.carrier !== request.carrier) error = 'Chipta boshqa tashuvchiga tegishli'
+    else if (request.transportMode && ticket.transportMode !== request.transportMode) error = 'Chipta boshqa transport turiga tegishli'
     else if (!events.some(e => e.ticketId === ticket.ticketId && eventMonth(e.occurredAt) === request.period)) error = 'Chipta davrga mos emas'
     else if (request.lines.filter(l => l.ticketId === line.ticketId).length > 1) error = 'Buyurtmanomada takroriy chipta'
     else if (ticket.paymentChannel !== 'MONTHLY_CLAIM') error = 'Boshqa to‘lov kanalidagi chipta'
