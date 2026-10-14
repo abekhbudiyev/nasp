@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import { eiProductionRoutes } from '@/features/ei/routes'
+import { governancePages } from '@/features/project-governance/config'
 
 const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
 const LoginPage = () => import('@/features/auth/pages/LoginPage.vue')
@@ -43,6 +44,19 @@ export const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
     children: [
+      ...governancePages.map((page) => ({
+        path: `apps/project-governance${page.path}`,
+        name: `project-governance-${page.key}`,
+        component: () => import('@/features/project-governance/pages/ProjectGovernancePage.vue'),
+        props: { pageKey: page.key },
+        meta: { requiresAuth: true, permission: 'project-governance.view' as const, moduleKey: 'project-governance', moduleTitle: 'Loyihalarni boshqarish', title: page.title, breadcrumb: ['Ilovalar', 'Loyihalarni boshqarish', page.title] },
+      })),
+      {
+        path: 'apps/project-governance/projects/:projectId', name: 'project-governance-detail',
+        component: () => import('@/features/project-governance/pages/ProjectGovernancePage.vue'),
+        props: (route) => ({ pageKey: 'detail', projectId: String(route.params.projectId) }),
+        meta: { requiresAuth: true, permission: 'project-governance.view', moduleKey: 'project-governance', moduleTitle: 'Loyihalarni boshqarish', title: 'Loyiha kartasi', breadcrumb: ['Ilovalar', 'Loyihalarni boshqarish', 'Loyiha kartasi'] },
+      },
       {
         path: '',
         redirect: '/apps',

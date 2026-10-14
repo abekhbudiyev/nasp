@@ -10,6 +10,7 @@ import { snavMenu } from '@/features/snav/config'
 import { eiMenu } from '@/features/ei/config'
 import { transportBenefitsMenu } from '@/features/transport-benefits/config'
 import { ptpkMenu } from '@/features/ptpk/config'
+import { governanceMenu } from '@/features/project-governance/config'
 import { palliativeMenu, palliativeMenuGroups } from '@/features/palliative-care/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
@@ -59,6 +60,7 @@ const currentModuleLabel = computed(() => {
 })
 
 const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
+  if (activeModuleKey.value === 'project-governance') return governanceMenu
   if (activeModuleKey.value === 'palliative-care') {
     return palliativeMenu
   }

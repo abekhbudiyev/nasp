@@ -1,5 +1,6 @@
 export type PermissionKey =
   | 'apps.view'
+  | 'project-governance.view'
   | 'iptk.view'
   | 'ptpk.view'
   | 'palliative-care.view'

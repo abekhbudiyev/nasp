@@ -50,10 +50,10 @@ const router = makeRouter()
 const key = STORAGE_KEYS.authSession
 beforeEach(() => { localStorage.clear(); sessionStorage.clear() })
 
-test('all 17 registered modules have distinct stable credentials and exactly their own permission', () => {
-  assert.equal(data.demoModuleAccounts.length, 17)
+test('all registered modules have distinct stable credentials and exactly their own permission', () => {
+  assert.equal(data.demoModuleAccounts.length, appModules.length)
   assert.deepEqual(new Set(data.demoModuleAccounts.map(account => account.moduleId)), new Set(appModules.map(module => module.id)))
-  for (const field of ['username', 'password', 'id']) assert.equal(new Set(data.demoModuleAccounts.map(account => account[field])).size, 17)
+  for (const field of ['username', 'password', 'id']) assert.equal(new Set(data.demoModuleAccounts.map(account => account[field])).size, appModules.length)
   for (const account of data.demoModuleAccounts) {
     const user = data.authenticateDemoModule(account.username, account.password)
     assert.ok(user)
@@ -109,7 +109,7 @@ test('all actual module routes, including nested and generic routes without meta
 })
 
 test('login redirects reject other modules, external paths, prefix lookalikes and traversal', () => {
-  const account = data.demoModuleAccounts[0]
+  const account = data.demoModuleAccounts.find(account => account.moduleId === 'palliative-care')
   const user = data.createDemoUser(account.id)
   const own = `${account.route}/cases?view=scenarios#examples`
   assert.equal(guard.resolveAuthorizedRedirect(router, user, own), own)
@@ -167,7 +167,7 @@ test('live guard redirects an unauthenticated deep link, allows the own module a
   await instance.push('/apps/palliative-care/cases')
   assert.equal(instance.currentRoute.value.name, 'login')
   assert.equal(instance.currentRoute.value.query.redirect, '/apps/palliative-care/cases')
-  const account = data.demoModuleAccounts[0]
+  const account = data.demoModuleAccounts.find(account => account.moduleId === 'palliative-care')
   await store.login({ username: account.username, password: account.password })
   await instance.push('/apps/palliative-care/cases')
   assert.equal(instance.currentRoute.value.path, '/apps/palliative-care/cases')

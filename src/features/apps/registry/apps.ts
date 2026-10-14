@@ -21,6 +21,16 @@ import type { AppModule } from '../types'
 
 export const appModules: AppModule[] = [
   {
+    id: 'project-governance',
+    title: 'Loyihalarni boshqarish',
+    description: '346 va 79-son buyruqlar: tashabbus, Kengash, texnik hujjatlar, dalolatnoma va moliyalashtirish.',
+    route: '/apps/project-governance',
+    icon: Workflow,
+    enabled: true,
+    permission: 'project-governance.view',
+    hasInternalNavigation: true,
+  },
+  {
     id: 'palliative-care',
     title: 'Bolalar palliativ yordami',
     description: 'Bola va oilaga yo‘llanmadan statsionar, mobil yordam va keyingi kuzatuvgacha uzluksiz yordamni tashkil etish.',
