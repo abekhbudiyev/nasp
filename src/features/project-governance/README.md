@@ -71,3 +71,15 @@ Kengashning individual ovozlari qaror tarixidagi alohida dalil; mavjud xulosalar
 29 test: xodimdan vorisga o‘tish, eski muallif saqlanishi, shaxsni lavozim o‘rniga tayinlash taqiqlanishi, boshqa lavozimdagi bir xil rolning cheklanishi va oldingi biznes qoidalari.
 
 Ma’lumotlar sessiya xotirasida. Ishlab chiqarish uchun umumiy tashkilot/lavozim/xodim reyestri, vaqtinchalik o‘rinbosarlik va server RBAC integratsiyasi kerak.
+
+## IHMA rasmiy sayti ma’lumotlari — 14.10.2026
+
+`official-directory.ts` rasmiy saytning shu sahifalarida ishlatiladigan ochiq Nuxt Content to‘plamidan tayyorlangan statik nusxa: management, central-office, organizations-under-agency. Manba sahifalari inglizcha; interfeys nomlari sayt to‘plamidagi o‘zbekcha variantdan olindi.
+
+6 rahbariyat vakili; markaziy apparatda 34 lavozim; 13 tizim tashkilotida 28 rahbar/lavozim. Jami 68 rasmiy lavozim va xodim yozuvi. Tashkilotlar soni Agentlikning o‘zi bilan 14. Public ish telefonlari va email berilgan joylarda yozuvda saqlanadi. Manbadagi yozuvlar avtomatik autentifikatsiya yoki jarayon vakolati bermaydi.
+
+Tashkilot nomlari rahbar lavozimidan ajratildi; markaziy bo‘linma nomlarida boshliq/mudir qo‘shimchasi ajratildi. Tizim tashkilotlarining ichki strukturasi berilmagan joylarda «Rahbariyat» mantiqiy guruhi tuzildi — bu alohida rasmiy bo‘linma deb talqin qilinmaydi. «Manbadan tuzilgan» belgisi shu hosil qilingan yozuvlarga tegishli.
+
+6 mavjud demo lavozim/xodim va ikki demo ishchi guruh workflow sinovlari uchun saqlandi, «Demo jarayon» deb belgilandi. Xodimlar va lavozimlar tablari standart ravishda «Rasmiy sayt» filtrini ochadi. Kengash buyruqdagi tarixiy tarkibi ushbu import bilan yangilanmaydi. Rasmiy lavozimlarning process role ro‘yxati bo‘sh; administrator vakolatni reglament asosida alohida biriktiradi.
+
+32 test: 68 yozuvning to‘liqligi, ID yagonaligi, org/unit/position/person bog‘liqligi, manba va sana, vakolatning avtomatik berilmasligi va avvalgi 29 jarayon tekshiruvi.

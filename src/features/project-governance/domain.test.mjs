@@ -122,7 +122,7 @@ test('unit and employee hierarchy is enforced; invalid parent or role cannot be 
   const store = useGovernanceStore(createPinia()); store.role = 'admin'
   assert.throws(() => store.saveUnit({ id: '', organizationId: 'missing', code: 'U', name: 'Bo‘linma', active: true }), /faol tashkilot/)
   assert.throws(() => store.savePerson({ id: '', organizationId: 'org-center', unitId: 'unit-services', name: 'Sinov', position: 'Lavozim', roles: ['center'], active: true }), /tegishli/)
-  assert.throws(() => store.savePerson({ id: '', organizationId: 'org-center', unitId: 'unit-center', name: 'Sinov', position: 'Lavozim', roles: [], active: true }), /vazifasini/)
+  assert.throws(() => store.savePerson({ id: '', organizationId: 'org-center', unitId: 'unit-center', name: 'Sinov', position: 'Lavozim', roles: ['unknown'], active: true }), /vazifasini/)
 })
 test('linked organization, unit and position are protected; employee may leave without moving tasks', () => {
   const store = useGovernanceStore(createPinia()); store.role = 'admin'
@@ -170,4 +170,38 @@ test('another position with the same role cannot act on a project outside its as
   store.savePerson({ id: 'other-person', name: 'Boshqa xodim', positionId: 'other-center', organizationId: 'org-center', unitId: 'unit-center', position: '', roles: [], active: true })
   store.role = 'center'; store.actingPersonId = 'other-person'
   assert.throws(() => store.actStep('DL-2026-001', 'submit'), /boshqa lavozim/)
+})
+test('official site snapshot contains all 68 positions and people with valid hierarchy and provenance', () => {
+  const store = useGovernanceStore(createPinia())
+  const d = store.directory
+  const people = d.people.filter(p => p.sourceType === 'official')
+  assert.equal(people.length, 68)
+  assert.equal(people.filter(p => p.sourceUrl.endsWith('/management')).length, 6)
+  assert.equal(people.filter(p => p.sourceUrl.endsWith('/central-office')).length, 34)
+  assert.equal(people.filter(p => p.sourceUrl.endsWith('/organizations-under-agency')).length, 28)
+  assert.equal(d.organizations.length, 14)
+  for (const collection of [d.organizations, d.units, d.positions, d.people]) assert.equal(new Set(collection.map(p => p.id)).size, collection.length)
+  for (const person of people) {
+    const position = d.positions.find(p => p.id === person.positionId)
+    assert.ok(position); assert.equal(position.unitId, person.unitId); assert.equal(position.organizationId, person.organizationId)
+    assert.ok(d.units.find(u => u.id === person.unitId && u.organizationId === person.organizationId))
+    assert.equal(person.observedAt, '2026-10-14')
+  }
+})
+test('source imports do not infer workflow permissions or overwrite statutory council membership', () => {
+  const store = useGovernanceStore(createPinia())
+  assert.ok(store.directory.positions.filter(p => p.sourceType === 'official').every(p => p.roles.length === 0))
+  assert.equal(d.members.length, 10)
+  const director = store.directory.people.find(p => p.name === 'Olloyorov Mansurbek Polvonzoda')
+  assert.ok(director); assert.equal(director.sourceUrl, 'https://ihma.uz/en/agency/management')
+  assert.equal(store.project('LY-2026-001').assignees.center, 'position-center')
+})
+test('an official catalogue position without a process role can be maintained without granting permissions', () => {
+  const store = useGovernanceStore(createPinia()); store.role = 'admin'
+  const person = store.directory.people.find(p => p.sourceType === 'official')
+  store.savePerson({ ...person, name: person.name })
+  assert.deepEqual(person.roles, [])
+  const position = store.directory.positions.find(p => p.id === person.positionId)
+  store.savePosition({ ...position })
+  assert.deepEqual(position.roles, [])
 })

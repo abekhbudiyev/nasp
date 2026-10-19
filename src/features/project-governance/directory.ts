@@ -1,9 +1,11 @@
+import { applyOfficialDirectory } from './official-directory'
 import type { Project, Role } from './domain'
 export type ProcessRole = Exclude<Role, 'admin' | 'council'>
-export interface Organization { id: string; code: string; name: string; type: 'agency' | 'center' | 'fund' | 'regional' | 'other'; active: boolean }
-export interface Unit { id: string; organizationId: string; code: string; name: string; active: boolean }
-export interface Position { id: string; organizationId: string; unitId: string; code: string; name: string; roles: ProcessRole[]; active: boolean }
-export interface Person { positionId?: string; id: string; organizationId: string; unitId: string; name: string; position: string; roles: ProcessRole[]; active: boolean }
+export interface DirectorySource { sourceType?: 'official' | 'derived' | 'demo' | 'manual'; sourceUrl?: string; observedAt?: string }
+export interface Organization extends DirectorySource { id: string; code: string; name: string; type: 'agency' | 'center' | 'fund' | 'regional' | 'other'; active: boolean }
+export interface Unit extends DirectorySource { kind?: 'department' | 'group'; id: string; organizationId: string; code: string; name: string; active: boolean }
+export interface Position extends DirectorySource { id: string; organizationId: string; unitId: string; code: string; name: string; roles: ProcessRole[]; active: boolean }
+export interface Person extends DirectorySource { phone?: string; email?: string; positionId?: string; id: string; organizationId: string; unitId: string; name: string; position: string; roles: ProcessRole[]; active: boolean }
 export interface Directory { organizations: Organization[]; units: Unit[]; positions: Position[]; people: Person[] }
 export const organizationTypes = [{ id: 'agency', title: 'Agentlik' }, { id: 'center', title: 'Markaz' }, { id: 'fund', title: 'Jamg‘arma' }, { id: 'regional', title: 'Hududiy tashkilot' }, { id: 'other', title: 'Boshqa tashkilot' }] as const
 export function seedDirectory(): Directory {
@@ -32,6 +34,7 @@ export function seedDirectory(): Directory {
   }
   d.positions = d.people.map(p => ({ id: p.id.replace('person-', 'position-'), organizationId: p.organizationId, unitId: p.unitId, code: p.roles[0]!.toUpperCase(), name: p.position, roles: [...p.roles], active: true }))
   d.people.forEach(p => { p.positionId = p.id.replace('person-', 'position-') })
+  applyOfficialDirectory(d)
   return d
 }
 function requireDirectory(ok: unknown, error: string): asserts ok { if (!ok) throw new Error(error) }
@@ -58,7 +61,7 @@ export function validatePerson(d: Directory, input: Person, projects: Project[])
   requireDirectory(d.organizations.some(o => o.id === input.organizationId && o.active), 'Xodim uchun faol tashkilotni tanlang.')
   requireDirectory(d.units.some(u => u.id === input.unitId && u.organizationId === input.organizationId && u.active), 'Xodim bo‘linmasi tashkilotga tegishli va faol bo‘lishi kerak.')
   const processRoles = ['initiator', 'secretary', 'director', 'center', 'reviewer', 'fund']
-  requireDirectory(input.roles.length && input.roles.every(r => processRoles.includes(r)), 'Xodimning jarayondagi vazifasini tanlang.')
+  requireDirectory(input.roles.every(r => processRoles.includes(r)), 'Xodimning jarayondagi vazifasini tanlang.')
   const position = d.positions.find(p => p.id === input.positionId && p.active)
   requireDirectory(position && position.organizationId === input.organizationId && position.unitId === input.unitId, 'Xodimning faol lavozimini tanlang; lavozim shu bo‘linmaga tegishli bo‘lishi kerak.')
   void projects
@@ -78,7 +81,7 @@ export function validateAssignment(d: Directory, role: ProcessRole, id: string) 
 export function validatePosition(d: Directory, input: Position, projects: Project[]) {
   requireDirectory(input.name.trim() && input.code.trim(), 'Lavozim nomi va kodi talab etiladi.')
   requireDirectory(d.units.some(u => u.id === input.unitId && u.organizationId === input.organizationId && u.active), 'Lavozimning tashkiloti va bo‘linmasi mos bo‘lishi kerak.')
-  requireDirectory(input.roles.length && input.roles.every(r => ['initiator', 'secretary', 'director', 'center', 'reviewer', 'fund'].includes(r)), 'Lavozimning jarayondagi vazifasini tanlang.')
+  requireDirectory(input.roles.every(r => ['initiator', 'secretary', 'director', 'center', 'reviewer', 'fund'].includes(r)), 'Lavozimning jarayondagi vazifasini tanlang.')
   requireDirectory(!d.positions.some(p => p.id !== input.id && p.unitId === input.unitId && p.code.toLowerCase() === input.code.trim().toLowerCase()), 'Bo‘linmada lavozim kodi takrorlanmoqda.')
   const old = d.positions.find(p => p.id === input.id)
   if (old && (old.organizationId !== input.organizationId || old.unitId !== input.unitId)) requireDirectory(!d.people.some(p => p.positionId === old.id) && !projects.some(p => Object.values(p.assignees || {}).includes(old.id)), 'Bog‘langan lavozimning bo‘linmasini o‘zgartirib bo‘lmaydi.')
