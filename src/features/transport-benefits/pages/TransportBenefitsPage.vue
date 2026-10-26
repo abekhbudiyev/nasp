@@ -2190,8 +2190,8 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
 </script>
 
 <template>
-  <PageContainer>
-    <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-0.5">
+  <PageContainer :style="isSettlements ? { height: 'calc(100dvh - 3.5rem)', minHeight: '0', overflow: 'hidden' } : undefined">
+    <div :class="['flex min-h-0 flex-1 flex-col gap-4 pr-0.5', isSettlements ? 'overflow-hidden' : 'overflow-y-auto']">
       <div v-if="!isIntegrations && !isSettlements" class="flex justify-end">
         <div class="flex shrink-0 items-center gap-2">
           <span class="inline-flex h-7 items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 text-xs font-medium text-amber-700 dark:text-amber-300">

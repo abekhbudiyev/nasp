@@ -6,7 +6,7 @@ export function caseOrganization(id: string) {
   const organizations = carrierOptions.filter(c => c.transportMode)
   const organization = organizations[(number - 1) % organizations.length]
   if (!organization?.transportMode) throw new Error('Sinov holatlari uchun transport turi ko‘rsatilgan tashkilot topilmadi.')
-  return { carrier: organization.label, carrierCode: organization.code, transportMode: organization.transportMode }
+  return { carrier: organization.label, carrierCode: organization.code, carrierInn: organization.inn, transportMode: organization.transportMode }
 }
 
 export function normalizeCaseOrganization(request: ReimbursementRequest): ReimbursementRequest {
@@ -35,10 +35,12 @@ export function createReimbursementCases() {
     const organization = caseOrganization(id)
     const { carrier, transportMode } = organization
     const amount = (index + 1) * 100000
+    const citizenPaid = index % 2 === 0 ? 0 : amount / 2
+    const requested = amount - citizenPaid
     const ticket: ReimbursementTicket = {
       id: `${id}-EVENT`, ticketId: `${id}-TICKET`, carrier, occurredAt: '2026-10-05T10:00:00+05:00',
       transportMode, ticketState: index === 1 ? 'RETURNED' : 'ISSUED',
-      amount, preferentialAmount: 0, compensationRequested: amount, evidenceRef: `${id}-EVIDENCE`,
+      amount, preferentialAmount: citizenPaid, compensationRequested: requested, evidenceRef: `${id}-EVIDENCE`,
       paymentChannel: 'MONTHLY_CLAIM', route: 'Toshkent — Samarqand',
     }
     const docs = documentTypes.map(type => {
@@ -53,11 +55,11 @@ export function createReimbursementCases() {
     if (payment !== 'NOT_SENT') history.push({ at, text: 'To‘lov tizimiga yuborildi (sinov)' })
     if (payment === 'PAID' || payment === 'FAILED') history.push({ at, text: payment === 'PAID' ? 'To‘lov yakunlandi (sinov)' : 'Bank to‘lovni bajarmadi. Hisob raqamini tekshirish va qayta yuborish kerak (sinov)' })
     return {
-      id, sourceId: `SINOV-BUY-${number}`, ...organization, period: '2026-10', account: '20208000000000000001',
+      id: `2026-2610${String(number).padStart(2, '0')}`, sourceId: String(number).padStart(3, '0'), ...organization, ...(carrier === 'O‘zbekiston temir yo‘llari' ? { carrierInn: '201051951' } : {}), mfo: '00450', period: '2026-10', account: '20210000603717281001',
       documents: docs.filter(d => d.type.code === 'COST_CALCULATION'),
-      lines: [{ ticketId: ticket.ticketId, requested: amount, documents: docs.filter(d => d.type.code !== 'COST_CALCULATION'),
+      lines: [{ ticketId: ticket.ticketId, requested, documents: docs.filter(d => d.type.code !== 'COST_CALCULATION'),
         ...(index === 1 ? { error: 'Chipta qaytarilgan, qoplashga yaroqli emas' } : {}) }],
-      status, payment, approvedAmount: status === 'APPROVED' ? amount : 0, receivedAt: at, electronicTickets: true,
+      status, payment, approvedAmount: status === 'APPROVED' ? requested : 0, receivedAt: at, electronicTickets: true,
       ...(payment !== 'NOT_SENT' ? { paymentId: `${id}-PAYMENT` } : {}),
       ...(payment === 'PAID' ? { paidAt: at, paymentDocument: `${id}-PAYMENT-DOC` } : {}),
       history, notifications: status === 'RECEIVED' ? [] : [{ at, status: `${status} / ${payment}` }],

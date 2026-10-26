@@ -3,13 +3,12 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { DialogRoot, DialogTrigger, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
 import { DropdownMenuRoot, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuContent, DropdownMenuItem } from 'reka-ui'
 import { Search, Plus, Ellipsis, Eye, X, RotateCcw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ListChecks, Clock3, CircleAlert, CircleCheck } from 'lucide-vue-next'
-import StatusTabs from '@/shared/components/StatusTabs.vue'
 import FilterPopover from '@/shared/components/FilterPopover.vue'
 import FilterSelect from '@/shared/components/FilterSelect.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Input } from '@/shared/ui/shadcn/input'
 import { userLabel } from '../ui-labels'
-import { requestStatuses, paymentStatuses, documentTypes, latestTickets, eventMonth, validateLines, normalizeRequestStatus, type ReimbursementRequest, type ReimbursementTicket, type RegisteredFile, type RequestDocument } from '../reimbursement'
+import { requestStatuses, paymentStatuses, documentTypes, latestTickets, eventMonth, requestTicketAmounts, validateLines, normalizeRequestStatus, type ReimbursementRequest, type ReimbursementTicket, type RegisteredFile, type RequestDocument } from '../reimbursement'
 import RequestFileField from './RequestFileField.vue'
 import { createReimbursementCases } from '../reimbursement-cases'
 import { carrierOptions, transportModeOptions } from '../reference-data'
@@ -55,35 +54,111 @@ const query = ref('')
 const statusFilter = ref('')
 const paymentFilter = ref('')
 const organizationFilter = ref('')
+const organizationTypeFilter = ref('')
+const calculationMonthFrom = ref('')
+const calculationMonthTo = ref('')
+const paymentMonthFrom = ref('')
+const paymentMonthTo = ref('')
+const invalidCalculationRange = computed(() => Boolean(calculationMonthFrom.value && calculationMonthTo.value && calculationMonthFrom.value > calculationMonthTo.value))
+const invalidPaymentRange = computed(() => Boolean(paymentMonthFrom.value && paymentMonthTo.value && paymentMonthFrom.value > paymentMonthTo.value))
+const organizationTypeOptions = computed(() => [...new Set(requests.value.map(requestModeLabel))])
 const filterOpen = ref(false)
 const currentPage = ref(1)
 const rowsPerPage = ref(10)
-const filterCount = computed(() => Number(Boolean(paymentFilter.value)) + Number(Boolean(organizationFilter.value)))
-const organizationOptions = computed(() => [...new Set(requests.value.map(r => r.carrier))])
-const filtered = computed(() => requests.value.filter(r =>
-  (!statusFilter.value || r.status === statusFilter.value) &&
+const filterCount = computed(() => [organizationTypeFilter.value, organizationFilter.value, calculationMonthFrom.value, calculationMonthTo.value, paymentMonthFrom.value, paymentMonthTo.value].filter(Boolean).length)
+const organizationOptions = computed(() => [...new Set(requests.value.filter(r => !organizationTypeFilter.value || requestModeLabel(r) === organizationTypeFilter.value).map(r => r.carrier))])
+watch(organizationTypeFilter, () => { if (!organizationOptions.value.includes(organizationFilter.value)) organizationFilter.value = '' })
+const scopedRequests = computed(() => requests.value.filter(r =>
   (!paymentFilter.value || label(r.payment) === paymentFilter.value) &&
+  (!organizationTypeFilter.value || requestModeLabel(r) === organizationTypeFilter.value) &&
   (!organizationFilter.value || r.carrier === organizationFilter.value) &&
+  (!calculationMonthFrom.value || r.period >= calculationMonthFrom.value) &&
+  (!calculationMonthTo.value || r.period <= calculationMonthTo.value) &&
+  (!(paymentMonthFrom.value || paymentMonthTo.value) || Boolean(r.paidAt &&
+    (!paymentMonthFrom.value || eventMonth(r.paidAt) >= paymentMonthFrom.value) &&
+    (!paymentMonthTo.value || eventMonth(r.paidAt) <= paymentMonthTo.value))) &&
   [r.id, r.sourceId, r.carrier, r.paymentId || ''].some(value => value.toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase()))))
+const filtered = computed(() => scopedRequests.value.filter(r => !statusFilter.value || requestStatus(r) === statusFilter.value))
+const reportOpen = ref(false)
+interface ReportRow {
+  key: string; carrier: string; inn: string; type: string; count: number
+  total: number | undefined; requested: number; approved: number; paid: number
+}
+const reportRows = computed(() => {
+  const groups = new Map<string, ReportRow>()
+  for (const request of filtered.value) {
+    const type = requestModeLabel(request)
+    const key = JSON.stringify([request.carrierCode || request.carrier, request.carrierInn || '', type])
+    const row = groups.get(key) || { key, carrier: request.carrier, inn: request.carrierInn || '—', type, count: 0, total: 0, requested: 0, approved: 0, paid: 0 }
+    const values = requestAmounts(request)
+    row.count++
+    row.total = row.total === undefined || values.total === undefined ? undefined : row.total + values.total
+    row.requested += values.requested
+    row.approved += request.approvedAmount
+    row.paid += request.payment === 'PAID' ? request.approvedAmount : 0
+    groups.set(key, row)
+  }
+  return [...groups.values()].sort((a, b) => a.type.localeCompare(b.type) || a.carrier.localeCompare(b.carrier))
+})
+const expandedReportTypes = ref<string[]>([])
+function toggleReportType(type: string) {
+  expandedReportTypes.value = expandedReportTypes.value.includes(type) ? expandedReportTypes.value.filter(value => value !== type) : [...expandedReportTypes.value, type]
+}
+const reportGroups = computed(() => {
+  const groups = new Map<string, { type: string; rows: ReportRow[]; count: number; total: number | undefined; requested: number; approved: number; paid: number }>()
+  for (const row of reportRows.value) {
+    const group = groups.get(row.type) || { type: row.type, rows: [], count: 0, total: 0, requested: 0, approved: 0, paid: 0 }
+    group.rows.push(row)
+    group.count += row.count
+    group.total = group.total === undefined || row.total === undefined ? undefined : group.total + row.total
+    group.requested += row.requested
+    group.approved += row.approved
+    group.paid += row.paid
+    groups.set(row.type, group)
+  }
+  return [...groups.values()]
+})
+const reportTotals = computed(() => reportRows.value.reduce((total, row) => ({
+  count: total.count + row.count,
+  total: total.total === undefined || row.total === undefined ? undefined : total.total + row.total,
+  requested: total.requested + row.requested,
+  approved: total.approved + row.approved,
+  paid: total.paid + row.paid,
+}), { count: 0, total: 0 as number | undefined, requested: 0, approved: 0, paid: 0 }))
 const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / rowsPerPage.value)))
 const paginatedRequests = computed(() => filtered.value.slice((currentPage.value - 1) * rowsPerPage.value, currentPage.value * rowsPerPage.value))
 const rangeStart = computed(() => filtered.value.length ? (currentPage.value - 1) * rowsPerPage.value + 1 : 0)
 const rangeEnd = computed(() => Math.min(currentPage.value * rowsPerPage.value, filtered.value.length))
-watch([query, statusFilter, paymentFilter, organizationFilter, rowsPerPage], () => { currentPage.value = 1 })
+watch([query, statusFilter, paymentFilter, organizationFilter, organizationTypeFilter, calculationMonthFrom, calculationMonthTo, paymentMonthFrom, paymentMonthTo, rowsPerPage], () => { currentPage.value = 1 })
 watch(totalPages, pages => { currentPage.value = Math.min(currentPage.value, pages) })
-const statusDots: Record<string, string> = { RECEIVED: 'bg-blue-500', APPROVED: 'bg-emerald-500', CANCELLED: 'bg-red-500' }
-const statusTabs = computed(() => [
-  { label: 'Barchasi', value: 'all', count: requests.value.length, dotClass: 'bg-muted-foreground' },
-  ...requestStatuses.map(s => ({ label: s.name, value: s.code, count: requests.value.filter(r => r.status === s.code).length, dotClass: statusDots[s.code] })),
-])
+const displayStatuses = [
+  { code: 'RECEIVED', name: 'Yaratilgan' },
+  { code: 'APPROVED', name: 'To‘lovga tasdiqlangan' },
+  { code: 'CANCELLED', name: 'Rad etilgan' },
+  { code: 'PAID', name: 'To‘langan' },
+]
+const requestStatus = (r: ReimbursementRequest) => r.payment === 'PAID' ? 'PAID' : r.status
+const requestStatusLabel = (r: ReimbursementRequest) => displayStatuses.find(s => s.code === requestStatus(r))?.name || 'Yaratilgan'
 const summaryCards = computed(() => [
-  { label: 'Jami buyurtmanomalar', count: requests.value.length, icon: ListChecks, tone: 'text-primary bg-primary/10', status: '', payment: '' },
-  { label: 'Tasdiqlash kutilmoqda', count: requests.value.filter(r => r.status === 'RECEIVED').length, icon: Clock3, tone: 'text-blue-600 bg-blue-500/10', status: 'RECEIVED', payment: '' },
-  { label: 'Tasdiqlandi', count: requests.value.filter(r => r.status === 'APPROVED').length, icon: CircleCheck, tone: 'text-emerald-600 bg-emerald-500/10', status: 'APPROVED', payment: '' },
-  { label: 'Bekor qilindi', count: requests.value.filter(r => r.status === 'CANCELLED').length, icon: CircleAlert, tone: 'text-red-600 bg-red-500/10', status: 'CANCELLED', payment: '' },
+  { label: 'Jami', count: scopedRequests.value.length, icon: ListChecks, tone: 'text-primary bg-primary/10', status: '', payment: '' },
+  { label: 'Yaratilgan', count: scopedRequests.value.filter(r => requestStatus(r) === 'RECEIVED').length, icon: Clock3, tone: 'text-blue-600 bg-blue-500/10', status: 'RECEIVED', payment: '' },
+  { label: 'To‘lovga tasdiqlangan', count: scopedRequests.value.filter(r => requestStatus(r) === 'APPROVED').length, icon: CircleCheck, tone: 'text-amber-600 bg-amber-500/10', status: 'APPROVED', payment: '' },
+  { label: 'To‘langan', count: scopedRequests.value.filter(r => requestStatus(r) === 'PAID').length, icon: CircleCheck, tone: 'text-emerald-600 bg-emerald-500/10', status: 'PAID', payment: '' },
+  { label: 'Rad etilgan', count: scopedRequests.value.filter(r => requestStatus(r) === 'CANCELLED').length, icon: CircleAlert, tone: 'text-red-600 bg-red-500/10', status: 'CANCELLED', payment: '' },
 ])
-function clearFilters() { query.value = ''; statusFilter.value = ''; paymentFilter.value = ''; organizationFilter.value = ''; currentPage.value = 1 }
-function selectSummary(card: typeof summaryCards.value[number]) { clearFilters(); statusFilter.value = card.status; paymentFilter.value = card.payment }
+function clearPanelFilters() {
+  organizationTypeFilter.value = ''; organizationFilter.value = ''; paymentFilter.value = ''
+  calculationMonthFrom.value = ''; calculationMonthTo.value = ''; paymentMonthFrom.value = ''; paymentMonthTo.value = ''
+}
+function clearFilters() { query.value = ''; statusFilter.value = ''; clearPanelFilters(); currentPage.value = 1 }
+function selectSummary(card: typeof summaryCards.value[number]) { statusFilter.value = card.status; currentPage.value = 1 }
+function statusAmount(status: string) {
+  return scopedRequests.value
+    .filter(request => !status || requestStatus(request) === status)
+    .reduce((sum, request) => sum + (status === 'APPROVED' || status === 'PAID' ? request.approvedAmount : request.lines.reduce((subtotal, line) => subtotal + line.requested, 0)), 0)
+}
+const statusAmountLabel = (status: string) => ({ RECEIVED: 'So‘ralgan', APPROVED: 'Tasdiqlangan', PAID: 'To‘langan', CANCELLED: 'Rad etilgan talablar' } as Record<string, string>)[status] || 'Jami so‘ralgan'
+const statusShare = (count: number) => scopedRequests.value.length ? Math.round(count / scopedRequests.value.length * 100) : 0
 function statusClass(code: string) {
   if (code === 'CANCELLED') return 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300'
   return ({ RECEIVED: 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300', APPROVED: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300', NOT_SENT: 'border-border bg-muted text-muted-foreground', PROCESSING: 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300', PAID: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300', FAILED: 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300' } as Record<string, string>)[code] || 'border-border text-muted-foreground'
@@ -96,11 +171,22 @@ watch([carrier, period, transportMode], () => { ticketsFilled.value = false; cho
 watch(carrier, () => { documents.value = []; lineDocuments.value = {}; expandedTicket.value = '' })
 const total = computed(() => available.value.filter(t => chosen.value.includes(t.ticketId)).reduce((s, t) => s + t.compensationRequested, 0))
 const money = (n: number) => `${new Intl.NumberFormat('uz-UZ').format(n)} so‘m`
+const requestTotal = (r: ReimbursementRequest) => r.lines.reduce((sum, line) => sum + line.requested, 0)
+const requestAmounts = (r: ReimbursementRequest) => requestTicketAmounts(r, r.demoTickets || props.tickets)
+const amount = (value: number | undefined) => value === undefined ? '—' : new Intl.NumberFormat('uz-UZ').format(value)
+const requestedPercent = (r: ReimbursementRequest) => {
+  const total = requestAmounts(r).total
+  return total === undefined ? '—' : new Intl.NumberFormat('uz-UZ', { maximumFractionDigits: 2 }).format(total > 0 ? requestTotal(r) / total * 100 : 0)
+}
+const approvalPercent = (r: ReimbursementRequest) => new Intl.NumberFormat('uz-UZ', { maximumFractionDigits: 2 }).format(requestTotal(r) > 0 ? r.approvedAmount / requestTotal(r) * 100 : 0)
+const documentDate = (value: string) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)).split('/').join('.')
+const monthNames = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
+const calculationMonth = (value: string) => { const [year, month] = value.split('-'); return monthNames[Number(month) - 1] ? monthNames[Number(month) - 1] + ' (' + year + ')' : value }
 const now = () => new Date().toISOString()
 const label = (code: string) => [...requestStatuses, ...paymentStatuses].find(s => s.code === (['NEEDS_CORRECTION', 'VALIDATED'].includes(code) ? normalizeRequestStatus(code) : code))?.name || code
 const date = (value: string) => new Date(value).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 function log(r: ReimbursementRequest, text: string) { r.history.push({ at: now(), text }) }
-function notify(r: ReimbursementRequest) { r.notifications.push({ at: now(), status: `${r.status} / ${r.payment}` }) }
+function notify(r: ReimbursementRequest) { r.notifications.push({ at: now(), status: requestStatusLabel(r) }) }
 function loadCases() {
   const fixtures = createReimbursementCases()
   const added = fixtures.requests.filter(r => !requests.value.some(existing => existing.id === r.id))
@@ -176,7 +262,7 @@ function submit() {
   if (existing) { selectedId.value = existing.id; message.value = 'Bu raqamli buyurtmanoma avval qabul qilingan.'; return }
   const id = `REQ-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
   const request: ReimbursementRequest = { id, sourceId: sourceId.value.trim(), carrier: carrier.value, period: period.value, account: account.value,
-    carrierCode: carriers.value.find(c => c.label === carrier.value)?.code || undefined, transportMode: transportMode.value,
+    carrierInn: carrierOptions.find(c => c.label === carrier.value)?.inn || undefined, carrierCode: carriers.value.find(c => c.label === carrier.value)?.code || undefined, transportMode: transportMode.value,
     ...(draftDemoTickets.value.length ? { demoCase: 'Tuzatilgan sinov buyurtmanomasi', demoTickets: JSON.parse(JSON.stringify(draftDemoTickets.value)) } : {}),
     documents: structuredClone(JSON.parse(JSON.stringify(documents.value))), electronicTickets: electronic.value, lines: available.value.filter(t => chosen.value.includes(t.ticketId)).map(t => ({ ticketId: t.ticketId, requested: t.compensationRequested, documents: JSON.parse(JSON.stringify(lineDocuments.value[t.ticketId] || [])) })),
     status: 'RECEIVED', payment: 'NOT_SENT', receivedAt: now(), approvedAmount: 0, history: [{ at: now(), text: 'Buyurtmanoma qabul qilindi' }], notifications: [] }
@@ -252,19 +338,28 @@ function cancelRequest() {
   if (!r || !canCancel(r)) return
   r.status = 'CANCELLED'
   r.approvedAmount = 0
-  log(r, 'Buyurtmanoma bekor qilindi' + (cancelReason.value.trim() ? ': ' + cancelReason.value.trim() : ''))
+  log(r, 'Buyurtmanoma rad etildi' + (cancelReason.value.trim() ? ': ' + cancelReason.value.trim() : ''))
   notify(r)
   cancelOpen.value = false
-  message.value = 'Buyurtmanoma bekor qilindi.'
+  message.value = 'Buyurtmanoma rad etildi.'
 }
 </script>
 
 <template>
-  <div class="min-w-0 space-y-3">
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <button v-for="card in summaryCards" :key="card.label" type="button" class="flex items-center gap-3 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" @click="selectSummary(card)">
-        <span :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', card.tone]"><component :is="card.icon" class="h-5 w-5" /></span>
-        <span><span class="block text-sm text-muted-foreground">{{ card.label }}</span><span class="mt-1 block text-2xl font-semibold text-foreground">{{ card.count }}</span></span>
+  <div class="settlements-panel flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+    <div class="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5" role="group" aria-label="Buyurtmanoma holati bo‘yicha filtrlash">
+      <button v-for="card in summaryCards" :key="card.label" type="button"
+        :aria-pressed="statusFilter === card.status"
+        :class="['min-w-0 rounded-lg border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', !card.status ? 'col-span-2 md:col-span-1' : '', statusFilter === card.status ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border bg-card hover:bg-muted/40']"
+        @click="selectSummary(card)">
+        <span class="flex items-center justify-between gap-2">
+          <span class="flex min-w-0 items-center gap-1.5"><component :is="card.icon" :class="['h-3.5 w-3.5 shrink-0 rounded', card.tone]" /><span class="text-xs text-muted-foreground">{{ card.label }}</span></span>
+          <span class="text-base font-semibold tabular-nums">{{ card.count }}</span>
+        </span>
+        <span class="mt-1 flex items-baseline justify-between gap-2" :title="statusAmountLabel(card.status)">
+          <span class="text-sm font-semibold tabular-nums">{{ amount(statusAmount(card.status)) }} <span class="text-[10px] font-normal text-muted-foreground">so‘m</span></span>
+          <span v-if="card.status" class="text-[10px] text-muted-foreground">{{ statusShare(card.count) }}%</span>
+        </span>
       </button>
     </div>
     <DialogRoot v-model:open="createOpen">
@@ -272,9 +367,25 @@ function cancelRequest() {
         <div class="relative w-full lg:max-w-sm"><Search class="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input v-model="query" class="pl-9" placeholder="Qidirish" aria-label="Buyurtmanomalarni qidirish" /></div>
         <div class="flex flex-wrap items-center gap-2">
           <FilterPopover v-model:open="filterOpen" :active-count="filterCount">
-            <FilterSelect v-model="organizationFilter" label="Transport tashkiloti" :options="organizationOptions" />
-            <FilterSelect v-model="paymentFilter" label="To‘lov holati" :options="paymentStatuses.map(s => s.name)" />
-            <template #footer><div class="flex justify-end gap-2 border-t border-border pt-3"><Button variant="outline" size="sm" :disabled="!filterCount" @click="organizationFilter = ''; paymentFilter = ''">Tozalash</Button><Button size="sm" @click="filterOpen = false">Qo‘llash</Button></div></template>
+            <FilterSelect v-model="organizationTypeFilter" label="Tashkilot turi" :options="organizationTypeOptions" />
+            <FilterSelect v-model="organizationFilter" label="Tashkilot" :options="organizationOptions" />
+            <fieldset class="min-w-0 space-y-2">
+              <legend class="text-sm font-medium">Hisoblash oyi</legend>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="min-w-0 space-y-1 text-xs text-muted-foreground">Boshlanish<Input v-model="calculationMonthFrom" type="month" aria-label="Hisoblash oyi boshlanishi" :max="calculationMonthTo || undefined" :aria-invalid="invalidCalculationRange" /></label>
+                <label class="min-w-0 space-y-1 text-xs text-muted-foreground">Tugash<Input v-model="calculationMonthTo" type="month" aria-label="Hisoblash oyi tugashi" :min="calculationMonthFrom || undefined" :aria-invalid="invalidCalculationRange" /></label>
+              </div>
+              <p v-if="invalidCalculationRange" role="alert" class="text-xs text-destructive">Boshlanish oyi tugash oyidan keyin bo‘lishi mumkin emas.</p>
+            </fieldset>
+            <fieldset class="min-w-0 space-y-2">
+              <legend class="text-sm font-medium">To‘lov oyi</legend>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="min-w-0 space-y-1 text-xs text-muted-foreground">Boshlanish<Input v-model="paymentMonthFrom" type="month" aria-label="To‘lov oyi boshlanishi" :max="paymentMonthTo || undefined" :aria-invalid="invalidPaymentRange" /></label>
+                <label class="min-w-0 space-y-1 text-xs text-muted-foreground">Tugash<Input v-model="paymentMonthTo" type="month" aria-label="To‘lov oyi tugashi" :min="paymentMonthFrom || undefined" :aria-invalid="invalidPaymentRange" /></label>
+              </div>
+              <p v-if="invalidPaymentRange" role="alert" class="text-xs text-destructive">Boshlanish oyi tugash oyidan keyin bo‘lishi mumkin emas.</p>
+            </fieldset>
+            <template #footer><div class="flex justify-end gap-2 border-t border-border pt-3"><Button variant="outline" size="sm" :disabled="!filterCount" @click="clearPanelFilters">Tozalash</Button><Button size="sm" :disabled="invalidCalculationRange || invalidPaymentRange" @click="filterOpen = false">Qo‘llash</Button></div></template>
           </FilterPopover>
           <Button variant="outline" size="sm" class="h-7" @click="loadCases">Sinov holatlari</Button>
           <DialogTrigger as-child><Button size="sm" class="h-7 gap-1.5" @click="startNew"><Plus class="h-4 w-4" />Yaratish</Button></DialogTrigger>
@@ -311,19 +422,78 @@ function cancelRequest() {
       </DialogPortal>
     </DialogRoot>
     <p v-if="message && !createOpen && !detailsOpen && !cancelOpen" role="status" class="text-sm text-primary">{{ message }}</p>
-    <StatusTabs :tabs="statusTabs" :selected-values="statusFilter ? [statusFilter] : []" item-key-prefix="transport-request-status" @select="statusFilter = $event === 'all' ? '' : $event" />
-    <section class="min-w-0 overflow-hidden rounded-lg border border-border bg-card">
-      <div class="relative max-h-[60vh] min-h-[22rem] overflow-auto overscroll-contain">
-        <table class="w-full min-w-[64rem] border-separate border-spacing-0 text-sm text-left">
-          <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground"><tr><th v-for="heading in ['Buyurtmanoma', 'Oy', 'Transport turi', 'Transport tashkiloti', 'So‘ralgan summa', 'Tasdiqlangan summa', 'Holat', 'To‘lov', 'Amallar']" :key="heading" class="h-10 whitespace-nowrap border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">{{ heading }}</th></tr></thead>
+    <div class="flex items-center gap-2" role="group" aria-label="Ro‘yxat yoki svod hisobot">
+      <Button size="sm" :variant="reportOpen ? 'outline' : 'default'" :aria-pressed="!reportOpen" @click="reportOpen = false">Ro‘yxat</Button>
+      <Button size="sm" :variant="reportOpen ? 'default' : 'outline'" :aria-pressed="reportOpen" @click="reportOpen = true">Svod hisobot</Button>
+    </div>
+    <section v-if="reportOpen" class="settlements-table flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card" aria-label="Buyurtmanomalar svod hisoboti">
+      <div class="border-b border-border p-4">
+        <h2 class="font-semibold">Buyurtmanomalar bo‘yicha svod hisobot</h2>
+        <p class="mt-1 text-xs text-muted-foreground">Transport turlari bo‘yicha. Tashkilotlar kesimini ochish uchun transport turini bosing. Summalar so‘mda. Tanlangan filtrlar va qidiruv bo‘yicha barcha yozuvlar hisobga olinadi.</p>
+        <p class="mt-1 text-xs text-muted-foreground">To‘langan qoplama — tashkilotga o‘tkazilgan mablag‘. Ma’lumot manbasi: sahifadagi sinov buyurtmanomalari.</p>
+      </div>
+      <div class="min-h-0 flex-1 overflow-auto overscroll-contain">
+        <table class="w-full min-w-[72rem] border-separate border-spacing-0 text-sm">
+          <thead class="sticky top-0 z-10 bg-card"><tr><th v-for="heading in ['Tashkilot turi', 'Talabnomalar soni', 'Jami chipta narxi', 'So‘ralgan qoplama', 'Tasdiqlangan', 'To‘langan qoplama']" :key="heading" class="whitespace-nowrap border-b border-border p-3 text-left font-medium">{{ heading }}</th></tr></thead>
+          <tbody>
+            <template v-for="group in reportGroups" :key="group.type">
+              <tr class="bg-muted/20">
+                <td class="border-b border-border p-3"><button type="button" class="flex items-center gap-2 text-left font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-expanded="expandedReportTypes.includes(group.type)" @click="toggleReportType(group.type)"><ChevronRight :class="['h-4 w-4 shrink-0 transition-transform', expandedReportTypes.includes(group.type) ? 'rotate-90' : '']" />{{ group.type }}<span class="text-xs font-normal text-muted-foreground">({{ group.rows.length }})</span></button></td>
+                <td class="border-b border-border p-3 text-right tabular-nums font-semibold">{{ group.count }}</td>
+                <td class="border-b border-border p-3 text-right tabular-nums font-semibold">{{ amount(group.total) }}</td>
+                <td class="border-b border-border p-3 text-right tabular-nums font-semibold">{{ amount(group.requested) }}</td>
+                <td class="border-b border-border p-3 text-right tabular-nums font-semibold">{{ amount(group.approved) }}</td>
+                <td class="border-b border-border p-3 text-right tabular-nums font-semibold">{{ amount(group.paid) }}</td>
+              </tr>
+              <template v-if="expandedReportTypes.includes(group.type)">
+                <tr v-for="row in group.rows" :key="row.key" class="hover:bg-muted/30">
+                  <td class="border-b border-border py-3 pl-9 pr-3"><strong>{{ row.carrier }}</strong><p class="mt-1 text-xs text-muted-foreground">{{ row.inn }}</p></td>
+                  <td class="border-b border-border p-3 text-right tabular-nums">{{ row.count }}</td>
+                  <td class="border-b border-border p-3 text-right tabular-nums">{{ amount(row.total) }}</td>
+                  <td class="border-b border-border p-3 text-right tabular-nums">{{ amount(row.requested) }}</td>
+                  <td class="border-b border-border p-3 text-right tabular-nums">{{ amount(row.approved) }}</td>
+                  <td class="border-b border-border p-3 text-right tabular-nums">{{ amount(row.paid) }}</td>
+                </tr>
+              </template>
+            </template>
+            <tr v-if="!reportRows.length"><td colspan="6" class="p-12 text-center text-muted-foreground">Ma’lumot topilmadi</td></tr>
+          </tbody>
+          <tfoot v-if="reportRows.length" class="sticky bottom-0 bg-muted font-semibold"><tr>
+            <td class="border-t border-border p-3">Jami</td>
+            <td class="border-t border-border p-3 text-right tabular-nums">{{ reportTotals.count }}</td>
+            <td class="border-t border-border p-3 text-right tabular-nums">{{ amount(reportTotals.total) }}</td>
+            <td class="border-t border-border p-3 text-right tabular-nums">{{ amount(reportTotals.requested) }}</td>
+            <td class="border-t border-border p-3 text-right tabular-nums">{{ amount(reportTotals.approved) }}</td>
+            <td class="border-t border-border p-3 text-right tabular-nums">{{ amount(reportTotals.paid) }}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </section>
+    <section v-if="!reportOpen" class="settlements-table flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
+      <div class="relative min-h-0 flex-1 overflow-auto overscroll-contain">
+        <table class="w-full min-w-[80rem] border-separate border-spacing-0 text-sm text-left">
+          <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground"><tr><th v-for="heading in ['Talabnoma', 'Hisob-kitob oyi', 'Tashkilot', 'Hisob raqami', 'Buyurtma mablag‘i (so‘m)', 'Tasdiqlangan (so‘m)', 'Holat', 'Amallar']" :key="heading" class="h-10 whitespace-nowrap border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">{{ heading }}</th></tr></thead>
           <tbody>
             <tr v-for="r in paginatedRequests" :key="r.id" class="transition-colors duration-200 ease-out hover:bg-muted/30">
-              <td class="border-b border-border p-2 align-middle font-medium"><button type="button" class="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-label="r.sourceId + ' tafsilotlari'" @click="viewRequest(r)">{{ r.sourceId }}</button><time :datetime="r.receivedAt" class="mt-1 block whitespace-nowrap text-xs font-normal text-muted-foreground" title="Kelib tushgan sana va vaqt (Toshkent)">{{ date(r.receivedAt) }}</time></td>
-              <td class="border-b border-border p-2 align-middle whitespace-nowrap">{{ r.period }}</td><td class="border-b border-border p-2 align-middle whitespace-nowrap">{{ requestModeLabel(r) }}</td><td class="max-w-80 border-b border-border p-2 align-middle">{{ r.carrier }}</td>
-              <td class="border-b border-border p-2 align-middle whitespace-nowrap">{{ money(r.lines.reduce((sum, line) => sum + line.requested, 0)) }}</td>
-              <td class="border-b border-border p-2 align-middle whitespace-nowrap">{{ money(r.approvedAmount) }}</td>
-              <td class="border-b border-border p-2 align-middle"><span :class="['inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium', statusClass(r.status)]">{{ label(r.status) }}</span></td>
-              <td class="border-b border-border p-2 align-middle"><span :class="['inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium', statusClass(r.payment)]">{{ label(r.payment) }}</span></td>
+              <td class="border-b border-border p-2 align-middle">
+                <button type="button" class="whitespace-nowrap font-normal text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :aria-label="r.sourceId + ' tafsilotlari'" @click="viewRequest(r)"><strong class="font-bold">{{ r.id }}</strong> ({{ r.sourceId }})</button>
+                <time :datetime="r.receivedAt" class="mt-1 block whitespace-nowrap text-xs text-muted-foreground">{{ documentDate(r.receivedAt) }}</time>
+              </td>
+              <td class="border-b border-border p-2 align-middle whitespace-nowrap"><strong class="font-bold">{{ calculationMonth(r.period).split(' (')[0] }}</strong> ({{ r.period.split('-')[0] }})</td>
+              <td class="min-w-64 max-w-80 border-b border-border p-2 align-middle">
+                <p><strong class="font-bold">{{ r.carrier }}</strong> ({{ requestModeLabel(r) }})</p>
+                <p class="mt-1 text-xs text-muted-foreground">{{ r.carrierInn || '—' }}</p>
+              </td>
+              <td class="border-b border-border p-2 align-middle whitespace-nowrap">
+                <p class="text-sm tabular-nums"><strong class="font-bold">{{ r.account || '—' }}</strong> ({{ r.mfo || '—' }})</p>
+              </td>
+              <td class="border-b border-border p-2 align-middle whitespace-nowrap">
+                <p class="tabular-nums"><span class="font-semibold">{{ amount(requestTotal(r)) }}</span> / {{ amount(requestAmounts(r).total) }} <span class="text-xs text-muted-foreground">({{ requestedPercent(r) }}%)</span></p>
+              </td>
+              <td class="border-b border-border p-2 align-middle whitespace-nowrap">
+                <p class="flex items-baseline gap-2 tabular-nums"><span class="font-semibold">{{ amount(r.approvedAmount) }}</span><span class="text-xs text-muted-foreground">({{ approvalPercent(r) }}%)</span></p>
+              </td>
+              <td class="border-b border-border p-2 align-middle"><span :class="['inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium', statusClass(requestStatus(r))]">{{ requestStatusLabel(r) }}</span></td>
               <td class="w-24 border-b border-border p-2 align-middle">
                 <DropdownMenuRoot>
                   <DropdownMenuTrigger as-child><Button variant="outline" size="sm" class="h-7 w-7 rounded-md p-0" :aria-label="r.sourceId + ' amallari'"><Ellipsis class="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -337,12 +507,12 @@ function cancelRequest() {
                 </DropdownMenuRoot>
               </td>
             </tr>
-            <tr v-if="!paginatedRequests.length"><td colspan="9" class="px-6 py-16 text-center text-muted-foreground">Ma’lumot topilmadi</td></tr>
+            <tr v-if="!paginatedRequests.length"><td colspan="8" class="px-6 py-16 text-center text-muted-foreground">Ma’lumot topilmadi</td></tr>
           </tbody>
         </table>
       </div>
     </section>
-    <div class="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+    <div v-if="!reportOpen" class="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
       <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2"><span>Qatorlar soni</span><select v-model.number="rowsPerPage" aria-label="Qatorlar soni" class="h-8 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"><option v-for="size in [10, 20, 50, 100]" :key="size" :value="size">{{ size }}</option></select></label><span>Sahifada: <strong class="font-semibold text-foreground">{{ rangeStart }}-{{ rangeEnd }} / {{ filtered.length }}</strong></span></div>
       <div class="flex items-center gap-2"><Button variant="ghost" size="sm" class="gap-2" @click="clearFilters"><RotateCcw class="h-4 w-4" />Tiklash</Button><nav aria-label="Buyurtmanomalar sahifalari" class="flex h-8 items-center rounded-lg border border-border bg-background px-1">
         <Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="currentPage === 1" aria-label="Birinchi sahifa" @click="currentPage = 1"><ChevronsLeft class="h-4 w-4" /></Button>
@@ -356,7 +526,7 @@ function cancelRequest() {
       <DialogPortal>
         <DialogOverlay class="fixed inset-0 z-50 bg-black/50" />
         <DialogContent class="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-background p-5 shadow-xl">
-          <DialogTitle class="font-semibold">Buyurtmanomani bekor qilish</DialogTitle>
+          <DialogTitle class="font-semibold">Buyurtmanomani rad etish</DialogTitle>
           <DialogDescription class="mt-2 text-sm text-muted-foreground">{{ selected?.sourceId }} bekor qilinsinmi? Ma’lumotlar va jarayon tarixi saqlanadi.</DialogDescription>
           <form class="mt-4 space-y-4" @submit.prevent="cancelRequest">
             <label class="block text-sm space-y-2"><span>Sabab (ixtiyoriy)</span><Input v-model="cancelReason" maxlength="500" /></label>
@@ -384,8 +554,7 @@ function cancelRequest() {
         <div><p class="text-xs text-muted-foreground">Bank hisob raqami</p><p class="mt-1 text-sm font-medium">{{ selected.account }}</p></div>
         <div><p class="text-xs text-muted-foreground">So‘ralgan summa</p><p class="mt-1 text-sm font-medium">{{ money(selected.lines.reduce((sum, line) => sum + line.requested, 0)) }}</p></div>
         <div><p class="text-xs text-muted-foreground">Tasdiqlangan summa</p><p class="mt-1 text-sm font-medium">{{ money(selected.approvedAmount) }}</p></div>
-        <div><p class="text-xs text-muted-foreground">Buyurtmanoma holati</p><span :class="['mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', statusClass(selected.status)]">{{ label(selected.status) }}</span></div>
-        <div><p class="text-xs text-muted-foreground">To‘lov holati</p><span :class="['mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', statusClass(selected.payment)]">{{ label(selected.payment) }}</span></div>
+        <div><p class="text-xs text-muted-foreground">Buyurtmanoma holati</p><span :class="['mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', statusClass(requestStatus(selected))]">{{ requestStatusLabel(selected) }}</span></div>
       </div>
       <div><h3 class="text-sm font-semibold">Buyurtmanoma hujjatlari</h3><p v-for="doc in selected.documents" :key="doc.file_id" class="mt-2 text-sm">{{ documentTypes.find(type => type.code === doc.type.code)?.name }}: {{ files.find(file => file.id === doc.file_id)?.name || 'Fayl topilmadi' }}</p><p v-if="!selected.documents.length" class="mt-2 text-sm text-muted-foreground">Hujjat biriktirilmagan.</p></div>
       <h3 class="text-sm font-semibold">Chiptalar ({{ selected.lines.length }})</h3>
@@ -395,7 +564,7 @@ function cancelRequest() {
         <label class="block text-sm"><input v-model="method" type="checkbox" :disabled="!selected.validation?.valid" /> Chiptalar va hujjatlarni tekshirdim, bank hisob raqami shu tashkilotga tegishli</label>
         <Button :disabled="!method || !selected.validation?.valid" @click="approve">Tasdiqlash</Button>
       </div>
-      <p v-if="selected.paymentId" class="text-sm">To‘lov raqami: <span class="font-mono">{{ selected.paymentId }}</span> · {{ label(selected.payment) }}<span v-if="selected.paidAt"> · {{ date(selected.paidAt) }} · {{ selected.paymentDocument }}</span></p>
+      <p v-if="selected.paymentId" class="text-sm">To‘lov raqami: <span class="font-mono">{{ selected.paymentId }}</span><span v-if="selected.paidAt"> · {{ date(selected.paidAt) }} · {{ selected.paymentDocument }}</span></p>
       <div class="grid gap-4 md:grid-cols-2"><div><h3 class="text-sm font-semibold">Jarayon tarixi</h3><p v-for="(h,i) in selected.history" :key="i" class="mt-2 text-xs text-muted-foreground">{{ date(h.at) }} · {{ h.text }}</p></div><div><h3 class="text-sm font-semibold">Tashkilotga yuborilgan xabarlar (sinov)</h3><p v-for="(n,i) in selected.notifications" :key="i" class="mt-2 text-xs text-muted-foreground">{{ date(n.at) }} · {{ n.status.split(' / ').map(label).join(' / ') }}</p><p v-if="!selected.notifications.length" class="mt-2 text-xs text-muted-foreground">Hali xabarnoma yo‘q.</p></div></div>
     </section>
 
@@ -405,3 +574,12 @@ function cancelRequest() {
     </DialogRoot>
   </div>
 </template>
+
+<style scoped>
+.settlements-panel > :not(.settlements-table) {
+  flex-shrink: 0;
+}
+.settlements-table > :not(:last-child) {
+  flex-shrink: 0;
+}
+</style>

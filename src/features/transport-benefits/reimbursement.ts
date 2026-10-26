@@ -35,7 +35,7 @@ export interface RegisteredFile {
 }
 export interface ReimbursementRequest {
   id: string; sourceId: string; carrier: string; period: string; account: string
-  carrierCode?: string; transportMode?: string
+  carrierCode?: string; transportMode?: string; carrierInn?: string; mfo?: string; citizenPaidAmount?: number; totalAmount?: number
   documents: RequestDocument[]; lines: ClaimLine[]; status: RequestStatus; payment: PaymentStatus
   receivedAt: string; approvedAmount: number; paymentId?: string; paymentDocument?: string
   paidAt?: string; history: { at: string; text: string }[]; notifications: { at: string; status: string }[]
@@ -78,4 +78,16 @@ export function validateLines(request: ReimbursementRequest, events: Reimburseme
     else if (others.some(r => r.id !== request.id && r.status === 'APPROVED' && r.lines.some(l => l.ticketId === line.ticketId))) error = 'Chipta avvalgi tasdiqlangan buyurtmanomada mavjud'
     return { ...line, error: error || undefined }
   })
+}
+
+// Citizen ticket payments are separate from reimbursement transfers to the carrier.
+export function requestTicketAmounts(request: ReimbursementRequest, events: ReimbursementTicket[]) {
+  const tickets = latestTickets(events)
+  const matched = request.lines.map(line => tickets.find(ticket => ticket.ticketId === line.ticketId))
+  const complete = matched.every(ticket => Boolean(ticket))
+  return {
+    total: complete ? matched.reduce((sum, ticket) => sum + ticket!.amount, 0) : request.totalAmount,
+    citizenPaid: complete ? matched.reduce((sum, ticket) => sum + ticket!.preferentialAmount, 0) : request.citizenPaidAmount,
+    requested: request.lines.reduce((sum, line) => sum + line.requested, 0),
+  }
 }

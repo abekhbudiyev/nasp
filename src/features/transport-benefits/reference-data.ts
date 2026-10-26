@@ -362,7 +362,9 @@ export const referenceCatalogs: ReferenceCatalog[] = [
     warning: 'Quyidagi kodlar MVP demo konfiguratsiyasi. Production ro‘yxat va ownership Transport vazirligining vakolatli registridan olinadi.',
     entries: [
       technical('UZRAIL', 'O‘zbekiston temir yo‘llari', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'RAIL' }, version: 1 }),
-      technical('UZBEKISTAN_AIRWAYS', 'Uzbekistan Airways', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'AIR' }, version: 1 }),
+      technical('FLY_KHIVA_GROUP', '"FLY KHIVA GROUP" LLC', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'AIR', inn: '308076287' }, version: 1 }),
+      technical('CENTRUM_AIR_SALES', '"CENTRUM AIR SALES" LLC', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'AIR', inn: '310289742' }, version: 1 }),
+      technical('QANOT_SHARQ_AVIA_SERVICE', '"QANOT SHARQ AVIA SERVICE" LLC', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'AIR', inn: '310608218' }, version: 1 }),
       technical('INTERCITY_BUS', 'Toshkent avtovokzali', 'MVPdagi shaharlararo avtobus adapteri.', { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'BUS' }, version: 1 }),
     ],
   },
@@ -930,7 +932,7 @@ export const fareClassOptions = prototypeOptionEntries('fare_classes').map(({ co
   baseEligible: referenceAttributeBoolean(attributes, 'base_eligible'),
 }))
 export const countryOptions = prototypeOptionEntries('countries').map(({ code, name, status }) => ({ code, label: name, status }))
-export const carrierOptions = prototypeOptionEntries('carriers').map(({ code, name, attributes }) => ({ code, label: name, transportMode: referenceAttributeString(attributes, 'transport_mode') }))
+export const carrierOptions = prototypeOptionEntries('carriers').map(({ code, name, attributes }) => ({ code, label: name, transportMode: referenceAttributeString(attributes, 'transport_mode'), inn: referenceAttributeString(attributes, 'inn') }))
 export const applicantRoleOptions = prototypeOptionEntries('applicant_roles').map(({ code, name }) => ({ code, label: name }))
 export const legTypeOptions = prototypeOptionEntries('leg_types').map(({ code, name }) => ({ code, label: name }))
 export const contingentEventTypeOptions = prototypeOptionEntries('contingent_event_types').map(({ code, name }) => ({ code, label: name }))
