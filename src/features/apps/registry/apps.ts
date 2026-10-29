@@ -20,6 +20,7 @@ import {
 import type { AppModule } from '../types'
 
 export const appModules: AppModule[] = [
+  { id: 'social-benefits', title: 'Ijtimoiy imtiyozlar moduli', description: 'Barcha kontingentlar va imtiyozlar yagona katalogi, muvofiqlik tekshiruvi va foydalanish monitoringi.', route: '/apps/social-benefits', icon: Shield, enabled: true, permission: 'social-benefits.view', hasInternalNavigation: true },
   {
     id: 'project-governance',
     title: 'Loyihalarni boshqarish',

@@ -14,6 +14,7 @@ export interface DemoModuleAccount {
 
 // Public frontend examples, intentionally shown on the demo login page.
 const credentials: Record<string, { username: string; password: string }> = {
+  'social-benefits': { username: 'social-benefits', password: 'ImtiyozDemo!26' },
   'project-governance': { username: 'project-governance', password: 'LoyihaDemo!26' },
   'palliative-care': { username: 'palliative-care', password: 'PalliativDemo!26' },
   ptpk: { username: 'ptpk', password: 'PtpkDemo!26' },

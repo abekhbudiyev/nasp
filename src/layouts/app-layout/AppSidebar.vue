@@ -10,6 +10,7 @@ import { snavMenu } from '@/features/snav/config'
 import { eiMenu } from '@/features/ei/config'
 import { transportBenefitsMenu } from '@/features/transport-benefits/config'
 import { ptpkMenu } from '@/features/ptpk/config'
+import { socialBenefitsMenu, socialBenefitsMenuGroups } from '@/features/social-benefits/config'
 import { governanceMenu } from '@/features/project-governance/config'
 import { palliativeMenu, palliativeMenuGroups } from '@/features/palliative-care/config'
 import { useAuthStore } from '@/stores/auth'
@@ -60,6 +61,7 @@ const currentModuleLabel = computed(() => {
 })
 
 const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
+  if (activeModuleKey.value === 'social-benefits') return socialBenefitsMenu
   if (activeModuleKey.value === 'project-governance') return governanceMenu
   if (activeModuleKey.value === 'palliative-care') {
     return palliativeMenu
@@ -91,6 +93,10 @@ const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
 
   return []
 })
+
+const groupedNavigation = computed(() => activeModuleKey.value === 'social-benefits'
+  ? socialBenefitsMenuGroups
+  : activeModuleKey.value === 'palliative-care' ? palliativeMenuGroups : [])
 
 const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/ptpk': 'nav.dashboard',
@@ -262,31 +268,33 @@ watch(() => route.path, syncOpenSections, { immediate: true })
 
     <div class="flex-1 overflow-y-auto p-2">
       <nav
-        v-if="activeModuleKey === 'palliative-care'"
-        :aria-label="t('Bolalar palliativ yordami bo‘limlari')"
+        v-if="groupedNavigation.length"
+        :aria-label="activeModuleKey === 'social-benefits' ? 'Ijtimoiy imtiyozlar bo‘limlari' : t('Bolalar palliativ yordami bo‘limlari')"
       >
         <div
-          v-for="(group, index) in palliativeMenuGroups"
+          v-for="(group, index) in groupedNavigation"
           :key="group.id"
           role="group"
           :aria-label="t(group.title ?? 'Bosh sahifa')"
-          :class="!collapsed && index > 0 ? 'mt-5' : undefined"
+          :class="!collapsed && index > 0 ? (activeModuleKey === 'social-benefits' ? 'mt-4' : 'mt-5') : undefined"
         >
           <hr v-if="collapsed && index > 0" class="mx-4 my-3 border-sidebar-border" />
-          <p v-if="group.title && !collapsed" class="px-2 pb-2 text-[11px] font-semibold text-muted-foreground">
+          <p v-if="group.title && !collapsed" :class="cn('px-2 pb-2 text-[11px] font-semibold text-muted-foreground', activeModuleKey === 'social-benefits' && 'flex items-center gap-2 text-[10px] tracking-[0.06em]', activeModuleKey === 'social-benefits' && group.items.some(isItemActive) && 'text-primary')">
+            <span v-if="activeModuleKey === 'social-benefits'" :class="cn('h-1 w-1 rounded-full bg-sidebar-border', group.items.some(isItemActive) && 'bg-primary')" aria-hidden="true" />
             {{ t(group.title) }}
           </p>
           <div class="space-y-1">
             <RouterLink
               v-for="item in group.items"
               :key="item.id"
-              :to="item.route"
+              :to="item.route ?? '/apps'"
               @click="$emit('navigate')"
               :aria-label="sidebarTitle(item)"
               :aria-current="isItemActive(item) ? 'page' : undefined"
               :title="collapsed ? sidebarTitle(item) : undefined"
               :class="cn(
                 'flex h-8 items-center gap-2 rounded-md text-sm outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring/50',
+                activeModuleKey === 'social-benefits' && 'h-8 text-[13px]',
                 collapsed ? 'mx-auto w-8 justify-center p-0' : 'w-full px-2',
                 isItemActive(item)
                   ? 'bg-sidebar-accent font-medium text-foreground shadow-[inset_2px_0_0_var(--primary)] [&>svg]:text-primary'

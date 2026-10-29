@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import { eiProductionRoutes } from '@/features/ei/routes'
+import { socialBenefitsPages } from '@/features/social-benefits/config'
 import { governancePages } from '@/features/project-governance/config'
 
 const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
@@ -44,6 +45,13 @@ export const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
     children: [
+      { path: 'apps/social-benefits/flow', redirect: '/apps/social-benefits/risks' },
+      { path: 'apps/social-benefits/integrations', redirect: '/apps/social-benefits/coverage' },
+      ...socialBenefitsPages.map(page => ({
+        path: 'apps/social-benefits' + page.path, name: 'social-benefits-' + page.key,
+        component: () => import('@/features/social-benefits/pages/SocialBenefitsPage.vue'), props: { pageKey: page.key },
+        meta: { requiresAuth: true, permission: 'social-benefits.view' as const, moduleKey: 'social-benefits', moduleTitle: 'Ijtimoiy imtiyozlar moduli', title: page.title, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar moduli', page.title] },
+      })),
       ...governancePages.map((page) => ({
         path: `apps/project-governance${page.path}`,
         name: `project-governance-${page.key}`,

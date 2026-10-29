@@ -1,5 +1,6 @@
 export type PermissionKey =
   | 'apps.view'
+  | 'social-benefits.view'
   | 'project-governance.view'
   | 'iptk.view'
   | 'ptpk.view'
