@@ -48,12 +48,12 @@ export function createReimbursementCases() {
       files.push({ id: fileId, name: `${id}-${type.code.toLowerCase()}.pdf`, carrier, size: 0, uploadedAt: at, sample: true, typeCode: type.code })
       return { type: { id: type.id, code: type.code }, file_id: fileId }
     })
-    const history = [{ at, text: 'Sinov buyurtmanomasi qabul qilindi' }]
+    const history = [{ at, text: 'Buyurtmanoma qabul qilindi' }]
     if (status === 'APPROVED') history.push({ at, text: 'Chiptalar tekshirildi' })
-    if (status === 'CANCELLED') history.push({ at, text: 'Buyurtmanoma bekor qilindi: tashuvchi noto‘g‘ri buyurtmanoma yuborgan (sinov)' })
-    if (status === 'APPROVED') history.push({ at, text: 'Summa va bank hisob raqami tasdiqlandi (sinov)' })
-    if (payment !== 'NOT_SENT') history.push({ at, text: 'To‘lov tizimiga yuborildi (sinov)' })
-    if (payment === 'PAID' || payment === 'FAILED') history.push({ at, text: payment === 'PAID' ? 'To‘lov yakunlandi (sinov)' : 'Bank to‘lovni bajarmadi. Hisob raqamini tekshirish va qayta yuborish kerak (sinov)' })
+    if (status === 'CANCELLED') history.push({ at, text: 'Buyurtmanoma bekor qilindi: tashuvchi noto‘g‘ri buyurtmanoma yuborgan' })
+    if (status === 'APPROVED') history.push({ at, text: 'Summa va bank hisob raqami tasdiqlandi' })
+    if (payment !== 'NOT_SENT') history.push({ at, text: 'To‘lov tizimiga yuborildi' })
+    if (payment === 'PAID' || payment === 'FAILED') history.push({ at, text: payment === 'PAID' ? 'To‘lov yakunlandi' : 'Bank to‘lovni bajarmadi. Hisob raqamini tekshirish va qayta yuborish kerak' })
     return {
       id: `2026-2610${String(number).padStart(2, '0')}`, sourceId: String(number).padStart(3, '0'), ...organization, ...(carrier === 'O‘zbekiston temir yo‘llari' ? { carrierInn: '201051951' } : {}), mfo: '00450', period: '2026-10', account: '20210000603717281001',
       documents: docs.filter(d => d.type.code === 'COST_CALCULATION'),

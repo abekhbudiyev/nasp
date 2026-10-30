@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
+import FilterPopover from '@/shared/components/FilterPopover.vue'
 import {
   Activity,
   AlertTriangle,
@@ -8,28 +10,27 @@ import {
   BadgeCheck,
   Banknote,
   BookOpenCheck,
-  Boxes,
-  BusFront,
   CheckCircle2,
   ChevronRight,
   CircleDollarSign,
   Clock3,
   Code2,
   Database,
+  Download,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
   FileCheck2,
   Landmark,
   Layers3,
   ListChecks,
   Network,
-  Plane,
-  Plus,
   RefreshCw,
   Search,
   Send,
   ServerCog,
   ShieldCheck,
   TicketCheck,
-  TrainFront,
   UploadCloud,
   UsersRound,
   WalletCards,
@@ -39,7 +40,7 @@ import {
 } from 'lucide-vue-next'
 import {
   applicantRoleOptions,
-  benefitProfileOptions,
+  beneficiaryCategoryOptions,
   carrierOptions,
   contingentEventTypeOptions,
   countryOptions,
@@ -64,9 +65,13 @@ import ReimbursementPanel from './ReimbursementPanel.vue'
 import { userLabel } from '../ui-labels'
 import { financeApiDefinitions } from '../finance-api-contracts'
 import IntegrationExplorer from './IntegrationExplorer.vue'
+import TransportStatusCard from '../components/TransportStatusCard.vue'
+import GroupedReport from '../components/GroupedReport.vue'
+import type { GroupableRow } from '../grouped-report'
+import { transportPalette, transportStatusTone } from '../status-presentation'
 
 type ContingentEventType = 'RIGHT_GRANTED' | 'RIGHT_CORRECTED' | 'RIGHT_REVOKED' | 'RIGHT_REINSTATED'
-type ContingentEventStatus = 'Qo‘llandi' | 'Tekshiruvda' | 'Xatolik'
+type ContingentEventStatus = 'Faol' | 'Nofaol' | 'Foydalangan'
 type TicketEventType = 'ISSUED' | 'RETURNED' | 'CARRIER_CANCELLED' | 'VOIDED' | 'RESCHEDULED' | 'TRAVELLED' | 'NO_SHOW'
 type TicketEventStatus = 'Qabul qilindi' | 'Qayta ishlanmoqda' | 'Rad etildi'
 type TransportMode = 'RAIL' | 'AIR' | 'BUS'
@@ -76,6 +81,14 @@ type EntitlementLegState = 'AVAILABLE' | 'HELD' | 'CONSUMED' | 'RESTORE_REVIEW' 
 type ReturnReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'METHODOLOGY_PENDING'
 
 interface ContingentEvent {
+  personKey?: string
+  documentNumber?: string
+  documentId?: string
+  documentDate?: string
+  birthDate?: string
+  categoryCode?: string
+  revocationReason?: string
+  revokedAt?: string
   id: string
   receivedAt: string
   source: string
@@ -111,6 +124,15 @@ interface EligibilityDecision {
 }
 
 interface TicketEvent {
+  carrierInn?: string
+  beneficiaryCategoryCode?: string
+  beneficiarySource?: string
+  documentNumber?: string
+  documentId?: string
+  documentDate?: string
+  passengerName?: string
+  passengerBirthDate?: string
+  ticketIssuedAt?: string
   id: string
   occurredAt: string
   ticketId: string
@@ -257,6 +279,26 @@ const isEligibility = computed(() => props.pageKey === 'eligibility')
 const isTicketEvents = computed(() => props.pageKey === 'ticket-events')
 const isSettlements = computed(() => props.pageKey === 'settlements')
 const isReferences = computed(() => props.pageKey.startsWith('reference-'))
+const ticketFormOpen = ref(false)
+const ticketDetailsOpen = ref(false)
+const selectedTicketEventId = ref('')
+const selectedTicketRecord = computed(() => ticketEvents.value.find(event => event.id === selectedTicketEventId.value))
+const contingentFilterOpen = ref(false)
+const contingentDetailsOpen = ref(false)
+const selectedContingentId = ref('')
+const selectedContingent = computed(() => contingentEvents.value.find(event => event.id === selectedContingentId.value))
+function contingentAge(birthDate?: string) {
+  if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return '—'
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+  const [year, month, day] = birthDate.split('-').map(Number)
+  const [currentYear, currentMonth, currentDay] = today.split('-').map(Number)
+  if (!year || !month || !day || !currentYear || !currentMonth || !currentDay) return '—'
+  const age = currentYear - year - Number(currentMonth < month || (currentMonth === month && currentDay < day))
+  return age >= 0 && age <= 130 ? String(age) : '—'
+}
+const contingentCategoryCode = (event: ContingentEvent) => event.categoryCode || beneficiaryCategoryOptions.find(option => option.label === event.category)?.code || '—'
+const contingentCategoryName = (event: ContingentEvent) => beneficiaryCategoryOptions.find(option => option.code === event.categoryCode)?.label || event.category.replace(/\s+—\s+[A-Z][A-Z0-9_]*$/, '')
+const isWorkspacePage = computed(() => isSettlements.value || isContingents.value || isTicketEvents.value || isReferences.value)
 const isIntegrations = computed(() => props.pageKey === 'integrations')
 const fieldClass = 'h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none transition-colors hover:border-ring focus:border-ring focus:ring-2 focus:ring-ring/25'
 const feedback = ref<{ tone: FeedbackTone, message: string } | null>(null)
@@ -287,110 +329,136 @@ function parseDateTimeLocal(value: string) {
   return value ? Date.parse(`${value}:00+05:00`) : Number.NaN
 }
 
-const contingentEvents = ref<ContingentEvent[]>([
+// Synthetic demo cases: one beneficiary per supplied category.
+const contingentDemoPeople = [
   {
-    id: 'EVT-300926-1048',
-    receivedAt: '30.09.2026 10:48',
-    source: 'Mudofaa vazirligi',
-    sourceCode: 'DEFENCE_MINISTRY',
-    pinfl: '30101•••••••42',
-    person: 'Azizov J. R.',
-    category: 'Urush qatnashchisiga tenglashtirilgan shaxs — PART_EQ_10',
-    legalBasis: 'PART_EQ_10',
-    eventType: 'RIGHT_GRANTED',
-    version: 4,
-    effectiveFrom: '01.10.2026',
-    status: 'Qo‘llandi',
+    "person": "AZIZOV JAMSHID RUSTAMOVICH",
+    "birthDate": "1925-01-15"
   },
   {
-    id: 'EVT-300926-1031',
-    receivedAt: '30.09.2026 10:31',
-    source: 'Ichki ishlar vazirligi',
-    sourceCode: 'INTERNAL_AFFAIRS',
-    pinfl: '31205•••••••18',
-    person: 'Karimova M. T.',
-    category: 'Urush nogironiga tenglashtirilgan III guruh shaxs — DIS_EQ_02',
-    legalBasis: 'DIS_EQ_02',
-    eventType: 'RIGHT_CORRECTED',
-    version: 7,
-    effectiveFrom: '01.10.2026',
-    status: 'Qo‘llandi',
+    "person": "KARIMOVA MALIKA TURSUNOVNA",
+    "birthDate": "1926-05-12"
   },
   {
-    id: 'EVT-300926-0956',
-    receivedAt: '30.09.2026 09:56',
-    source: 'Pensiya jamg‘armasi',
-    sourceCode: 'PENSION_FUND',
-    pinfl: '29811•••••••09',
-    person: 'Ergashev O. S.',
-    category: '1941–1945-yillardagi urush nogironi, I guruh',
-    legalBasis: 'VMQ440_1A_WAR_DISABLED_I',
-    eventType: 'RIGHT_GRANTED',
-    version: 2,
-    effectiveFrom: '01.10.2026',
-    status: 'Tekshiruvda',
+    "person": "ERGASHEV OLIM SOBIROVICH",
+    "birthDate": "1957-03-22"
   },
   {
-    id: 'EVT-300926-0914',
-    receivedAt: '30.09.2026 09:14',
-    source: 'Favqulodda vaziyatlar vazirligi',
-    sourceCode: 'EMERGENCIES_MINISTRY',
-    pinfl: '30508•••••••71',
-    person: 'Sodiqov B. A.',
-    category: 'Sobiq SSSR mudofaasi/harbiy xizmatidagi jarohat yoki front kasalligi tufayli halok bo‘lgan harbiyning ota-onasi yoki turmush o‘rtog‘i',
-    legalBasis: 'PART_EQ_03 | VMQ440_1B_FALLEN_FAMILY · alohida reference’lar',
-    eventType: 'RIGHT_REINSTATED',
-    version: 3,
-    effectiveFrom: '23.08.2026',
-    status: 'Qo‘llandi',
+    "person": "SODIQOV BAHODIR ANVAROVICH",
+    "birthDate": "1963-08-09"
   },
   {
-    id: 'EVT-300926-0842',
-    receivedAt: '30.09.2026 08:42',
-    source: 'Bojxona qo‘mitasi',
-    sourceCode: 'CUSTOMS_COMMITTEE',
-    pinfl: '28703•••••••55',
-    person: 'Rasulov N. K.',
-    category: '1941–1945-yillardagi urush qatnashchisi',
-    legalBasis: 'VMQ440_1A_WAR_PARTICIPANT',
-    eventType: 'RIGHT_REVOKED',
-    version: 6,
-    effectiveFrom: '01.10.2026',
-    status: 'Xatolik',
+    "person": "RASULOV NODIR KOMILOVICH",
+    "birthDate": "1928-11-17"
   },
   {
-    id: 'EVT-300926-0819',
-    receivedAt: '30.09.2026 08:19',
-    source: 'Davlat xavfsizlik xizmati',
-    sourceCode: 'STATE_SECURITY_SERVICE',
-    pinfl: '27509•••••••31',
-    person: 'Usmonov T. A.',
-    category: 'Urush nogironiga tenglashtirilgan I guruh shaxs — DIS_EQ_02',
-    legalBasis: 'DIS_EQ_02',
-    eventType: 'RIGHT_GRANTED',
-    version: 1,
-    effectiveFrom: '01.10.2026',
-    status: 'Qo‘llandi',
+    "person": "USMONOV TOHIR AKMALOVICH",
+    "birthDate": "1965-02-28"
   },
-])
+  {
+    "person": "ABDULLAYEV SHAVKAT IKROMOVICH",
+    "birthDate": "1927-07-04"
+  },
+  {
+    "person": "QODIROVA DILBAR MURODOVNA",
+    "birthDate": "1929-06-18"
+  },
+  {
+    "person": "RAHIMOV ANVAR ABDULLAYEVICH",
+    "birthDate": "1948-12-25"
+  },
+  {
+    "person": "ISMOILOVA NARGIZA OLIMOVNA",
+    "birthDate": "1953-04-11"
+  },
+  {
+    "person": "TURSUNOV BEKZOD SHAVKATOVICH",
+    "birthDate": "1960-09-30"
+  },
+  {
+    "person": "YUSUPOVA SAODAT KARIMOVNA",
+    "birthDate": "1955-10-30"
+  },
+  {
+    "person": "MIRZAYEV AKMAL BAHODIROVICH",
+    "birthDate": "1958-11-02"
+  }
+]
+const contingentEvents = ref<ContingentEvent[]>(beneficiaryCategoryOptions.map((category, index) => {
+  const person = contingentDemoPeople[index]!
+  const source = sourceOrganizationOptions[index % sourceOrganizationOptions.length]!
+  const status: ContingentEventStatus = (['Faol', 'Nofaol', 'Foydalangan'] as const)[index % 3]!
+  return {
+    id: String(index + 1).padStart(3, '0'),
+    documentNumber: '2026-2610' + String(index + 1).padStart(2, '0'),
+    documentId: String(index + 1).padStart(3, '0'),
+    documentDate: '2026-10-30', receivedAt: '30.10.2026 10:00',
+    source: source.label, sourceCode: source.code,
+    pinfl: String(index % 2 ? 4 : 3) + person.birthDate.slice(8, 10) + person.birthDate.slice(5, 7) + '•••••••' + String(index + 1).padStart(2, '0'),
+    personKey: 'demo-person-' + String(index + 1),
+    person: person.person, birthDate: person.birthDate,
+    category: category.label, categoryCode: category.code, legalBasis: '',
+    eventType: status === 'Nofaol' ? 'RIGHT_REVOKED' : 'RIGHT_GRANTED',
+    version: 1, effectiveFrom: '01.10.2026', status,
+    ...(status === 'Nofaol' ? { revocationReason: 'Manba tashkilot ma’lumotiga asosan imtiyoz huquqi bekor qilingan', revokedAt: '30.10.2026' } : {}),
+  }
+}))
 
 const contingentSearch = ref('')
 const contingentSourceFilter = ref('Barchasi')
 const contingentStatusFilter = ref('Barchasi')
+const contingentCategoryFilter = ref('')
+const contingentRevocationReason = ref('')
+const contingentRevokedFrom = ref('')
+const contingentRevokedTo = ref('')
+const contingentPage = ref(1)
+const contingentPageSize = ref(10)
+const contingentDownloading = ref(false)
+const contingentRevocationReasons = computed(() => [...new Set(contingentEvents.value.map(event => event.revocationReason).filter((reason): reason is string => Boolean(reason)))])
+function contingentRevokedDate(event: ContingentEvent) {
+  const value = event.revokedAt || ''
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10)
+  const [day, month, year] = value.split('.')
+  return year && month && day ? year + '-' + month + '-' + day : ''
+}
+const contingentDateFrom = ref('')
+const contingentDateTo = ref('')
+const contingentReportOpen = ref(false)
+const contingentDateRangeInvalid = computed(() => Boolean((contingentDateFrom.value && contingentDateTo.value && contingentDateFrom.value > contingentDateTo.value) || (contingentRevokedFrom.value && contingentRevokedTo.value && contingentRevokedFrom.value > contingentRevokedTo.value)))
+const contingentFilterCount = computed(() => Number(contingentSourceFilter.value !== 'Barchasi') + Number(contingentStatusFilter.value !== 'Barchasi') + [contingentCategoryFilter.value, contingentDateFrom.value, contingentDateTo.value, contingentRevocationReason.value, contingentRevokedFrom.value, contingentRevokedTo.value].filter(Boolean).length)
+function clearContingentFilters() {
+  contingentSourceFilter.value = 'Barchasi'; contingentStatusFilter.value = 'Barchasi'; contingentCategoryFilter.value = ''; contingentDateFrom.value = ''; contingentDateTo.value = ''; contingentRevocationReason.value = ''; contingentRevokedFrom.value = ''; contingentRevokedTo.value = ''
+}
+function contingentDocumentDate(event: ContingentEvent) {
+  if (event.documentDate) return event.documentDate
+  const [day, month, year] = event.receivedAt.split(' ')[0]!.split('.')
+  return year && month && day ? year + '-' + month + '-' + day : ''
+}
+function uniqueContingentPeople(events: ContingentEvent[]) {
+  const people = new Map<string, ContingentEvent>()
+  for (const event of events) {
+    // Do not deduplicate masked identifiers without a stable person key.
+    const key = /^\d{14}$/.test(event.pinfl) ? event.pinfl : event.personKey || 'record:' + event.id
+    const previous = people.get(key)
+    const stamp = (item: ContingentEvent) => contingentDocumentDate(item) + ' ' + (item.receivedAt.split(' ')[1] || '')
+    if (!previous || stamp(event) > stamp(previous) || (stamp(event) === stamp(previous) && event.version > previous.version)) people.set(key, event)
+  }
+  return [...people.values()]
+}
 const isContingentDialogOpen = ref(false)
 const contingentDraft = ref({
   source: 'Mudofaa vazirligi',
   pinfl: '',
   person: '',
   eventType: 'RIGHT_GRANTED' as ContingentEventType,
-  category: benefitProfileOptions.find((item) => item.code === 'C05')?.label ?? 'C05',
+  category: beneficiaryCategoryOptions.find((item) => item.code === '05')!.label,
   legalBasis: 'VMQ440_1A_WAR_PARTICIPANT',
   effectiveFrom: '2026-10-01',
 })
 
 const sourceOptions = sourceOrganizationOptions.map((item) => item.label)
 
-const categoryOptions = benefitProfileOptions
+const categoryOptions = beneficiaryCategoryOptions
 const defaultLegalBasisByProfile: Record<string, string> = {
   C01: 'VMQ440_1A_WAR_DISABLED_I_II',
   C02: 'DIS_EQ_01',
@@ -408,25 +476,67 @@ const equivalenceBasisOptions = [...disabilityEquivalenceOptions, ...participant
 
 const selectedCategoryNeedsEquivalenceBasis = computed(() => contingentDraft.value.category.includes('tenglashtirilgan'))
 const filteredEquivalenceBasisOptions = computed(() => {
-  if (contingentDraft.value.category.includes('nogironiga tenglashtirilgan')) {
+  if (['02', '021', '04'].includes(categoryOptions.find(item => item.label === contingentDraft.value.category)?.code || '')) {
     return equivalenceBasisOptions.filter((item) => item.code.startsWith('DIS_EQ_'))
   }
-  if (contingentDraft.value.category.includes('qatnashchisiga tenglashtirilgan')) {
+  if (categoryOptions.find(item => item.label === contingentDraft.value.category)?.code === '06') {
     return equivalenceBasisOptions.filter((item) => item.code.startsWith('PART_EQ_'))
   }
   return []
 })
 
-const filteredContingentEvents = computed(() => {
+const scopedContingentEvents = computed(() => {
   const query = contingentSearch.value.trim().toLocaleLowerCase()
-  return contingentEvents.value.filter((event) => {
-    const matchesSearch = !query || [event.id, event.pinfl, event.person, event.category, event.legalBasis]
-      .some((value) => value.toLocaleLowerCase().includes(query))
-    const matchesSource = contingentSourceFilter.value === 'Barchasi' || event.source === contingentSourceFilter.value
-    const matchesStatus = contingentStatusFilter.value === 'Barchasi' || event.status === contingentStatusFilter.value
-    return matchesSearch && matchesSource && matchesStatus
+  return uniqueContingentPeople(contingentEvents.value).filter(event => {
+    const date = contingentDocumentDate(event)
+    const revoked = contingentRevokedDate(event)
+    return (!query || [event.id, event.documentNumber || '', event.pinfl, event.person, event.category, contingentCategoryCode(event)].some(value => value.toLocaleLowerCase().includes(query))) &&
+      (contingentSourceFilter.value === 'Barchasi' || event.source === contingentSourceFilter.value) &&
+      (!contingentCategoryFilter.value || contingentCategoryCode(event) === contingentCategoryFilter.value) &&
+      (!contingentDateFrom.value || Boolean(date && date >= contingentDateFrom.value)) &&
+      (!contingentDateTo.value || Boolean(date && date <= contingentDateTo.value)) &&
+      (!contingentRevocationReason.value || event.revocationReason === contingentRevocationReason.value) &&
+      (!contingentRevokedFrom.value || Boolean(revoked && revoked >= contingentRevokedFrom.value)) &&
+      (!contingentRevokedTo.value || Boolean(revoked && revoked <= contingentRevokedTo.value))
   })
 })
+const filteredContingentEvents = computed(() => scopedContingentEvents.value.filter(event => contingentStatusFilter.value === 'Barchasi' || event.status === contingentStatusFilter.value))
+const contingentCards = computed(() => [
+  { label: 'Jami shaxslar', status: 'Barchasi', count: scopedContingentEvents.value.length, tone: 'text-primary', icon: UsersRound },
+  ...(['Faol', 'Nofaol', 'Foydalangan'] as const).map(status => ({ label: status, status, count: scopedContingentEvents.value.filter(event => event.status === status).length, tone: status === 'Faol' ? 'text-primary' : status === 'Nofaol' ? 'text-muted-foreground' : 'text-blue-600', icon: status === 'Faol' ? CheckCircle2 : status === 'Nofaol' ? XCircle : TicketCheck })),
+])
+const contingentRowCount = computed(() => filteredContingentEvents.value.length)
+const contingentPageCount = computed(() => Math.max(1, Math.ceil(contingentRowCount.value / contingentPageSize.value)))
+const contingentPageEvents = computed(() => filteredContingentEvents.value.slice((contingentPage.value - 1) * contingentPageSize.value, contingentPage.value * contingentPageSize.value))
+const contingentRangeStart = computed(() => contingentRowCount.value ? (contingentPage.value - 1) * contingentPageSize.value + 1 : 0)
+const contingentRangeEnd = computed(() => Math.min(contingentPage.value * contingentPageSize.value, contingentRowCount.value))
+watch([contingentSourceFilter, contingentStatusFilter, contingentCategoryFilter, contingentDateFrom, contingentDateTo, contingentRevocationReason, contingentRevokedFrom, contingentRevokedTo, contingentSearch, contingentPageSize, contingentReportOpen], () => { contingentPage.value = 1 })
+watch(contingentPageCount, count => { contingentPage.value = Math.min(contingentPage.value, count) })
+async function downloadContingentReport() {
+  if (contingentReportOpen.value) { await contingentGroupedReport.value?.download(); return }
+  contingentDownloading.value = true
+  try {
+    const XLSX = await import('xlsx')
+    let rows: (string | number)[][]
+    rows = [['Hujjat raqami', 'ID', 'Hujjat sanasi', 'F.I.O.', 'JShShIR', 'Yosh', 'Toifa kodi', 'Toifa', 'Manba', 'Holati', 'Bekor qilish sababi', 'Bekor qilish sanasi'], ...filteredContingentEvents.value.map(event => [event.documentNumber || '', event.documentId || event.id, contingentDocumentDate(event), event.person.toLocaleUpperCase('uz-UZ'), event.pinfl, contingentAge(event.birthDate), contingentCategoryCode(event), contingentCategoryName(event), event.source, event.status, event.revocationReason || '', contingentRevokedDate(event)])]
+    const sheet = XLSX.utils.aoa_to_sheet(rows)
+    sheet['!cols'] = rows[0]!.map((_, index) => ({ wch: Math.min(60, Math.max(14, ...rows.map(row => String(row[index] ?? '').length))) }))
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, sheet, contingentReportOpen.value ? 'Hisobot' : 'Imtiyoz oluvchilar')
+    XLSX.writeFile(book, contingentReportOpen.value ? 'imtiyoz-oluvchilar-svod.xlsx' : 'imtiyoz-oluvchilar.xlsx')
+  } catch {
+    showFeedback('error', 'Hisobotni yuklab bo‘lmadi. Qayta urinib ko‘ring.')
+  } finally { contingentDownloading.value = false }
+}
+const contingentGroupedReport = ref<InstanceType<typeof GroupedReport> | null>(null)
+const beneficiaryDimensions = [{ key: 'category', label: 'Toifa' }, { key: 'source', label: 'Manba' }, { key: 'status', label: 'Holat' }]
+const beneficiaryMetrics = [{ key: 'count', label: 'Jami' }, { key: 'active', label: 'Faol' }, { key: 'inactive', label: 'Nofaol' }, { key: 'used', label: 'Foydalangan' }, { key: 'share', label: 'Foydalanish ulushi (%)', numerator: 'used', denominator: 'count' }]
+const contingentGroupedRows = computed<GroupableRow[]>(() => filteredContingentEvents.value.map(event => ({ id: event.id, dimensions: { category: { value: contingentCategoryCode(event), label: contingentCategoryName(event) + ' (' + contingentCategoryCode(event) + ')' }, source: { value: event.source, label: event.source }, status: { value: event.status, label: event.status } }, metrics: { count: 1, active: Number(event.status === 'Faol'), inactive: Number(event.status === 'Nofaol'), used: Number(event.status === 'Foydalangan') } })))
+function drillBeneficiary(path: { dimension: string; value: string }[]) {
+  for (const part of path) { if (part.dimension === 'category') contingentCategoryFilter.value = part.value; if (part.dimension === 'source') contingentSourceFilter.value = part.value; if (part.dimension === 'status') contingentStatusFilter.value = part.value }
+  contingentReportOpen.value = false
+}
+const contingentShare = (used: number, total: number) => new Intl.NumberFormat('uz-UZ', { maximumFractionDigits: 1 }).format(total ? used / total * 100 : 0)
 
 function maskPinfl(value: string) {
   const normalized = value.replace(/\D/g, '').slice(0, 14)
@@ -457,13 +567,14 @@ function submitContingentEvent() {
     source: contingentDraft.value.source,
     sourceCode: sourceCode(contingentDraft.value.source),
     pinfl: maskPinfl(contingentDraft.value.pinfl),
-    person: contingentDraft.value.person.trim(),
+    person: contingentDraft.value.person.trim().toLocaleUpperCase('uz-UZ'),
     category: contingentDraft.value.category,
+    categoryCode: categoryOptions.find(option => option.label === contingentDraft.value.category)?.code,
     legalBasis: contingentDraft.value.legalBasis,
     eventType: contingentDraft.value.eventType,
     version: 1,
     effectiveFrom: formatInputDate(contingentDraft.value.effectiveFrom),
-    status: 'Tekshiruvda',
+    status: 'Faol',
   })
   isContingentDialogOpen.value = false
   contingentDraft.value.pinfl = ''
@@ -1109,6 +1220,9 @@ function consumeManualAuthorization(item: ManualVerificationCase) {
 
 const ticketEvents = ref<TicketEvent[]>([
   {
+    beneficiaryCategoryCode: '01', beneficiarySource: sourceOrganizationOptions[0]?.label,
+    documentNumber: '2026-261001', documentId: '001', documentDate: '2026-10-15',
+    passengerName: 'AZIZOV JAMSHID RUSTAMOVICH', passengerBirthDate: '1925-01-15',
     id: 'TEV-9431',
     occurredAt: '15.10.2026 10:49',
     ticketId: 'UTY-78394510',
@@ -1138,6 +1252,9 @@ const ticketEvents = ref<TicketEvent[]>([
     status: 'Qabul qilindi',
   },
   {
+    beneficiaryCategoryCode: '09', beneficiarySource: sourceOrganizationOptions[1]?.label,
+    documentNumber: '2026-261002', documentId: '002', documentDate: '2026-10-15',
+    passengerName: 'KARIMOVA MALIKA TURSUNOVNA', passengerBirthDate: '1926-05-12',
     id: 'TEV-9418',
     occurredAt: '15.10.2026 10:22',
     ticketId: 'HY-12587409',
@@ -1167,6 +1284,9 @@ const ticketEvents = ref<TicketEvent[]>([
     status: 'Qabul qilindi',
   },
   {
+    beneficiaryCategoryCode: '09', beneficiarySource: sourceOrganizationOptions[1]?.label,
+    documentNumber: '2026-261003', documentId: '003', documentDate: '2026-10-14',
+    passengerName: 'KARIMOVA MALIKA TURSUNOVNA', passengerBirthDate: '1926-05-12',
     id: 'TEV-9417',
     occurredAt: '14.10.2026 18:04',
     ticketId: 'HY-12587409',
@@ -1196,6 +1316,9 @@ const ticketEvents = ref<TicketEvent[]>([
     status: 'Qabul qilindi',
   },
   {
+    beneficiaryCategoryCode: '01', beneficiarySource: sourceOrganizationOptions[2]?.label,
+    documentNumber: '2026-261004', documentId: '004', documentDate: '2026-10-15',
+    passengerName: 'ERGASHEV OLIM SOBIROVICH', passengerBirthDate: '1957-03-22',
     id: 'TEV-9397',
     occurredAt: '15.10.2026 09:58',
     ticketId: 'BUS-661284',
@@ -1230,6 +1353,9 @@ const ticketEvents = ref<TicketEvent[]>([
     status: 'Qayta ishlanmoqda',
   },
   {
+    beneficiaryCategoryCode: '01', beneficiarySource: sourceOrganizationOptions[2]?.label,
+    documentNumber: '2026-261005', documentId: '005', documentDate: '2026-10-14',
+    passengerName: 'ERGASHEV OLIM SOBIROVICH', passengerBirthDate: '1957-03-22',
     id: 'TEV-9396',
     occurredAt: '14.10.2026 16:40',
     ticketId: 'BUS-661284',
@@ -1259,6 +1385,9 @@ const ticketEvents = ref<TicketEvent[]>([
     status: 'Qabul qilindi',
   },
   {
+    beneficiaryCategoryCode: '09', beneficiarySource: sourceOrganizationOptions[3]?.label,
+    documentNumber: '2026-261006', documentId: '006', documentDate: '2026-10-14',
+    passengerName: 'SODIQOV BAHODIR ANVAROVICH', passengerBirthDate: '1963-08-09',
     id: 'TEV-9351',
     occurredAt: '14.10.2026 17:36',
     ticketId: 'UTY-78394418',
@@ -1292,6 +1421,9 @@ const ticketEvents = ref<TicketEvent[]>([
     status: 'Qabul qilindi',
   },
   {
+    beneficiaryCategoryCode: '09', beneficiarySource: sourceOrganizationOptions[3]?.label,
+    documentNumber: '2026-261007', documentId: '007', documentDate: '2026-10-13',
+    passengerName: 'SODIQOV BAHODIR ANVAROVICH', passengerBirthDate: '1963-08-09',
     id: 'TEV-9340',
     occurredAt: '13.10.2026 12:10',
     ticketId: 'UTY-78391122',
@@ -1322,6 +1454,46 @@ const ticketEvents = ref<TicketEvent[]>([
   },
 ])
 const ticketSearch = ref('')
+const ticketFilterOpen = ref(false)
+const ticketModeFilter = ref('')
+const ticketCarrierFilter = ref('')
+const ticketStateFilter = ref('')
+const ticketDateFrom = ref('')
+const ticketDateTo = ref('')
+const ticketDepartureFrom = ref('')
+const ticketDepartureTo = ref('')
+const ticketPage = ref(1)
+const ticketPageSize = ref(10)
+const ticketDownloading = ref(false)
+const ticketReportOpen = ref(false)
+const ticketDateInvalid = computed(() => Boolean((ticketDateFrom.value && ticketDateTo.value && ticketDateFrom.value > ticketDateTo.value) || (ticketDepartureFrom.value && ticketDepartureTo.value && ticketDepartureFrom.value > ticketDepartureTo.value)))
+const ticketFilterCount = computed(() => [ticketCategoryFilter.value, ticketModeFilter.value, ticketCarrierFilter.value, ticketStateFilter.value, ticketDateFrom.value, ticketDateTo.value, ticketDepartureFrom.value, ticketDepartureTo.value].filter(Boolean).length)
+const ticketCarrierOptions = computed(() => [...new Set(ticketEvents.value.filter(event => !ticketModeFilter.value || event.transportMode === ticketModeFilter.value).map(event => event.carrier))])
+watch(ticketModeFilter, () => { if (!ticketCarrierOptions.value.includes(ticketCarrierFilter.value)) ticketCarrierFilter.value = '' })
+function clearTicketFilters() { ticketCategoryFilter.value = '';  ticketModeFilter.value = ''; ticketCarrierFilter.value = ''; ticketStateFilter.value = ''; ticketDateFrom.value = ''; ticketDateTo.value = ''; ticketDepartureFrom.value = ''; ticketDepartureTo.value = '' }
+function ticketIsoDate(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10)
+  const [day, month, year] = value.split(' ')[0]!.split('.')
+  return year && month && day ? year + '-' + month + '-' + day : ''
+}
+function ticketIssuedDate(event: TicketEvent) {
+  if (event.ticketIssuedAt) return formatInputDate(ticketIsoDate(event.ticketIssuedAt))
+  const issued = ticketEvents.value.filter(row => row.ticketId === event.ticketId && row.eventType === 'ISSUED').sort((a, b) => ticketIsoDate(a.occurredAt).localeCompare(ticketIsoDate(b.occurredAt)))[0]
+  return issued ? formatInputDate(ticketIsoDate(issued.occurredAt)) : '—'
+}
+const ticketCarrierInn = (event: TicketEvent) => event.carrierInn || carrierOptions.find(carrier => carrier.label === event.carrier)?.inn || '—'
+const ticketModeLabel = (event: TicketEvent) => transportModeOptions.find(mode => mode.code === event.transportMode)?.label || event.transportMode
+const ticketCategoryLabel = (event: TicketEvent) => beneficiaryCategoryOptions.find(category => category.code === event.beneficiaryCategoryCode)?.label || '—'
+const ticketRequestedShare = (event: TicketEvent) => contingentShare(event.compensationRequested, event.amount)
+function latestTicketRows(events: TicketEvent[]) {
+  const tickets = new Map<string, TicketEvent>()
+  for (const event of events) {
+    const old = tickets.get(event.ticketId)
+    const stamp = (row: TicketEvent) => ticketIsoDate(row.occurredAt) + ' ' + (row.occurredAt.split(' ')[1] || '')
+    if (!old || stamp(event) > stamp(old)) tickets.set(event.ticketId, event)
+  }
+  return [...tickets.values()]
+}
 const ticketDraft = ref({
   ticketId: '',
   reservationId: '',
@@ -1381,14 +1553,59 @@ function calculateReturnDeadline(nonuseDate: string) {
 }
 
 const computedReturnDeadline = computed(() => calculateReturnDeadline(ticketDraft.value.serviceCancelledAt))
-const selectedTicketAuthorization = computed(() => reservationAuthorizations.value[ticketDraft.value.reservationId.trim()])
 
-const filteredTicketEvents = computed(() => {
+const ticketStateOptions = computed(() => [...new Set(latestTicketRows(ticketEvents.value).map(event => event.ticketState))])
+const scopedTicketEvents = computed(() => {
   const query = ticketSearch.value.trim().toLocaleLowerCase()
-  if (!query) return ticketEvents.value
-  return ticketEvents.value.filter((event) => [event.id, event.ticketId, event.reservationId, event.carrier, event.route, event.eventType]
-    .some((value) => value.toLocaleLowerCase().includes(query)))
+  return latestTicketRows(ticketEvents.value).filter(event => {
+    const date = ticketIsoDate(event.occurredAt), departure = ticketIsoDate(event.departureAt)
+    return (!query || [event.id, event.ticketId, event.reservationId, event.documentNumber || '', event.documentId || '', event.passengerName || '', event.passenger, event.beneficiaryCategoryCode || '', ticketCategoryLabel(event), event.beneficiarySource || '', event.carrier, event.route, userLabel(event.ticketState)].some(value => value.toLocaleLowerCase().includes(query))) &&
+      (!ticketCategoryFilter.value || event.beneficiaryCategoryCode === ticketCategoryFilter.value) && (!ticketModeFilter.value || event.transportMode === ticketModeFilter.value) && (!ticketCarrierFilter.value || event.carrier === ticketCarrierFilter.value) &&
+      (!ticketDateFrom.value || Boolean(date && date >= ticketDateFrom.value)) && (!ticketDateTo.value || Boolean(date && date <= ticketDateTo.value)) &&
+      (!ticketDepartureFrom.value || Boolean(departure && departure >= ticketDepartureFrom.value)) && (!ticketDepartureTo.value || Boolean(departure && departure <= ticketDepartureTo.value))
+  })
 })
+const filteredTicketEvents = computed(() => scopedTicketEvents.value.filter(event => !ticketStateFilter.value || event.ticketState === ticketStateFilter.value))
+function ticketPalette(state: string) {
+  return { ...transportPalette(transportStatusTone(state)), icon: state === 'TRAVELLED' ? CheckCircle2 : transportStatusTone(state) === 'danger' ? XCircle : state ? Clock3 : TicketCheck }
+}
+const ticketCards = computed(() => [
+  { state: '', label: 'Jami chiptalar', ...ticketTotals(scopedTicketEvents.value) },
+  ...[...new Set(scopedTicketEvents.value.map(event => event.ticketState))].sort().map(state => ({ state, label: userLabel(state), ...ticketTotals(scopedTicketEvents.value.filter(event => event.ticketState === state)) })),
+])
+function ticketTotals(events: TicketEvent[]) {
+  return events.reduce((sum, event) => ({ count: sum.count + 1, amount: sum.amount + event.amount, citizen: sum.citizen + event.passengerPaidAmount, requested: sum.requested + event.compensationRequested }), { count: 0, amount: 0, citizen: 0, requested: 0 })
+}
+const ticketGroupedReport = ref<InstanceType<typeof GroupedReport> | null>(null)
+const ticketDimensions = [{ key: 'mode', label: 'Tashkilot turi' }, { key: 'carrier', label: 'Tashkilot' }, { key: 'category', label: 'Toifa' }, { key: 'status', label: 'Holat' }]
+const ticketMetrics = [{ key: 'count', label: 'Chiptalar soni' }, { key: 'amount', label: 'Jami narx (so‘m)' }, { key: 'citizen', label: 'Yo‘lovchi to‘lovi (so‘m)' }, { key: 'requested', label: 'So‘ralgan qoplama (so‘m)' }]
+const ticketCategoryFilter = ref('')
+const ticketGroupedRows = computed<GroupableRow[]>(() => filteredTicketEvents.value.map(event => ({ id: event.ticketId, dimensions: { mode: { value: event.transportMode, label: ticketModeLabel(event) }, carrier: { value: event.carrier, label: event.carrier }, category: { value: event.beneficiaryCategoryCode || '', label: ticketCategoryLabel(event) + ' (' + (event.beneficiaryCategoryCode || '—') + ')' }, status: { value: event.ticketState, label: userLabel(event.ticketState) } }, metrics: { count: 1, amount: event.amount, citizen: event.passengerPaidAmount, requested: event.compensationRequested } })))
+function drillTicket(path: { dimension: string; value: string }[]) {
+  for (const part of path) { if (part.dimension === 'mode') ticketModeFilter.value = part.value; if (part.dimension === 'carrier') ticketCarrierFilter.value = part.value; if (part.dimension === 'status') ticketStateFilter.value = part.value; if (part.dimension === 'category') ticketCategoryFilter.value = part.value }
+  ticketReportOpen.value = false
+}
+const ticketRowCount = computed(() => filteredTicketEvents.value.length)
+const ticketPageCount = computed(() => Math.max(1, Math.ceil(ticketRowCount.value / ticketPageSize.value)))
+const ticketPageEvents = computed(() => filteredTicketEvents.value.slice((ticketPage.value - 1) * ticketPageSize.value, ticketPage.value * ticketPageSize.value))
+const ticketRangeStart = computed(() => ticketRowCount.value ? (ticketPage.value - 1) * ticketPageSize.value + 1 : 0)
+const ticketRangeEnd = computed(() => Math.min(ticketPage.value * ticketPageSize.value, ticketRowCount.value))
+watch([ticketSearch, ticketCategoryFilter, ticketModeFilter, ticketCarrierFilter, ticketStateFilter, ticketDateFrom, ticketDateTo, ticketDepartureFrom, ticketDepartureTo, ticketPageSize, ticketReportOpen], () => { ticketPage.value = 1 })
+watch(ticketPageCount, count => { ticketPage.value = Math.min(ticketPage.value, count) })
+async function downloadTickets() {
+  if (ticketReportOpen.value) { await ticketGroupedReport.value?.download(); return }
+  ticketDownloading.value = true
+  try {
+    const XLSX = await import('xlsx')
+    let rows: (string | number)[][]
+    rows = [['Hujjat raqami', 'ID', 'Hujjat sanasi', 'F.I.O.', 'JShShIR', 'Yosh', 'Toifa', 'Toifa kodi', 'Manba', 'Tashkilot', 'INN', 'Tashkilot turi', 'Chipta raqami', 'Chipta sanasi', 'Yo‘nalish', 'Jo‘nash vaqti', 'Reys', 'Tarif', 'Borish/kelish', 'So‘ralgan', 'Umumiy', 'Qoplash (%)', 'Yo‘lovchi to‘lagan', 'Holat'], ...filteredTicketEvents.value.map(event => [event.documentNumber || '', event.documentId || event.id, event.documentDate || '', event.passengerName?.toLocaleUpperCase('uz-UZ') || '', event.passenger, contingentAge(event.passengerBirthDate), ticketCategoryLabel(event), event.beneficiaryCategoryCode || '', event.beneficiarySource || '', event.carrier, ticketCarrierInn(event), ticketModeLabel(event), event.ticketId, ticketIssuedDate(event), event.route, event.departureAt, event.serviceNumber, event.ticketClass, userLabel(event.legType), event.compensationRequested, event.amount, event.amount ? Math.round(event.compensationRequested / event.amount * 1000) / 10 : 0, event.passengerPaidAmount, userLabel(event.ticketState)])]
+    const book = XLSX.utils.book_new(), sheet = XLSX.utils.aoa_to_sheet(rows)
+    sheet['!cols'] = rows[0]!.map(() => ({ wch: 24 }))
+    XLSX.utils.book_append_sheet(book, sheet, ticketReportOpen.value ? 'Hisobot' : 'Chiptalar')
+    XLSX.writeFile(book, ticketReportOpen.value ? 'chiptalar-svod.xlsx' : 'chiptalar.xlsx')
+  } catch { showFeedback('error', 'Hisobotni yuklab bo‘lmadi. Qayta urinib ko‘ring.') }
+  finally { ticketDownloading.value = false }
+}
 
 function ticketLedgerEffect(eventType: TicketEventType, qualifyingReturn: boolean, deadlineExpired: boolean) {
   if (eventType === 'ISSUED') return 'RIGHT=CONSUMED(reason=TICKET_ISSUED) · TICKET=ISSUED'
@@ -2076,23 +2293,11 @@ const filteredReferenceEntries = computed(() => {
   })
 })
 
-const familyReferenceEntries = computed(() => familyReferenceCatalogs.value.flatMap((catalog) => catalog.entries))
-const referenceFamilyStats = computed(() => ({
-  catalogs: familyReferenceCatalogs.value.length,
-  entries: familyReferenceEntries.value.length,
-  normative: familyReferenceEntries.value.filter((entry) => entry.kind === 'NORMATIVE_REFERENCE').length,
-  open: familyReferenceEntries.value.filter((entry) => entry.status === 'OPEN_DECISION').length,
-}))
-
 const manualDocumentOptions = (getReferenceCatalog('manual_document_types')?.entries ?? [])
   .filter((entry) => entry.attributes?.transport_mode === 'RAIL' && entry.status === 'ACTIVE')
 const ticketPassengerRoleOptions = applicantRoleOptions.filter((option) => option.code !== 'LEGAL_REPRESENTATIVE')
 
-function referenceStatusClass(status: ReferenceEntry['status']) {
-  if (status === 'ACTIVE') return 'border-primary/20 bg-primary/10 text-primary'
-  if (status === 'HISTORICAL') return 'border-border bg-muted text-muted-foreground'
-  return 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-}
+function referenceStatusClass(status: ReferenceEntry['status']) { return transportPalette(transportStatusTone(status)).badge }
 
 function referenceStatusLabel(status: ReferenceEntry['status']) {
   return ({
@@ -2121,10 +2326,10 @@ function selectReferenceCatalog(id: string) {
 }
 
 const pipelineSteps = computed(() => [
-  { title: 'Imtiyoz oluvchilar', value: '24 812', caption: 'Namunaviy ma’lumot', icon: UsersRound, route: '/apps/transport-benefits/contingents', tone: 'primary' },
-  { title: 'Moslik', value: '1 426', caption: 'Namunaviy ma’lumot', icon: ShieldCheck, route: '/apps/transport-benefits/eligibility', tone: 'primary' },
-  { title: 'Rezerv', value: '319', caption: 'Namunaviy ma’lumot', icon: Zap, route: '/apps/transport-benefits/eligibility', tone: 'warning' },
-  { title: 'Chiptalar', value: '1 107', caption: 'Namunaviy ma’lumot', icon: TicketCheck, route: '/apps/transport-benefits/ticket-events', tone: 'primary' },
+  { title: 'Imtiyoz oluvchilar', value: '24 812', caption: '', icon: UsersRound, route: '/apps/transport-benefits/contingents', tone: 'primary' },
+  { title: 'Moslik', value: '1 426', caption: '', icon: ShieldCheck, route: '/apps/transport-benefits/eligibility', tone: 'primary' },
+  { title: 'Rezerv', value: '319', caption: '', icon: Zap, route: '/apps/transport-benefits/eligibility', tone: 'warning' },
+  { title: 'Chiptalar', value: '1 107', caption: '', icon: TicketCheck, route: '/apps/transport-benefits/ticket-events', tone: 'primary' },
   { title: 'Buyurtmanomalar va to‘lovlar', value: 'Ko‘rish', caption: 'Oylik hisob-kitob va to‘lov natijalari', icon: CircleDollarSign, route: '/apps/transport-benefits/settlements', tone: 'warning' },
 ])
 
@@ -2132,32 +2337,18 @@ const dashboardMetrics = computed(() => [
   { label: 'Faol kontingent · demo', value: '24 812', delta: '6 rasmiy manba', icon: UsersRound, bars: [42, 56, 48, 64, 62, 74, 81] },
   { label: 'API so‘rovlari · demo', value: '3 284', delta: 'go-live ssenariysi', icon: Activity, bars: [38, 45, 62, 54, 72, 68, 88] },
   { label: 'Faol rezervlar · demo', value: '319', delta: 'atomar global ledger', icon: Clock3, bars: [71, 62, 78, 57, 69, 51, 45] },
-  { label: 'To‘lovga yuborilgan · namuna', value: '0', delta: 'Buyurtmanomalar bo‘limida yuritiladi', icon: Banknote, bars: [8, 8, 8, 8, 8, 8, 8] },
+  { label: 'To‘lovga yuborilgan', value: '0', delta: 'Buyurtmanomalar bo‘limida yuritiladi', icon: Banknote, bars: [8, 8, 8, 8, 8, 8, 8] },
 ])
 
 function transportLabel(mode: TransportMode) {
   return ({ RAIL: 'Temir yo‘l', AIR: 'Havo', BUS: 'Avtobus' } as Record<TransportMode, string>)[mode]
 }
 
-function transportIcon(mode: TransportMode) {
-  return ({ RAIL: TrainFront, AIR: Plane, BUS: BusFront } as Record<TransportMode, typeof TrainFront>)[mode]
-}
-
 function formatMoney(value: number) {
   return new Intl.NumberFormat('uz-UZ').format(value)
 }
 
-function contingentStatusClass(status: ContingentEventStatus) {
-  if (status === 'Qo‘llandi') return 'border-primary/20 bg-primary/10 text-primary'
-  if (status === 'Tekshiruvda') return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-  return 'border-destructive/20 bg-destructive/10 text-destructive'
-}
-
-function ticketStatusClass(status: TicketEventStatus) {
-  if (status === 'Qabul qilindi') return 'border-primary/20 bg-primary/10 text-primary'
-  if (status === 'Qayta ishlanmoqda') return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300'
-  return 'border-destructive/20 bg-destructive/10 text-destructive'
-}
+function contingentStatusClass(status: ContingentEventStatus) { return transportPalette(transportStatusTone(status)).badge }
 
 
 function eligibilityResultClass(result: EligibilityDecision['result']) {
@@ -2190,17 +2381,8 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
 </script>
 
 <template>
-  <PageContainer :style="isSettlements ? { height: 'calc(100dvh - 3.5rem)', minHeight: '0', overflow: 'hidden' } : undefined">
-    <div :class="['flex min-h-0 flex-1 flex-col gap-4 pr-0.5', isSettlements ? 'overflow-hidden' : 'overflow-y-auto']">
-      <div v-if="!isIntegrations && !isSettlements" class="flex justify-end">
-        <div class="flex shrink-0 items-center gap-2">
-          <span class="inline-flex h-7 items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 text-xs font-medium text-amber-700 dark:text-amber-300">
-            <Boxes class="h-3.5 w-3.5" />
-            MVP ishga tushirilgan · Moliyaviy jarayonlar
-          </span>
-        </div>
-      </div>
-
+  <PageContainer :style="isWorkspacePage ? { height: 'calc(100dvh - 3.5rem)', minHeight: '0', overflow: 'hidden' } : undefined">
+    <div :class="['flex min-h-0 flex-1 flex-col gap-3 pr-0.5', isWorkspacePage ? 'transport-workspace overflow-hidden' : 'overflow-y-auto']">
       <Transition
         enter-active-class="transition duration-200 ease-out"
         enter-from-class="-translate-y-2 opacity-0"
@@ -2222,22 +2404,6 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <span>{{ feedback.message }}</span>
         </div>
       </Transition>
-
-      <div v-if="!isIntegrations && !isSettlements" class="flex flex-col gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.055] px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex items-start gap-3">
-          <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
-          <div>
-            <p class="text-sm font-semibold text-foreground">440-son qaror asosida</p>
-            <p class="mt-0.5 text-xs leading-5 text-muted-foreground">
-              Ushbu tartib 2026-yil 1-oktabrdan amal qiladi. Imtiyoz oluvchilar va chiptalarni yuritishdan keyin oylik buyurtmanomalarni qabul qilish, xarajatlarni qoplash va to‘lov holatini kuzatish bosqichi boshlanadi.
-            </p>
-          </div>
-        </div>
-        <a href="https://lex.uz/docs/8400823" target="_blank" rel="noreferrer" class="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary hover:underline">
-          440-son qarorni ochish
-          <ArrowRight class="h-3.5 w-3.5" />
-        </a>
-      </div>
 
       <template v-if="isDashboard">
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -2427,7 +2593,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                   <td class="px-4 py-3 font-mono text-xs text-foreground">{{ event.id }}</td>
                   <td class="px-4 py-3">{{ event.source }}</td>
                   <td class="px-4 py-3">
-                    <p class="font-medium text-foreground">{{ event.person }}</p>
+                    <p class="font-medium text-foreground">{{ event.person.toLocaleUpperCase('uz-UZ') }}</p>
                     <p class="text-xs text-muted-foreground">{{ event.pinfl }}</p>
                   </td>
                   <td class="px-4 py-3 text-xs">{{ eventTypeLabel(event.eventType) }}</td>
@@ -2529,114 +2695,48 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
       </template>
 
       <template v-else-if="isContingents">
-        <div class="rounded-xl border border-primary/15 bg-primary/[0.045] px-4 py-3">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div class="flex min-w-0 items-center gap-3">
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Code2 class="h-4.5 w-4.5" />
-              </div>
-              <div class="min-w-0">
-                <p class="text-sm font-medium text-foreground">POST <span class="font-mono text-primary">/v1/beneficiary-events</span></p>
-                <p class="mt-0.5 text-xs text-muted-foreground">6 rasmiy manba uchun yagona delta envelope · snapshot batch shu resource familyda · D-01 fail-closed</p>
-              </div>
-            </div>
-            <Button @click="isContingentDialogOpen = true">
-              <Plus class="h-4 w-4" />
-              Sandbox event
-            </Button>
-          </div>
+        <div class="grid shrink-0 grid-cols-2 gap-2 lg:grid-cols-4" role="group" aria-label="Shaxslar holati bo‘yicha filtrlash">
+          <TransportStatusCard v-for="card in contingentCards" :key="card.status" :label="card.label" :count="card.count" :icon="card.icon" :tone="transportStatusTone(card.status)" :selected="contingentStatusFilter === card.status" :share="card.status === 'Barchasi' ? '' : contingentShare(card.count, scopedContingentEvents.length) + '%'" caption="nafar shaxs" @select="contingentStatusFilter = card.status" />
         </div>
-
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <p class="text-xs text-muted-foreground">Faol huquqlar</p>
-            <p class="mt-1 text-2xl font-semibold">24 812</p>
-            <p class="mt-1 text-xs text-primary">+318 shu oyda</p>
-          </div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <p class="text-xs text-muted-foreground">Bugun qabul qilindi</p>
-            <p class="mt-1 text-2xl font-semibold">1 284</p>
-            <p class="mt-1 text-xs text-muted-foreground">6 ta rasmiy manba tizim</p>
-          </div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <p class="text-xs text-muted-foreground">Tekshirish kerak</p>
-            <p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">17</p>
-            <p class="mt-1 text-xs text-muted-foreground">1,32% tekshiruvda</p>
-          </div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <p class="text-xs text-muted-foreground">Oxirgi yangilanish</p>
-            <p class="mt-1 text-2xl font-semibold">10:48</p>
-            <p class="mt-1 text-xs text-primary">Yangilanishlar kuzatib borilmoqda</p>
-          </div>
-        </div>
-
-        <section class="min-h-0 rounded-xl border border-border bg-card shadow-sm">
-          <div class="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="relative max-w-md flex-1">
-              <Search class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input v-model="contingentSearch" placeholder="Yozuv raqami, JShShIR, F.I.Sh. yoki toifa" class="pl-8" />
+        <section class="transport-table flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+          <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-border p-3">
+            <div class="relative mr-auto w-full sm:max-w-sm">
+              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input v-model="contingentSearch" class="pl-9" placeholder="Hujjat, F.I.O., JShShIR yoki toifa bo‘yicha qidirish" aria-label="Imtiyoz oluvchilarni qidirish" />
             </div>
-            <div class="flex flex-wrap gap-2">
-              <select v-model="contingentSourceFilter" :class="fieldClass" class="w-auto min-w-44">
-                <option>Barchasi</option>
-                <option v-for="source in sourceOptions" :key="source">{{ source }}</option>
-              </select>
-              <select v-model="contingentStatusFilter" :class="fieldClass" class="w-auto min-w-36">
-                <option>Barchasi</option>
-                <option>Qo‘llandi</option>
-                <option>Tekshiruvda</option>
-                <option>Xatolik</option>
-              </select>
-              <Button variant="outline" size="icon" title="Yangilash" @click="showFeedback('info', 'Reyestr holati yangilandi.')">
-                <RefreshCw class="h-4 w-4" />
-              </Button>
-            </div>
+            <FilterPopover v-model:open="contingentFilterOpen" :active-count="contingentFilterCount">
+              <label class="block space-y-1 text-xs font-medium">Imtiyozli toifa<select v-model="contingentCategoryFilter" :class="fieldClass"><option value="">Barchasi</option><option v-for="category in beneficiaryCategoryOptions" :key="category.code" :value="category.code">{{ category.code }} — {{ category.label }}</option></select></label>
+              <label class="block space-y-1 text-xs font-medium">Manba<select v-model="contingentSourceFilter" :class="fieldClass"><option>Barchasi</option><option v-for="source in sourceOptions" :key="source">{{ source }}</option></select></label>
+              <label class="block space-y-1 text-xs font-medium">Holati<select v-model="contingentStatusFilter" :class="fieldClass"><option>Barchasi</option><option>Faol</option><option>Nofaol</option><option>Foydalangan</option></select></label>
+              <label class="block space-y-1 text-xs font-medium">Bekor qilish sababi<select v-model="contingentRevocationReason" :class="fieldClass"><option value="">Barchasi</option><option v-for="reason in contingentRevocationReasons" :key="reason">{{ reason }}</option></select></label>
+              <fieldset class="space-y-2"><legend class="text-xs font-medium">Hujjat sanasi</legend><div class="grid grid-cols-2 gap-2"><label class="space-y-1 text-xs">Boshlanish<Input v-model="contingentDateFrom" type="date" :max="contingentDateTo || undefined" aria-label="Hujjat sanasi boshlanishi" /></label><label class="space-y-1 text-xs">Tugash<Input v-model="contingentDateTo" type="date" :min="contingentDateFrom || undefined" aria-label="Hujjat sanasi tugashi" /></label></div></fieldset>
+              <fieldset class="space-y-2"><legend class="text-xs font-medium">Bekor qilish sanasi</legend><div class="grid grid-cols-2 gap-2"><label class="space-y-1 text-xs">Boshlanish<Input v-model="contingentRevokedFrom" type="date" :max="contingentRevokedTo || undefined" aria-label="Bekor qilish sanasi boshlanishi" /></label><label class="space-y-1 text-xs">Tugash<Input v-model="contingentRevokedTo" type="date" :min="contingentRevokedFrom || undefined" aria-label="Bekor qilish sanasi tugashi" /></label></div></fieldset>
+              <p v-if="contingentDateRangeInvalid" role="alert" class="text-xs text-destructive">Boshlanish sanasi tugash sanasidan keyin bo‘lishi mumkin emas.</p>
+              <template #footer><div class="flex justify-end gap-2"><Button variant="outline" size="sm" @click="clearContingentFilters">Tozalash</Button><Button size="sm" :disabled="contingentDateRangeInvalid" @click="contingentFilterOpen = false">Qo‘llash</Button></div></template>
+            </FilterPopover>
+            <Button variant="outline" size="sm" class="gap-1.5" :disabled="contingentDownloading || !filteredContingentEvents.length || contingentDateRangeInvalid" @click="downloadContingentReport"><Download class="h-3.5 w-3.5" />{{ contingentDownloading ? 'Yuklanmoqda…' : 'Yuklab olish' }}</Button>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full min-w-[1080px] text-left text-sm">
-              <thead class="bg-muted/45 text-xs text-muted-foreground">
-                <tr>
-                  <th class="px-4 py-2.5 font-medium">Yozuv / vaqt</th>
-                  <th class="px-4 py-2.5 font-medium">Manba</th>
-                  <th class="px-4 py-2.5 font-medium">Shaxs</th>
-                  <th class="px-4 py-2.5 font-medium">Toifa va asos</th>
-                  <th class="px-4 py-2.5 font-medium">Amal turi</th>
-                  <th class="px-4 py-2.5 font-medium">Versiya</th>
-                  <th class="px-4 py-2.5 font-medium">Holat</th>
+          <div class="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2" role="group" aria-label="Hisobot ko‘rinishi"><Button size="sm" :variant="contingentReportOpen ? 'outline' : 'default'" :aria-pressed="!contingentReportOpen" @click="contingentReportOpen = false">Ro‘yxat</Button><Button size="sm" :variant="contingentReportOpen ? 'default' : 'outline'" :aria-pressed="contingentReportOpen" @click="contingentReportOpen = true">Hisobot</Button></div>
+          <div :class="['min-h-0 flex-1', contingentReportOpen ? 'overflow-hidden' : 'overflow-auto overscroll-contain']">
+            <table v-if="!contingentReportOpen" class="w-full min-w-[72rem] border-separate border-spacing-0 text-left text-sm">
+              <thead class="sticky top-0 z-10 bg-muted/70 backdrop-blur"><tr><th v-for="heading in ['Hujjat', 'Shaxs', 'Toifa', 'Holat', 'Bekor qilish hujjati', 'Amallar']" :key="heading" class="border-b border-border px-3 py-2.5 text-left font-medium">{{ heading }}</th></tr></thead>
+              <tbody>
+                <tr v-for="event in contingentPageEvents" :key="event.id" class="hover:bg-muted/30">
+                  <td class="whitespace-nowrap px-3 py-2.5"><p><strong>{{ event.documentNumber || '—' }}</strong> <span class="text-xs text-muted-foreground">({{ event.documentId || event.id }})</span></p><p class="mt-1 text-xs text-muted-foreground">{{ event.documentDate ? formatInputDate(event.documentDate) : event.receivedAt.split(' ')[0] }}</p></td>
+                  <td class="px-3 py-2.5"><strong>{{ event.person }}</strong><p class="mt-1 whitespace-nowrap text-xs text-muted-foreground">{{ event.pinfl }} ({{ contingentAge(event.birthDate) }} yosh)</p></td>
+                  <td class="min-w-64 max-w-96 px-3 py-2.5"><p><strong>{{ contingentCategoryName(event) }}</strong> <span class="text-xs text-muted-foreground">({{ contingentCategoryCode(event) }})</span></p><p class="mt-1 text-xs text-muted-foreground">{{ event.source }}</p></td>
+                  <td class="px-3 py-2.5"><span :class="['inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium', contingentStatusClass(event.status)]">{{ event.status }}</span></td>
+                  <td class="max-w-64 px-3 py-2.5"><p>{{ event.revocationReason || '—' }}</p><p v-if="event.revokedAt" class="mt-1 text-xs text-muted-foreground">{{ event.revokedAt }}</p></td>
+                  <td class="px-3 py-2.5"><Button variant="outline" size="sm" @click="selectedContingentId = event.id; contingentDetailsOpen = true">Ko‘rish</Button></td>
                 </tr>
-              </thead>
-              <tbody class="divide-y divide-border">
-                <tr v-for="event in filteredContingentEvents" :key="event.id" class="hover:bg-muted/30">
-                  <td class="px-4 py-3">
-                    <p class="font-mono text-xs text-foreground">{{ event.id }}</p>
-                    <p class="mt-0.5 text-xs text-muted-foreground">{{ event.receivedAt }}</p>
-                  </td>
-                  <td class="px-4 py-3">
-                    <p class="font-medium">{{ event.source }}</p>
-                    <p class="mt-0.5 font-mono text-[11px] text-muted-foreground">{{ event.sourceCode }}</p>
-                  </td>
-                  <td class="px-4 py-3">
-                    <p class="font-medium">{{ event.person }}</p>
-                    <p class="mt-0.5 font-mono text-xs text-muted-foreground">{{ event.pinfl }}</p>
-                  </td>
-                  <td class="max-w-[17rem] px-4 py-3">
-                    <p class="truncate">{{ event.category }}</p>
-                    <p class="mt-0.5 font-mono text-[11px] text-primary">{{ event.legalBasis }}</p>
-                  </td>
-                  <td class="px-4 py-3">
-                    <p class="text-xs font-medium">{{ eventTypeLabel(event.eventType) }}</p>
-                    <p class="mt-0.5 font-mono text-[11px] text-muted-foreground">{{ userLabel(event.eventType) }}</p>
-                  </td>
-                  <td class="px-4 py-3 font-mono text-xs">v{{ event.version }}</td>
-                  <td class="px-4 py-3">
-                    <span :class="['inline-flex rounded-md border px-2 py-1 text-xs font-medium', contingentStatusClass(event.status)]">{{ event.status }}</span>
-                  </td>
-                </tr>
-                <tr v-if="!filteredContingentEvents.length">
-                  <td colspan="7" class="px-4 py-12 text-center text-sm text-muted-foreground">Qidiruvga mos event topilmadi.</td>
-                </tr>
+                <tr v-if="!filteredContingentEvents.length"><td colspan="6" class="px-3 py-12 text-center text-muted-foreground">Ma’lumot topilmadi.</td></tr>
               </tbody>
             </table>
+            <GroupedReport v-show="contingentReportOpen" ref="contingentGroupedReport" :rows="contingentGroupedRows" :dimensions="beneficiaryDimensions" :metrics="beneficiaryMetrics" initial-primary="category" initial-secondary="source" filename="imtiyoz-oluvchilar-hisobot.xlsx" @drill="drillBeneficiary" />
+          </div>
+          <div v-if="!contingentReportOpen" class="flex shrink-0 flex-col gap-3 border-t border-border px-3 py-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2">Qatorlar soni<select v-model.number="contingentPageSize" aria-label="Qatorlar soni" class="h-8 rounded-md border border-border bg-background px-2 text-sm"><option v-for="size in [10, 20, 50, 100]" :key="size" :value="size">{{ size }}</option></select></label><span>Sahifada: <strong class="text-foreground">{{ contingentRangeStart }}–{{ contingentRangeEnd }} / {{ contingentRowCount }}</strong></span></div>
+            <div class="flex items-center gap-2"><Button variant="ghost" size="sm" @click="clearContingentFilters(); contingentPage = 1">Tiklash</Button><nav aria-label="Imtiyoz oluvchilar sahifalari" class="flex h-8 items-center rounded-lg border border-border bg-background px-1"><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="contingentPage === 1" aria-label="Birinchi sahifa" @click="contingentPage = 1"><ChevronsLeft class="h-4 w-4" /></Button><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="contingentPage === 1" aria-label="Oldingi sahifa" @click="contingentPage--"><ChevronLeft class="h-4 w-4" /></Button><span aria-live="polite" class="min-w-14 px-2 text-center font-semibold text-foreground">{{ contingentPage }}/{{ contingentPageCount }}</span><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="contingentPage === contingentPageCount" aria-label="Keyingi sahifa" @click="contingentPage++"><ChevronRight class="h-4 w-4" /></Button><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="contingentPage === contingentPageCount" aria-label="Oxirgi sahifa" @click="contingentPage = contingentPageCount"><ChevronsRight class="h-4 w-4" /></Button></nav></div>
           </div>
         </section>
       </template>
@@ -2904,21 +3004,19 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
       </template>
 
       <template v-else-if="isTicketEvents">
-        <div class="rounded-xl border border-primary/15 bg-primary/[0.045] px-4 py-3">
-          <div class="flex items-center gap-3">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Code2 class="h-4.5 w-4.5" /></div>
-            <div>
-              <p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/tickets/issue</span> · <span class="font-mono text-primary">/v1/tickets/{ticket_id}/events</span></p>
-              <p class="mt-0.5 text-xs text-muted-foreground">Bitta umumiy ticket schema; rezervni atomar commit qiluvchi issue va keyingi lifecycle commandlari invariantiga ko‘ra ajratilgan</p>
-            </div>
-          </div>
+        <div class="grid shrink-0 grid-cols-2 gap-2 lg:grid-cols-4" role="group" aria-label="Chipta holati bo‘yicha filtrlash">
+          <TransportStatusCard v-for="card in ticketCards" :key="card.state" :label="card.label" :count="card.count" :icon="ticketPalette(card.state).icon" :tone="transportStatusTone(card.state)" :selected="ticketStateFilter === card.state" :share="card.state ? contingentShare(card.count, scopedTicketEvents.length) + '%' : ''" caption="ta chipta" @select="ticketStateFilter = card.state">
+            <span class="flex items-baseline justify-between gap-2"><span class="text-muted-foreground">Jami narx</span><span class="font-semibold">{{ formatMoney(card.amount) }} <span class="font-normal">so‘m</span></span></span>
+            <span class="mt-1 flex items-baseline justify-between gap-2"><span class="text-muted-foreground">So‘ralgan qoplama</span><span class="font-semibold">{{ formatMoney(card.requested) }} <span class="font-normal">so‘m</span></span></span>
+          </TransportStatusCard>
         </div>
-
-        <section class="rounded-xl border border-border bg-card shadow-sm">
-          <div class="border-b border-border px-4 py-3.5">
-            <h2 class="text-sm font-semibold">Chipta eventini yuborish</h2>
-            <p class="mt-0.5 text-xs text-muted-foreground">ISSUED rezervni commit qiladi; keyingi RETURNED/CARRIER_CANCELLED/VOIDED/RESCHEDULED/TRAVELLED/NO_SHOW bir xil versioned event envelope’dan foydalanadi. Demo: <span class="font-mono">RSV-HELD-DEMO-001 · 30202012345670</span>.</p>
-          </div>
+        <DialogRoot v-model:open="ticketFormOpen">
+          <DialogPortal>
+            <DialogOverlay class="fixed inset-0 z-50 bg-black/50" />
+            <DialogContent class="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+              <div class="flex shrink-0 items-center justify-between border-b border-border px-4 py-3"><DialogTitle class="text-sm font-semibold">Chipta amali</DialogTitle><DialogClose as-child><Button variant="ghost" size="sm" aria-label="Formani yopish"><X class="h-4 w-4" /></Button></DialogClose></div>
+              <DialogDescription class="sr-only">Chipta bo‘yicha amal ma’lumotlarini kiriting.</DialogDescription>
+              <div class="min-h-0 overflow-y-auto">
           <form class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4" @submit.prevent="submitTicketEvent">
             <label class="space-y-1.5"><span class="text-xs font-medium">Chipta ID</span><Input v-model="ticketDraft.ticketId" placeholder="UTY-78394510" /></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Band qilish raqami</span><Input v-model="ticketDraft.reservationId" placeholder="RSV-PRINCIPAL-001" /></label>
@@ -2927,7 +3025,6 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <label class="space-y-1.5"><span class="text-xs font-medium">Amal turi</span><select v-model="ticketDraft.eventType" :class="fieldClass"><option v-for="option in ticketEventTypeOptions" :key="option.code" :value="option.code">{{ userLabel(option.code) }}</option></select></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Safar segmenti</span><select v-model="ticketDraft.legType" :class="fieldClass"><option v-for="option in legTypeOptions" :key="option.code" :value="option.code">{{ option.code }} · {{ option.label }}</option></select></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Transport</span><select v-model="ticketDraft.transportMode" :class="fieldClass"><option v-for="option in transportModeOptions" :key="option.code" :value="option.code">{{ option.label }}</option></select></label>
-            <div class="rounded-lg border border-primary/15 bg-primary/[0.045] p-3 text-xs leading-5 md:col-span-2 xl:col-span-4"><template v-if="selectedTicketAuthorization"><strong class="text-foreground">Server authorization snapshot:</strong> {{ selectedTicketAuthorization.carrierCode }} · {{ selectedTicketAuthorization.offerId }} · {{ selectedTicketAuthorization.policySnapshot }} · leg={{ selectedTicketAuthorization.legType }} · state={{ selectedTicketAuthorization.status }}<br><span class="text-muted-foreground">Journey: {{ selectedTicketAuthorization.departureDate }} · {{ selectedTicketAuthorization.serviceNumber }} · hold_expires={{ selectedTicketAuthorization.expiresAt ?? 'n/a' }}. Allowed base classes: {{ selectedTicketAuthorization.allowedFareClasses.join(', ') }} · discount={{ selectedTicketAuthorization.discountPercent }}% · eligible_base cap={{ formatMoney(selectedTicketAuthorization.maxEligibleBase) }} UZS. Carrier mTLS/token claimidan olinadi; policy va hisoblangan summalar requestdan qabul qilinmaydi.</span></template><span v-else class="text-muted-foreground">Server snapshotini ko‘rish uchun mavjud reservation_id kiriting.</span></div>
             <label class="space-y-1.5"><span class="text-xs font-medium">Qatnov raqami</span><Input v-model="ticketDraft.serviceNumber" /></label>
             <label class="space-y-1.5"><span class="text-xs font-medium">Jo‘nash vaqti</span><Input v-model="ticketDraft.departureAt" type="datetime-local" :clearable="false" /></label>
             <div class="grid grid-cols-2 gap-2"><label class="space-y-1.5"><span class="text-xs font-medium">Qayerdan</span><Input v-model="ticketDraft.origin" /></label><label class="space-y-1.5"><span class="text-xs font-medium">Qayerga</span><Input v-model="ticketDraft.destination" /></label></div>
@@ -2941,39 +3038,50 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <label v-if="ticketDraft.eventType === 'RESCHEDULED'" class="space-y-1.5"><span class="text-xs font-medium">Reschedule chain ID</span><Input v-model="ticketDraft.rescheduleChainId" placeholder="RSC-..." /></label>
             <label v-if="ticketDraft.eventType === 'RESCHEDULED'" class="space-y-1.5"><span class="text-xs font-medium">Server reschedule authorization</span><Input v-model="ticketDraft.rescheduleAuthorizationRef" placeholder="RAUTH-DEMO-11FC04" /></label>
             <label v-if="ticketDraft.eventType === 'RESCHEDULED'" class="space-y-1.5"><span class="text-xs font-medium">Eski chipta ID</span><Input v-model="ticketDraft.previousTicketId" placeholder="OLD-TICKET-..." /></label>
-            <div class="flex items-end xl:col-span-2"><div class="w-full rounded-lg border border-border bg-muted/35 px-3 py-2 text-xs leading-5"><span class="text-muted-foreground">To‘lov:</span> <strong class="font-mono">MONTHLY_CLAIM</strong><span class="text-muted-foreground"> · authorization_source rezerv yoki bir martalik manual token orqali serverda aniqlanadi.</span></div></div>
             <div class="flex items-end"><Button type="submit" class="w-full"><Send class="h-4 w-4" />Ma’lumotni yuborish</Button></div>
           </form>
-        </section>
+              </div>
+            </DialogContent>
+          </DialogPortal>
+        </DialogRoot>
 
-        <div class="grid gap-3 lg:grid-cols-3">
-          <div class="rounded-xl border border-border bg-card p-4 text-xs leading-5 shadow-sm"><p class="font-semibold text-foreground">Qaytarish va limit</p><p class="mt-1 text-muted-foreground">Faqat tasdiqlangan texnik, tabiiy yoki boshqa qualifying nonuse hamda qatnov to‘xtaganidan bir hafta ichidagi qaytarish limitni tiklashga nomzod. Yo‘lovchi talabi avtomatik restore emas.</p><p class="mt-2 font-mono" :class="canDecideReturnReview ? 'text-primary' : 'text-amber-700 dark:text-amber-300'">Reviewer session: {{ canDecideReturnReview ? 'AUTHORIZED · permission + org + ERI claim' : 'READ_ONLY · joriy operator tiklay olmaydi' }}</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 text-xs leading-5 shadow-sm"><p class="font-semibold text-foreground">Klass va upgrade</p><p class="mt-1 text-muted-foreground">Havo — ekonom; temir yo‘l — ekonom, platskart yoki kupe. Yuqori klass farqi tasdiqlangan metodika bo‘yicha fuqaro zimmasida.</p></div>
-          <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 text-xs leading-5 shadow-sm"><p class="font-semibold text-foreground">Hisoblash qoidalari tasdiqlanishi kutilmoqda</p><p class="mt-1 text-muted-foreground">Qaytarilgan va foydalanilmagan chiptalarni qoplash qoidalari ishga tushirishdan oldin tasdiqlanishi kerak.</p></div>
-        </div>
-
-        <section class="min-h-0 rounded-xl border border-border bg-card shadow-sm">
-          <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 class="text-sm font-semibold">Ticket event oqimi</h2><p class="mt-0.5 text-xs text-muted-foreground">Kanonik projection eventlar ketma-ketligidan tiklanadi.</p></div>
-            <div class="relative w-full max-w-sm"><Search class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input v-model="ticketSearch" placeholder="Chipta, rezerv yoki tashuvchi" class="pl-8" /></div>
+        <section class="transport-table flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+          <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-border p-3">
+            <div class="relative mr-auto w-full sm:max-w-sm"><Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input v-model="ticketSearch" placeholder="Chipta, yo‘lovchi, tashkilot yoki yo‘nalish" aria-label="Chiptalarni qidirish" class="pl-9" /></div>
+            <FilterPopover v-model:open="ticketFilterOpen" :active-count="ticketFilterCount">
+              <label class="block space-y-1 text-xs font-medium">Transport turi<select v-model="ticketModeFilter" :class="fieldClass"><option value="">Barchasi</option><option v-for="mode in transportModeOptions" :key="mode.code" :value="mode.code">{{ mode.label }}</option></select></label>
+              <label class="block space-y-1 text-xs font-medium">Toifa<select v-model="ticketCategoryFilter" :class="fieldClass"><option value="">Barchasi</option><option v-for="category in beneficiaryCategoryOptions" :key="category.code" :value="category.code">{{ category.label }} ({{ category.code }})</option></select></label>
+              <label class="block space-y-1 text-xs font-medium">Tashkilot<select v-model="ticketCarrierFilter" :class="fieldClass"><option value="">Barchasi</option><option v-for="carrier in ticketCarrierOptions" :key="carrier">{{ carrier }}</option></select></label>
+              <label class="block space-y-1 text-xs font-medium">Holati<select v-model="ticketStateFilter" :class="fieldClass"><option value="">Barchasi</option><option v-for="state in ticketStateOptions" :key="state" :value="state">{{ userLabel(state) }}</option></select></label>
+              <fieldset class="space-y-2"><legend class="text-xs font-medium">Chipta sanasi</legend><div class="grid grid-cols-2 gap-2"><label class="space-y-1 text-xs">Boshlanish<Input v-model="ticketDateFrom" type="date" :max="ticketDateTo || undefined" aria-label="Chipta sanasi boshlanishi" /></label><label class="space-y-1 text-xs">Tugash<Input v-model="ticketDateTo" type="date" :min="ticketDateFrom || undefined" aria-label="Chipta sanasi tugashi" /></label></div></fieldset>
+              <fieldset class="space-y-2"><legend class="text-xs font-medium">Jo‘nash sanasi</legend><div class="grid grid-cols-2 gap-2"><label class="space-y-1 text-xs">Boshlanish<Input v-model="ticketDepartureFrom" type="date" :max="ticketDepartureTo || undefined" aria-label="Jo‘nash sanasi boshlanishi" /></label><label class="space-y-1 text-xs">Tugash<Input v-model="ticketDepartureTo" type="date" :min="ticketDepartureFrom || undefined" aria-label="Jo‘nash sanasi tugashi" /></label></div></fieldset>
+              <p v-if="ticketDateInvalid" role="alert" class="text-xs text-destructive">Boshlanish sanasi tugash sanasidan keyin bo‘lishi mumkin emas.</p>
+              <template #footer><div class="flex justify-end gap-2"><Button variant="outline" size="sm" @click="clearTicketFilters">Tozalash</Button><Button size="sm" :disabled="ticketDateInvalid" @click="ticketFilterOpen = false">Qo‘llash</Button></div></template>
+            </FilterPopover>
+            <Button variant="outline" size="sm" class="gap-1.5" :disabled="ticketDownloading || !filteredTicketEvents.length || ticketDateInvalid" @click="downloadTickets"><Download class="h-3.5 w-3.5" />{{ ticketDownloading ? 'Yuklanmoqda…' : 'Yuklab olish' }}</Button>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full min-w-[1580px] text-left text-sm">
-              <thead class="bg-muted/45 text-xs text-muted-foreground"><tr><th class="px-4 py-2.5 font-medium">Amal</th><th class="px-4 py-2.5 font-medium">Chipta / band qilish / shaxs</th><th class="px-4 py-2.5 font-medium">Transport tashkiloti / to‘lov usuli</th><th class="px-4 py-2.5 font-medium">Safar / yo‘nalish qismi / chipta turi</th><th class="px-4 py-2.5 text-right font-medium">Narx / yo‘lovchi to‘lovi / qoplash</th><th class="px-4 py-2.5 font-medium">Hujjat / qaytarish / almashtirish</th><th class="px-4 py-2.5 font-medium">Imtiyoz va hisob-kitob holati</th><th class="px-4 py-2.5 font-medium">Holat</th></tr></thead>
+          <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2" role="group" aria-label="Chiptalar hisoboti ko‘rinishi"><Button size="sm" :variant="ticketReportOpen ? 'outline' : 'default'" :aria-pressed="!ticketReportOpen" @click="ticketReportOpen = false">Ro‘yxat</Button><Button size="sm" :variant="ticketReportOpen ? 'default' : 'outline'" :aria-pressed="ticketReportOpen" @click="ticketReportOpen = true">Hisobot</Button></div>
+          <div :class="['min-h-0 flex-1', ticketReportOpen ? 'overflow-hidden' : 'overflow-auto overscroll-contain']">
+            <table v-if="!ticketReportOpen" class="w-full min-w-[96rem] border-separate border-spacing-0 text-left text-sm">
+              <thead class="sticky top-0 z-10 bg-muted/70 backdrop-blur"><tr><th v-for="heading in ['Hujjat', 'Shaxs', 'Toifa', 'Tashkilot', 'Chipta', 'Safar', 'Mablag‘ (so‘m)', 'Holat', 'Amallar']" :key="heading" class="border-b border-border px-3 py-2.5 font-medium">{{ heading }}</th></tr></thead>
               <tbody class="divide-y divide-border">
-                <tr v-for="event in filteredTicketEvents" :key="event.id" class="hover:bg-muted/30">
-                  <td class="px-4 py-3"><p class="font-mono text-xs">{{ event.id }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ event.occurredAt }}</p></td>
-                  <td class="px-4 py-3"><p class="font-mono text-xs font-medium">{{ event.ticketId }}</p><p class="mt-0.5 font-mono text-[11px] text-primary">{{ event.reservationId }} · {{ event.authorizationSource }}</p><p class="mt-1 font-mono text-[11px] text-muted-foreground">{{ event.passenger }} · {{ event.passengerRole }}</p><p class="mt-1 text-[11px] text-muted-foreground">{{ event.benefitSnapshot }}</p></td>
-                  <td class="px-4 py-3"><div class="flex items-center gap-2"><component :is="transportIcon(event.transportMode)" class="h-4 w-4 text-muted-foreground" /><span>{{ event.carrier }}</span></div><p class="mt-1 font-mono text-[11px] text-primary">{{ userLabel(event.paymentChannel) }}</p></td>
-                  <td class="px-4 py-3"><p>{{ event.route }}</p><p class="mt-1 text-xs text-muted-foreground">{{ event.departureAt }} · {{ event.serviceNumber }} · {{ event.ticketClass }}</p><p class="mt-1 font-mono text-[11px]">{{ userLabel(event.legType) }} · {{ userLabel(event.eventType) }} · {{ userLabel(event.ticketState) }}</p><p v-if="event.principalLink" class="mt-1 font-mono text-[11px] text-primary">principal: {{ event.principalLink }}</p></td>
-                  <td class="px-4 py-3 text-right font-medium tabular-nums"><p>Tarif {{ formatMoney(event.amount) }}</p><p class="mt-1 text-[11px] text-muted-foreground">Imtiyozli {{ formatMoney(event.preferentialAmount) }} · upgrade {{ formatMoney(event.upgradeSurcharge) }}</p><p class="mt-1 text-xs text-amber-700 dark:text-amber-300">Yo‘lovchi {{ formatMoney(event.passengerPaidAmount) }}</p><p class="mt-1 text-xs text-primary">Qoplash {{ formatMoney(event.compensationRequested) }} UZS</p></td>
-                  <td class="max-w-[19rem] px-4 py-3"><p class="truncate font-mono text-[11px]">{{ event.evidenceRef }}</p><p v-if="event.reason" class="mt-1 text-xs text-muted-foreground">{{ event.reason }}</p><p v-if="event.serviceCancelledAt" class="mt-1 text-xs text-muted-foreground">Nonuse sanasi: {{ event.serviceCancelledAt }}</p><p v-if="event.returnedAt" class="mt-1 text-xs text-muted-foreground">Qaytarildi: {{ event.returnedAt }}</p><p v-if="event.returnDeadline" class="mt-1 text-xs text-amber-700 dark:text-amber-300">1 haftalik deadline: {{ event.returnDeadline }}</p><p v-if="event.rescheduleChainId" class="mt-1 font-mono text-[11px] text-primary">{{ event.rescheduleChainId }} · {{ event.previousTicketId }} → {{ event.ticketId }}</p><p v-if="event.rescheduleAuthorizationRef" class="mt-1 font-mono text-[11px] text-muted-foreground">auth={{ event.rescheduleAuthorizationRef }}</p></td>
-                  <td class="max-w-[17rem] px-4 py-3"><p class="font-mono text-[11px] text-primary">{{ event.ledgerEffect }}</p><p class="mt-1 font-mono text-[11px] text-muted-foreground">{{ event.settlementAction }}</p></td>
-                  <td class="px-4 py-3"><span :class="['rounded-md border px-2 py-1 text-xs font-medium', ticketStatusClass(event.status)]">{{ event.status }}</span><p v-if="event.returnReviewStatus" class="mt-2 font-mono text-[11px]" :class="event.returnReviewStatus === 'APPROVED' ? 'text-primary' : event.returnReviewStatus === 'REJECTED' ? 'text-destructive' : 'text-amber-700 dark:text-amber-300'">{{ event.returnReviewStatus === 'METHODOLOGY_PENDING' ? 'RETURN_DECISION' : 'RETURN_REVIEW' }}={{ event.returnReviewStatus }}</p><p v-if="event.returnReviewRef" class="mt-1 max-w-[13rem] text-[11px] text-muted-foreground">{{ event.returnReviewRef }}</p><div v-if="event.returnReviewStatus === 'PENDING'" class="mt-2 flex flex-col gap-1.5"><Button size="sm" :disabled="!canDecideReturnReview" @click="decideReturnReview(event, 'APPROVED')">Vakolatli tasdiqlash</Button><Button size="sm" variant="outline" :disabled="!canDecideReturnReview" @click="decideReturnReview(event, 'REJECTED')">Rad etish</Button><p v-if="!canDecideReturnReview" class="text-[10px] leading-4 text-muted-foreground">Server permission + organization + ERI claim talab qilinadi.</p></div></td>
+                <tr v-for="event in ticketPageEvents" :key="event.id" class="hover:bg-muted/30">
+                  <td class="whitespace-nowrap px-3 py-2.5"><p><strong>{{ event.documentNumber || '—' }}</strong> <span class="text-xs text-muted-foreground">({{ event.documentId || event.id }})</span></p><p class="mt-1 text-xs text-muted-foreground">{{ event.documentDate ? formatInputDate(event.documentDate) : '—' }}</p></td>
+                  <td class="px-3 py-2.5"><strong>{{ event.passengerName?.toLocaleUpperCase('uz-UZ') || '—' }}</strong><p class="mt-1 whitespace-nowrap text-xs text-muted-foreground">{{ event.passenger }} ({{ contingentAge(event.passengerBirthDate) }} yosh)</p></td>
+                  <td class="min-w-64 max-w-96 px-3 py-2.5"><p><strong>{{ ticketCategoryLabel(event) }}</strong> <span class="text-xs text-muted-foreground">({{ event.beneficiaryCategoryCode || '—' }})</span></p><p class="mt-1 text-xs text-muted-foreground">{{ event.beneficiarySource || '—' }}</p></td>
+                  <td class="min-w-56 max-w-80 px-3 py-2.5"><p><strong>{{ event.carrier }}</strong> <span class="text-xs text-muted-foreground">({{ ticketCarrierInn(event) }})</span></p><p class="mt-1 text-xs text-muted-foreground">{{ ticketModeLabel(event) }}</p></td>
+                  <td class="whitespace-nowrap px-3 py-2.5"><strong>{{ event.ticketId }}</strong><p class="mt-1 text-xs text-muted-foreground">{{ ticketIssuedDate(event) }}</p></td>
+                  <td class="px-3 py-2.5"><p>{{ event.route }}</p><p class="mt-1 text-xs text-muted-foreground">{{ event.departureAt }} · {{ event.serviceNumber }}</p><p class="mt-1 text-xs text-muted-foreground">{{ event.ticketClass }} · {{ userLabel(event.legType) }}</p></td>
+                  <td class="whitespace-nowrap px-3 py-2.5 tabular-nums"><p><strong class="text-primary">{{ formatMoney(event.compensationRequested) }}</strong> / {{ formatMoney(event.amount) }} <span class="text-xs text-muted-foreground">({{ ticketRequestedShare(event) }}%)</span></p><p class="mt-1 text-xs text-muted-foreground">Yo‘lovchi: {{ formatMoney(event.passengerPaidAmount) }}</p></td>
+                  <td class="px-3 py-2.5"><span :class="['inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium', ticketPalette(event.ticketState).badge]">{{ userLabel(event.ticketState) }}</span></td>
+                  <td class="px-3 py-2.5"><Button variant="outline" size="sm" @click="selectedTicketEventId = event.id; ticketDetailsOpen = true">Ko‘rish</Button></td>
                 </tr>
+                <tr v-if="!filteredTicketEvents.length"><td colspan="9" class="px-3 py-12 text-center text-muted-foreground">Ma’lumot topilmadi.</td></tr>
               </tbody>
             </table>
+            <GroupedReport v-show="ticketReportOpen" ref="ticketGroupedReport" :rows="ticketGroupedRows" :dimensions="ticketDimensions" :metrics="ticketMetrics" initial-primary="mode" initial-secondary="carrier" filename="chiptalar-hisobot.xlsx" @drill="drillTicket" />
           </div>
+          <div v-if="!ticketReportOpen" class="flex shrink-0 flex-col gap-3 border-t border-border px-3 py-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"><div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2">Qatorlar soni<select v-model.number="ticketPageSize" aria-label="Qatorlar soni" class="h-8 rounded-md border border-border bg-background px-2"><option v-for="size in [10,20,50,100]" :key="size" :value="size">{{ size }}</option></select></label><span>Sahifada: <strong class="text-foreground">{{ ticketRangeStart }}–{{ ticketRangeEnd }} / {{ ticketRowCount }}</strong></span></div><div class="flex items-center gap-2"><Button variant="ghost" size="sm" @click="clearTicketFilters(); ticketSearch = ''; ticketPage = 1">Tiklash</Button><nav aria-label="Chiptalar sahifalari" class="flex h-8 items-center rounded-lg border border-border bg-background px-1"><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="ticketPage === 1" aria-label="Birinchi sahifa" @click="ticketPage = 1"><ChevronsLeft class="h-4 w-4" /></Button><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="ticketPage === 1" aria-label="Oldingi sahifa" @click="ticketPage--"><ChevronLeft class="h-4 w-4" /></Button><span aria-live="polite" class="min-w-14 px-2 text-center font-semibold text-foreground">{{ ticketPage }}/{{ ticketPageCount }}</span><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="ticketPage === ticketPageCount" aria-label="Keyingi sahifa" @click="ticketPage++"><ChevronRight class="h-4 w-4" /></Button><Button variant="ghost" size="sm" class="h-7 w-7 p-0" :disabled="ticketPage === ticketPageCount" aria-label="Oxirgi sahifa" @click="ticketPage = ticketPageCount"><ChevronsRight class="h-4 w-4" /></Button></nav></div></div>
         </section>
       </template>
 
@@ -2982,70 +3090,45 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
       </template>
 
       <template v-else-if="isReferences">
-        <div class="flex flex-col gap-3 rounded-xl border border-primary/15 bg-primary/[0.045] px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div class="flex items-start gap-3">
-            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Code2 class="h-4.5 w-4.5" /></div>
-            <div>
-              <p class="text-sm font-medium"><span class="font-mono text-primary">GET /v1/reference-data/{catalog_code}</span></p>
-              <p class="mt-0.5 text-xs leading-5 text-muted-foreground">Barcha kataloglar uchun bitta versiyalangan API · <span class="font-mono">as_of</span>, status va <span class="font-mono">changed_since</span> filtrlari</p>
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-2 text-xs">
-            <span class="rounded-md border border-border bg-background px-2.5 py-1.5 font-mono text-muted-foreground">reference_catalog → entry → revision</span>
-            <span class="rounded-md border border-primary/20 bg-primary/10 px-2.5 py-1.5 font-medium text-primary">MVP · read-only</span>
-          </div>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Kataloglar</p><p class="mt-1 text-2xl font-semibold">{{ referenceFamilyStats.catalogs }}</p><p class="mt-1 text-xs text-primary">bitta universal registrda</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Yozuvlar</p><p class="mt-1 text-2xl font-semibold">{{ referenceFamilyStats.entries }}</p><p class="mt-1 text-xs text-muted-foreground">versiya va amal davri bilan</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Normativ mazmun</p><p class="mt-1 text-2xl font-semibold text-primary">{{ referenceFamilyStats.normative }}</p><p class="mt-1 text-xs text-muted-foreground">texnik koddan ajratilgan</p></div>
-          <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 shadow-sm"><p class="text-xs text-muted-foreground">Ochiq qarorlar</p><p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">{{ referenceFamilyStats.open }}</p><p class="mt-1 text-xs text-muted-foreground">D-01…D-07 gate’lari</p></div>
-        </div>
-
-        <div class="grid min-h-[36rem] gap-4 xl:grid-cols-[minmax(17rem,0.55fr)_minmax(0,1.45fr)]">
-          <section class="flex min-h-0 flex-col rounded-xl border border-border bg-card shadow-sm">
+        <div class="transport-reference-grid grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-3 xl:grid-cols-[15rem_minmax(0,1fr)] xl:grid-rows-1">
+          <section class="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card">
             <div class="border-b border-border p-4">
               <div class="flex items-center gap-2"><BookOpenCheck class="h-4 w-4 text-primary" /><h2 class="text-sm font-semibold">Kataloglar registri</h2></div>
-              <p class="mt-1 text-xs leading-5 text-muted-foreground">Ko‘rinishlar alohida, saqlash va API modeli umumiy.</p>
+
               <div class="relative mt-3">
                 <Search class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input v-model="referenceCatalogSearch" class="pl-8" placeholder="Katalogni qidirish..." />
               </div>
             </div>
-            <div class="min-h-0 space-y-1.5 overflow-y-auto p-2.5">
+            <div class="flex max-h-28 gap-1.5 overflow-auto p-2 xl:max-h-none xl:flex-1 xl:flex-col">
               <button
                 v-for="catalog in filteredFamilyReferenceCatalogs"
                 :key="catalog.id"
                 type="button"
                 :class="[
-                  'w-full rounded-lg border p-3 text-left transition-all',
+                  'min-w-44 rounded-lg border p-2.5 text-left transition-colors xl:w-full',
                   selectedReferenceCatalog?.id === catalog.id ? 'border-primary/30 bg-primary/[0.06] shadow-sm' : 'border-transparent hover:border-border hover:bg-muted/40',
                 ]"
                 @click="selectReferenceCatalog(catalog.id)"
               >
                 <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ catalog.title }}</p><p class="mt-1 truncate font-mono text-[10px] text-muted-foreground">{{ catalog.code }}</p></div>
+                  <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ catalog.title }}</p></div>
                   <span class="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{{ catalog.entries.length }}</span>
                 </div>
-                <p class="mt-2 line-clamp-2 text-[11px] leading-4 text-muted-foreground">{{ catalog.description }}</p>
               </button>
               <div v-if="!filteredFamilyReferenceCatalogs.length" class="px-3 py-10 text-center text-xs text-muted-foreground">Mos katalog topilmadi.</div>
             </div>
           </section>
 
-          <section v-if="selectedReferenceCatalog" class="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <section v-if="selectedReferenceCatalog" class="transport-table flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card">
             <div class="border-b border-border p-4">
               <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div class="flex flex-wrap items-center gap-2">
                     <h2 class="text-base font-semibold">{{ selectedReferenceCatalog.title }}</h2>
-                    <span class="rounded-md border border-border bg-muted/45 px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{{ selectedReferenceCatalog.code }}</span>
-                    <span class="rounded-md border border-primary/15 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-medium text-primary">Versiyalangan</span>
                   </div>
-                  <p class="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">{{ selectedReferenceCatalog.description }}</p>
                 </div>
-                <div class="shrink-0 text-right"><p class="font-mono text-xs font-semibold">{{ selectedReferenceCatalog.entries.length }} yozuv</p><p class="mt-1 text-[10px] text-muted-foreground">hard delete yo‘q · effective dating</p></div>
+                <div class="shrink-0 text-right"><p class="font-mono text-xs font-semibold">{{ selectedReferenceCatalog.entries.length }} yozuv</p></div>
               </div>
               <div v-if="selectedReferenceCatalog.warning" class="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.055] p-3 text-xs leading-5 text-muted-foreground">
                 <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
@@ -3056,7 +3139,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <div class="grid gap-2 border-b border-border p-3 md:grid-cols-[minmax(12rem,1fr)_auto_auto]">
               <div class="relative">
                 <Search class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input v-model="referenceEntrySearch" class="pl-8" placeholder="Kod, nom, asos yoki egani qidirish..." />
+                <Input v-model="referenceEntrySearch" class="pl-8" placeholder="Kod, nom yoki huquqiy asos bo‘yicha qidirish..." />
               </div>
               <select v-model="referenceKindFilter" :class="fieldClass" class="md:w-48">
                 <option value="ALL">Barcha turlar</option>
@@ -3072,35 +3155,31 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
               </select>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="min-h-0 flex-1 overflow-auto overscroll-contain">
               <table class="w-full min-w-[1060px] text-left text-sm">
-                <thead class="bg-muted/45 text-xs text-muted-foreground">
-                  <tr><th class="px-4 py-2.5 font-medium">Kod / versiya</th><th class="px-4 py-2.5 font-medium">Nomi va atributlar</th><th class="px-4 py-2.5 font-medium">Tasnif</th><th class="px-4 py-2.5 font-medium">Huquqiy asos / owner</th><th class="px-4 py-2.5 font-medium">Amal davri</th><th class="px-4 py-2.5 font-medium">Holat</th></tr>
+                <thead class="sticky top-0 z-10 bg-muted/70 text-sm text-foreground backdrop-blur">
+                  <tr><th class="border-b border-border px-3 py-2.5 font-medium">Kod</th><th class="border-b border-border px-3 py-2.5 font-medium">Nomi</th><th class="border-b border-border px-3 py-2.5 font-medium">Tasnif</th><th class="border-b border-border px-3 py-2.5 font-medium">Huquqiy asos</th><th class="border-b border-border px-3 py-2.5 font-medium">Amal davri</th><th class="border-b border-border px-3 py-2.5 font-medium">Holat</th></tr>
                 </thead>
                 <tbody class="divide-y divide-border">
                   <tr v-for="entry in filteredReferenceEntries" :key="`${selectedReferenceCatalog.code}:${entry.code}`" class="align-top hover:bg-muted/30">
-                    <td class="px-4 py-3"><p class="font-mono text-xs font-semibold text-foreground">{{ entry.code }}</p><p class="mt-1 font-mono text-[10px] text-muted-foreground">version={{ entry.version }}</p><p v-if="entry.sourceRevision" class="mt-1 max-w-[13rem] truncate font-mono text-[9px] text-muted-foreground">source={{ entry.sourceRevision }}</p><span v-if="entry.gateIds?.length || entry.gateId" class="mt-1.5 inline-flex rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-700 dark:text-amber-300">{{ entry.gateIds?.join(' · ') ?? entry.gateId }}</span></td>
-                    <td class="max-w-[24rem] px-4 py-3"><p class="font-medium text-foreground">{{ entry.name }}</p><p v-if="entry.description" class="mt-1 text-xs leading-5 text-muted-foreground">{{ entry.description }}</p><div v-if="entry.attributes" class="mt-2 flex flex-wrap gap-1"><span v-for="(value, key) in entry.attributes" :key="key" class="rounded border border-border bg-muted/35 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">{{ key }}={{ formatReferenceAttribute(value) }}</span></div></td>
-                    <td class="px-4 py-3"><span :class="['inline-flex rounded-md border px-2 py-1 text-[10px] font-medium', entry.kind === 'NORMATIVE_REFERENCE' ? 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300' : 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300']">{{ referenceKindLabel(entry.kind) }}</span></td>
-                    <td class="max-w-[17rem] px-4 py-3"><p class="text-xs font-medium">{{ entry.legalBasis ?? '—' }}</p><p class="mt-1 text-xs leading-5 text-muted-foreground">{{ entry.owner ?? 'Egalik D-gate/konfiguratsiyada' }}</p></td>
-                    <td class="px-4 py-3 font-mono text-[11px]"><p>{{ entry.effectiveFrom ?? '—' }}</p><p class="mt-1 text-muted-foreground">→ {{ entry.effectiveTo ?? 'ochiq' }}</p></td>
-                    <td class="px-4 py-3"><span :class="['inline-flex rounded-md border px-2 py-1 text-xs font-medium', referenceStatusClass(entry.status)]">{{ referenceStatusLabel(entry.status) }}</span><p v-if="entry.approvalStatus" class="mt-1 font-mono text-[9px] text-muted-foreground">{{ entry.approvalStatus }}</p></td>
+                    <td class="px-3 py-2.5"><p class="font-mono text-xs font-semibold text-foreground">{{ entry.code }}</p></td>
+                    <td class="max-w-[24rem] px-3 py-2.5"><p class="font-medium text-foreground">{{ entry.name }}</p><p v-if="entry.description" class="mt-1 text-xs leading-5 text-muted-foreground">{{ entry.description }}</p><details v-if="entry.attributes" class="mt-1"><summary class="cursor-pointer text-xs text-muted-foreground">Qo‘shimcha ma’lumot</summary><div class="mt-2 flex flex-wrap gap-1"><span v-for="(value, key) in entry.attributes" :key="key" class="rounded border border-border bg-muted/35 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">{{ key }}={{ formatReferenceAttribute(value) }}</span></div></details></td>
+                    <td class="px-3 py-2.5"><span :class="['inline-flex rounded-md border px-2 py-1 text-[10px] font-medium', entry.kind === 'NORMATIVE_REFERENCE' ? 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300' : 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300']">{{ referenceKindLabel(entry.kind) }}</span></td>
+                    <td class="max-w-[17rem] px-3 py-2.5"><p class="text-xs font-medium">{{ entry.legalBasis ?? '—' }}</p><p class="mt-1 text-xs leading-5 text-muted-foreground">{{ entry.owner ?? '—' }}</p></td>
+                    <td class="px-3 py-2.5 font-mono text-[11px]"><p>{{ entry.effectiveFrom ?? '—' }}</p><p class="mt-1 text-muted-foreground">→ {{ entry.effectiveTo ?? 'ochiq' }}</p></td>
+                    <td class="px-3 py-2.5"><span :class="['inline-flex rounded-md border px-2 py-1 text-xs font-medium', referenceStatusClass(entry.status)]">{{ referenceStatusLabel(entry.status) }}</span></td>
                   </tr>
                   <tr v-if="!filteredReferenceEntries.length"><td colspan="6" class="px-4 py-14 text-center text-sm text-muted-foreground">Tanlangan filtrlarga mos yozuv topilmadi.</td></tr>
                 </tbody>
               </table>
             </div>
+            <div class="shrink-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">Jami: <strong class="text-foreground">{{ filteredReferenceEntries.length }}</strong> ta yozuv</div>
           </section>
-          <section v-else class="flex min-h-[24rem] items-center justify-center rounded-xl border border-dashed border-border bg-card p-8 text-center shadow-sm">
+          <section v-else class="flex min-h-0 items-center justify-center rounded-lg border border-dashed border-border bg-card p-8 text-center shadow-sm">
             <div><Search class="mx-auto h-8 w-8 text-muted-foreground/60" /><h2 class="mt-3 text-sm font-semibold">Katalog topilmadi</h2><p class="mt-1 text-xs text-muted-foreground">Qidiruvni tozalang yoki boshqa ma’lumotnoma oilasini tanlang.</p></div>
           </section>
         </div>
 
-        <div class="grid gap-3 lg:grid-cols-3">
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Database class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Universal registr + typed domenlar</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Oddiy klassifikatorlar katalog/entry/immutable revisionda umumiy saqlanadi. Policy, provider, bank-account, calendar, huquq, ledger, chipta va claim kuchli invariantli typed schema/jadvallarda yuritiladi.</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><ShieldCheck class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Boshqariladigan o‘zgarish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground"><span class="font-mono">POST /v1/reference-data/change-requests</span> yangi revision draftini yaratadi. Normativ yozuv aktivatsiyasi vakolat, ERI, approver va D-gate talab qiladi.</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Layers3 class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Tizim bo‘ylab qayta foydalanish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Imtiyoz oluvchilar, moslik va chipta formalaridagi select/classifier qiymatlari shu registrdan olinadi; demo tranzaksiya yozuvlari master-data hisoblanmaydi.</p></div>
-        </div>
       </template>
 
       <template v-else-if="isIntegrations">
@@ -3171,10 +3250,58 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
       </template>
     </div>
 
+      <DialogRoot v-model:open="ticketDetailsOpen">
+        <DialogPortal><DialogOverlay class="fixed inset-0 z-50 bg-black/50" /><DialogContent class="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+          <div class="flex items-center justify-between border-b px-4 py-3"><DialogTitle class="font-semibold">Chipta tafsilotlari</DialogTitle><DialogClose as-child><Button variant="ghost" size="sm" aria-label="Tafsilotlarni yopish"><X class="h-4 w-4" /></Button></DialogClose></div>
+          <DialogDescription class="sr-only">Chipta, safar va qaytarish ma’lumotlari.</DialogDescription>
+          <div v-if="selectedTicketRecord" class="min-h-0 overflow-auto p-4">
+            <dl class="grid gap-4 sm:grid-cols-2">
+              <div><dt class="text-xs text-muted-foreground">Hujjat raqami (ID)</dt><dd class="mt-1"><strong>{{ selectedTicketRecord.documentNumber || '—' }}</strong> ({{ selectedTicketRecord.documentId || selectedTicketRecord.id }})</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Hujjat sanasi</dt><dd class="mt-1">{{ selectedTicketRecord.documentDate ? formatInputDate(selectedTicketRecord.documentDate) : '—' }}</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Chipta sanasi</dt><dd class="mt-1">{{ ticketIssuedDate(selectedTicketRecord) }}</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Chipta raqami</dt><dd class="mt-1 font-semibold">{{ selectedTicketRecord.ticketId }}</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Holat</dt><dd class="mt-1">{{ userLabel(selectedTicketRecord.ticketState) }}</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Yo‘lovchi</dt><dd class="mt-1"><strong>{{ selectedTicketRecord.passengerName?.toLocaleUpperCase('uz-UZ') || '—' }}</strong><p class="mt-1 text-xs text-muted-foreground">{{ selectedTicketRecord.passenger }} ({{ contingentAge(selectedTicketRecord.passengerBirthDate) }} yosh)</p></dd></div>
+              <div class="sm:col-span-2"><dt class="text-xs text-muted-foreground">Toifa</dt><dd class="mt-1"><strong>{{ ticketCategoryLabel(selectedTicketRecord) }}</strong> ({{ selectedTicketRecord.beneficiaryCategoryCode || '—' }})<p class="mt-1 text-xs text-muted-foreground">{{ selectedTicketRecord.beneficiarySource || '—' }}</p></dd></div>
+              <div><dt class="text-xs text-muted-foreground">Tashkilot</dt><dd class="mt-1"><strong>{{ selectedTicketRecord.carrier }}</strong> ({{ ticketCarrierInn(selectedTicketRecord) }})<p class="mt-1 text-xs text-muted-foreground">{{ ticketModeLabel(selectedTicketRecord) }}</p></dd></div>
+              <div><dt class="text-xs text-muted-foreground">Yo‘nalish</dt><dd class="mt-1">{{ selectedTicketRecord.route }}</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Jo‘nash vaqti</dt><dd class="mt-1">{{ selectedTicketRecord.departureAt }}</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Chipta narxi</dt><dd class="mt-1">{{ formatMoney(selectedTicketRecord.amount) }} so‘m</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Yo‘lovchi to‘lovi</dt><dd class="mt-1">{{ formatMoney(selectedTicketRecord.passengerPaidAmount) }} so‘m</dd></div>
+              <div><dt class="text-xs text-muted-foreground">So‘ralgan qoplama</dt><dd class="mt-1">{{ formatMoney(selectedTicketRecord.compensationRequested) }} so‘m</dd></div>
+              <div><dt class="text-xs text-muted-foreground">Hujjat</dt><dd class="mt-1 break-words">{{ selectedTicketRecord.evidenceRef }}</dd></div>
+              <div v-if="selectedTicketRecord.reason"><dt class="text-xs text-muted-foreground">Qaytarish sababi</dt><dd class="mt-1">{{ selectedTicketRecord.reason }}</dd></div>
+              <div v-if="selectedTicketRecord.returnedAt"><dt class="text-xs text-muted-foreground">Qaytarilgan vaqt</dt><dd class="mt-1">{{ selectedTicketRecord.returnedAt }}</dd></div>
+              <div v-if="selectedTicketRecord.returnDeadline"><dt class="text-xs text-muted-foreground">Ko‘rib chiqish muddati</dt><dd class="mt-1">{{ selectedTicketRecord.returnDeadline }}</dd></div>
+              <div v-if="selectedTicketRecord.previousTicketId"><dt class="text-xs text-muted-foreground">Avvalgi chipta</dt><dd class="mt-1">{{ selectedTicketRecord.previousTicketId }}</dd></div>
+            </dl>
+            <div v-if="selectedTicketRecord.returnReviewStatus === 'PENDING'" class="mt-4 border-t pt-4"><p class="mb-2 text-sm">Qaytarish bo‘yicha qaror kutilmoqda.</p><div class="flex gap-2"><Button size="sm" :disabled="!canDecideReturnReview" @click="decideReturnReview(selectedTicketRecord, 'APPROVED')">Tasdiqlash</Button><Button size="sm" variant="outline" :disabled="!canDecideReturnReview" @click="decideReturnReview(selectedTicketRecord, 'REJECTED')">Rad etish</Button></div><p v-if="!canDecideReturnReview" class="mt-2 text-xs text-muted-foreground">Ushbu amal uchun vakolat yetarli emas.</p></div>
+          </div>
+        </DialogContent></DialogPortal>
+      </DialogRoot>
+
+    <DialogRoot v-model:open="contingentDetailsOpen">
+      <DialogPortal><DialogOverlay class="fixed inset-0 z-50 bg-black/50" /><DialogContent class="fixed left-1/2 top-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-xl">
+        <div class="flex items-center justify-between border-b px-4 py-3"><DialogTitle class="font-semibold">Imtiyoz oluvchi tafsilotlari</DialogTitle><DialogClose as-child><Button variant="ghost" size="sm" aria-label="Tafsilotlarni yopish"><X class="h-4 w-4" /></Button></DialogClose></div>
+        <DialogDescription class="sr-only">Hujjat, shaxs, toifa va bekor qilish ma’lumotlari.</DialogDescription>
+        <dl v-if="selectedContingent" class="grid min-h-0 gap-4 overflow-auto p-4 sm:grid-cols-2">
+          <div><dt class="text-xs text-muted-foreground">Hujjat raqami (ID)</dt><dd class="mt-1">{{ selectedContingent.documentNumber || '—' }} ({{ selectedContingent.documentId || selectedContingent.id }})</dd></div>
+          <div><dt class="text-xs text-muted-foreground">Sana</dt><dd class="mt-1">{{ selectedContingent.documentDate ? formatInputDate(selectedContingent.documentDate) : selectedContingent.receivedAt.split(' ')[0] }}</dd></div>
+          <div><dt class="text-xs text-muted-foreground">F.I.O.</dt><dd class="mt-1 font-semibold">{{ selectedContingent.person.toLocaleUpperCase('uz-UZ') }}</dd></div>
+          <div><dt class="text-xs text-muted-foreground">JShShIR (yosh)</dt><dd class="mt-1">{{ selectedContingent.pinfl }} ({{ contingentAge(selectedContingent.birthDate) }} yosh)</dd></div>
+          <div class="sm:col-span-2"><dt class="text-xs text-muted-foreground">Toifa</dt><dd class="mt-1">{{ contingentCategoryName(selectedContingent) }} ({{ contingentCategoryCode(selectedContingent) }})</dd></div>
+          <div><dt class="text-xs text-muted-foreground">Manba</dt><dd class="mt-1">{{ selectedContingent.source }}</dd></div>
+          <div><dt class="text-xs text-muted-foreground">Holat</dt><dd class="mt-1">{{ selectedContingent.status }}</dd></div>
+          <div><dt class="text-xs text-muted-foreground">Bekor qilish sababi</dt><dd class="mt-1">{{ selectedContingent.revocationReason || '—' }}</dd></div>
+          <div><dt class="text-xs text-muted-foreground">Bekor qilish sanasi</dt><dd class="mt-1">{{ selectedContingent.revokedAt || '—' }}</dd></div>
+        </dl>
+      </DialogContent></DialogPortal>
+    </DialogRoot>
+
     <div v-if="isContingentDialogOpen" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 p-4" @click.self="isContingentDialogOpen = false">
       <div class="w-full max-w-xl rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl">
         <div class="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
-          <div><h2 class="text-base font-semibold">Imtiyoz oluvchilar eventini yuborish</h2><p class="mt-1 text-xs text-muted-foreground">Yagona kanonik payloadning interaktiv namunasi</p></div>
+          <div><h2 class="text-base font-semibold">Imtiyoz oluvchilar eventini yuborish</h2></div>
           <Button variant="ghost" size="icon" aria-label="Yopish" @click="isContingentDialogOpen = false"><X class="h-4 w-4" /></Button>
         </div>
         <form class="space-y-4 p-5" @submit.prevent="submitContingentEvent">
@@ -3189,7 +3316,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <label class="block space-y-1.5">
             <span class="text-xs font-medium">Texnik profil · D-01</span>
             <select v-model="contingentDraft.category" :class="fieldClass" @change="syncContingentLegalBasis">
-              <option v-for="category in categoryOptions" :key="category.label" :value="category.label">{{ category.label }}</option>
+              <option v-for="category in categoryOptions" :key="category.code" :value="category.label">{{ category.label }} ({{ category.code }})</option>
             </select>
           </label>
           <div class="grid gap-3 sm:grid-cols-2">
@@ -3232,3 +3359,19 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
     </div>
   </PageContainer>
 </template>
+
+<style scoped>
+.transport-workspace > :not(.transport-table):not(.transport-reference-grid) {
+  flex-shrink: 0;
+}
+.transport-table > :not(.overflow-auto) {
+  flex-shrink: 0;
+}
+.transport-workspace :deep(th) {
+  white-space: nowrap;
+}
+.transport-workspace :deep(tbody td) {
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+}
+</style>

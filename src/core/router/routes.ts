@@ -1207,8 +1207,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'apps/transport-benefits',
         name: 'transport-benefits-dashboard',
-        component: TransportBenefitsPage,
-        props: { pageKey: 'dashboard' },
+        redirect: '/apps/transport-benefits/contingents',
         meta: {
           title: 'Transport imtiyozlari',
           requiresAuth: true,

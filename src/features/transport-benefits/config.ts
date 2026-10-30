@@ -1,10 +1,6 @@
 import {
   Boxes,
   BookOpenCheck,
-  Cable,
-  LayoutDashboard,
-  ListChecks,
-  ShieldCheck,
   TicketCheck,
   UsersRound,
   WalletCards,
@@ -100,28 +96,10 @@ export const transportBenefitsPages: MuruvvatPageDefinition[] = [
 
 export const transportBenefitsMenu: MuruvvatMenuItem[] = [
   {
-    id: 'dashboard',
-    title: 'Umumiy ko‘rsatkichlar',
-    route: '/apps/transport-benefits',
-    icon: LayoutDashboard,
-  },
-  {
     id: 'contingents',
     title: 'Imtiyoz oluvchilar',
     route: '/apps/transport-benefits/contingents',
     icon: UsersRound,
-  },
-  {
-    id: 'mvp-plan',
-    title: 'Ish rejasi va vazifalar',
-    route: '/apps/transport-benefits/mvp-plan',
-    icon: ListChecks,
-  },
-  {
-    id: 'eligibility',
-    title: 'Imtiyozni tekshirish',
-    route: '/apps/transport-benefits/eligibility',
-    icon: ShieldCheck,
   },
   {
     id: 'ticket-events',
@@ -144,14 +122,7 @@ export const transportBenefitsMenu: MuruvvatMenuItem[] = [
       { id: 'reference-policies', title: 'Imtiyoz qoidalari', route: '/apps/transport-benefits/references/policies' },
       { id: 'reference-transport', title: 'Transport va tariflar', route: '/apps/transport-benefits/references/transport' },
       { id: 'reference-organizations', title: 'Tashkilotlar', route: '/apps/transport-benefits/references/organizations' },
-      { id: 'reference-system-codes', title: 'Tizim kodlari', route: '/apps/transport-benefits/references/system-codes' },
     ],
-  },
-  {
-    id: 'integrations',
-    title: 'API va arxitektura',
-    route: '/apps/transport-benefits/integrations',
-    icon: Cable,
   },
 ]
 

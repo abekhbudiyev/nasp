@@ -84,7 +84,67 @@ const normative = (
   }
 }
 
+export const beneficiaryCategoryOptions = [
+  {
+    "code": "01",
+    "label": "1941–1945-yillardagi urushning I guruh nogironlari"
+  },
+  {
+    "code": "011",
+    "label": "1941–1945-yillardagi urushning II guruh nogironlari"
+  },
+  {
+    "code": "02",
+    "label": "1941–1945-yillardagi urushning I guruh nogironlariga tenglashtirilgan shaxslar"
+  },
+  {
+    "code": "021",
+    "label": "1941–1945-yillardagi urushning II guruh nogironlariga tenglashtirilgan shaxslar"
+  },
+  {
+    "code": "03",
+    "label": "1941–1945-yillardagi urushda III guruh nogironi bo‘lgan shaxslar"
+  },
+  {
+    "code": "04",
+    "label": "1941–1945-yillardagi urushda III guruh nogironi bo‘lganlarga tenglashtirilgan shaxslar"
+  },
+  {
+    "code": "05",
+    "label": "1941–1945-yillardagi urush qatnashchilari"
+  },
+  {
+    "code": "06",
+    "label": "1941–1945-yillardagi urush qatnashchilariga tenglashtirilgan shaxslar"
+  },
+  {
+    "code": "07",
+    "label": "Sovet Ittifoqi Qahramonlari"
+  },
+  {
+    "code": "08",
+    "label": "“Slava” ordeni uchala darajasi bilan mukofotlanganlar"
+  },
+  {
+    "code": "09",
+    "label": "Chernobil AES halokati oqibatida nurlanish kasalligiga chalingan va uni boshidan kechirgan shaxslar"
+  },
+  {
+    "code": "10",
+    "label": "Halok bo‘lgan harbiy xizmatchilarning ota-onalari va xotinlari"
+  },
+  {
+    "code": "11",
+    "label": "Vatan himoyasi va el-yurt tinchligi yo‘lida halok bo‘lgan harbiy xizmatchining (xodimning) ota-onasi"
+  }
+]
+
 export const referenceCatalogs: ReferenceCatalog[] = [
+  {
+    id: 'beneficiary-categories', code: 'beneficiary_categories', title: 'Imtiyoz oluvchilar toifalari',
+    description: 'Imtiyoz oluvchilar uchun toifa kodlari va nomlari.', family: 'CATEGORIES', readOnly: true,
+    entries: beneficiaryCategoryOptions.map(item => technical(item.code, item.label)),
+  },
   {
     id: 'legal-documents',
     code: 'legal_documents',
@@ -361,7 +421,7 @@ export const referenceCatalogs: ReferenceCatalog[] = [
     readOnly: true,
     warning: 'Quyidagi kodlar MVP demo konfiguratsiyasi. Production ro‘yxat va ownership Transport vazirligining vakolatli registridan olinadi.',
     entries: [
-      technical('UZRAIL', 'O‘zbekiston temir yo‘llari', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'RAIL' }, version: 1 }),
+      technical('UZRAIL', 'O‘zbekiston temir yo‘llari', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'RAIL', inn: '201051951' }, version: 1 }),
       technical('FLY_KHIVA_GROUP', '"FLY KHIVA GROUP" LLC', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'AIR', inn: '308076287' }, version: 1 }),
       technical('CENTRUM_AIR_SALES', '"CENTRUM AIR SALES" LLC', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'AIR', inn: '310289742' }, version: 1 }),
       technical('QANOT_SHARQ_AVIA_SERVICE', '"QANOT SHARQ AVIA SERVICE" LLC', undefined, { status: 'DRAFT', owner: 'Transport vazirligi', attributes: { transport_mode: 'AIR', inn: '310608218' }, version: 1 }),
