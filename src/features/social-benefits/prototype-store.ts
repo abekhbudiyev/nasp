@@ -8,7 +8,8 @@ export interface Rule { benefitId:number; version:string; minAge:number; maxAge:
 export interface Category { name:string; code:string; description:string; benefitIds:number[] }
 export interface Voucher { id:string; child:string; parent:string; region:string; state:string; start:string; end:string; kindergarten:string; consent:boolean; plan:string; history:string[] }
 export interface Source { name:string; organization:string; systemCode:string; status:string; time:string; coverage:number; frequency:string; description:string }
-export const catalog=reactive(originalCatalog.map(b=>({...b})))
+export interface CatalogItem { id:number; name:string; details:string; code?:string; specNumber?:number }
+export const catalog=reactive<CatalogItem[]>(originalCatalog.map(b=>({...b})))
 export const metadata=reactive<Record<number,BenefitMeta>>({})
 export const rules=reactive<Rule[]>([])
 export const categoryDefinitions=reactive<Category[]>(contingents.map((name,i)=>({name,code:`K${String(i+1).padStart(2,'0')}`,description:'Namunaviy kontingent',benefitIds:[...new Set(observations.filter(r=>personFor(r.personId).categories.includes(name)).map(r=>r.benefitId))]})))
@@ -47,7 +48,7 @@ export function saveEntity(entity:Entity,v:Values,editId='') {
  if(entity==='benefit'){
   required(['id','name','type','legal','organization']);dates();const n=Number(id);if(!Number.isInteger(n)||n<1)throw Error('Imtiyoz raqami musbat butun son bo‘lishi kerak.');if(s.catalog.some((b:{id:number})=>b.id===n&&String(b.id)!==editId))throw Error('Bu raqamdagi imtiyoz mavjud.')
   const details=`Тури: ${text(v,'type')}.\nHuquqiy asos: ${text(v,'legal')}\nTavsif va shartlar: ${text(v,'description')}`
-  upsert(s.catalog,'id',n,{id:n,name,details});s.metadata[n]={type:text(v,'type'),legal:text(v,'legal'),organization:text(v,'organization'),source:text(v,'source'),start:text(v,'start'),end:text(v,'end'),categories:list(v,'categories'),description:text(v,'description')};s.catalog.sort((a:{id:number},b:{id:number})=>a.id-b.id);s.categories.forEach((c:Category)=>{c.benefitIds=c.benefitIds.filter(id=>id!==n);if(list(v,'categories').includes(c.name))c.benefitIds.push(n)})
+  upsert(s.catalog,'id',n,{...s.catalog.find((b:CatalogItem)=>b.id===n),id:n,name,details});s.metadata[n]={type:text(v,'type'),legal:text(v,'legal'),organization:text(v,'organization'),source:text(v,'source'),start:text(v,'start'),end:text(v,'end'),categories:list(v,'categories'),description:text(v,'description')};s.catalog.sort((a:{id:number},b:{id:number})=>a.id-b.id);s.categories.forEach((c:Category)=>{c.benefitIds=c.benefitIds.filter(id=>id!==n);if(list(v,'categories').includes(c.name))c.benefitIds.push(n)})
  }
  if(entity==='category'){
   required(['name','code','description']);if(s.categories.some((c:Category)=>(c.name===name||c.code===text(v,'code'))&&c.name!==editId))throw Error('Kontingent nomi yoki kodi takrorlangan.');const benefitIds=list(v,'benefits').map(Number);if(!benefitIds.length)throw Error('Kamida bitta imtiyozni tanlang.');upsert(s.categories,'name',name,{name,code:text(v,'code'),description:text(v,'description'),benefitIds});if(editId&&editId!==name){s.people.forEach((p:Person)=>p.categories=p.categories.map(c=>c===editId?name:c));s.rules.forEach((r:Rule)=>r.categories=r.categories.map(c=>c===editId?name:c));Object.values(s.metadata).forEach((m:any)=>m.categories=m.categories.map((c:string)=>c===editId?name:c))}

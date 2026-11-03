@@ -10,7 +10,7 @@ export const socialBenefitsPages = [
  { key: 'people', title: 'Shaxslar reyestri', path: '/people' },
  { key: 'eligibility', title: 'Muvofiqlikni tekshirish', path: '/eligibility' },
  { key: 'usage', title: 'Foydalanish monitoringi', path: '/usage' },
- { key: 'vouchers', title: 'Elektron bog‘cha vaucheri', path: '/vouchers' },
+ { key: 'vouchers', title: 'Vaucherlar', path: '/vouchers' },
  { key: 'reports', title: 'Hisobot konstruktori', path: '/reports' },
 ]
 const icons = [LayoutDashboard, ShieldAlert, Database, Table2, BookOpen, Users, Users, ShieldCheck, Activity, Ticket, FileBarChart]
@@ -28,7 +28,7 @@ const socialMenuItem = (id: string, title?: string): MuruvvatMenuItem => {
 }
 export const socialBenefitsMenuGroups = [
  { id: 'analytics', title: 'Tahliliy boshqaruv', items: [socialMenuItem('overview'), socialMenuItem('risks', 'Risklar va takliflar'), socialMenuItem('matrix', 'Imtiyozlar matritsasi')] },
- { id: 'main', title: 'Asosiy sahifalar', items: [socialMenuItem('people'), socialMenuItem('usage', 'Foydalanish holatlari'), socialMenuItem('vouchers', 'Bog‘cha vaucherlari')] },
+ { id: 'main', title: 'Asosiy sahifalar', items: [socialMenuItem('people'), socialMenuItem('usage', 'Foydalanish holatlari'), socialMenuItem('vouchers', 'Vaucherlar')] },
  { id: 'tools', title: 'Yordamchi sahifalar', items: [socialMenuItem('eligibility', 'Muvofiqlik tekshiruvi')] },
  { id: 'reports', title: 'Hisobotlar', items: [socialMenuItem('reports')] },
  { id: 'settings', title: 'Sozlamalar', items: [socialMenuItem('catalog'), socialMenuItem('contingents'), socialMenuItem('coverage', 'Manbalar va tekshiruvlar')] },

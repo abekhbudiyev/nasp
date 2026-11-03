@@ -1,9 +1,10 @@
+import { educationState, paidFor, transportResult } from './education'
 import { capabilityFor } from './capabilities'
 import { people, personFor, summarize, type Observation } from './domain'
 export type RiskKind='mismatch'|'lowUsage'|'overlap'|'balance'|'criteria'|'source'
 export const riskLabels:Record<RiskKind,string>={mismatch:'Nomuvofiq taqsimot',lowUsage:'Past foydalanish',overlap:'Takrorlanish ehtimoli',balance:'Taqsimot muvozanati',criteria:'Mezonlarni qayta ko‘rish',source:'Tekshirish imkoni cheklangan'}
-export interface Risk {id:string;kind:RiskKind;benefitId:number;title:string;severity:string;people:number;amount:number|null;evidence:string;limits:string;proposal:string;category?:string;related?:number}
-export function analyzeBenefits(catalog:{id:number;name:string}[],rows:Observation[],threshold=50){
+export interface Risk {id:string;kind:RiskKind;benefitId:number;title:string;severity:string;people:number;amount:number|null;evidence:string;limits:string;proposal:string;category?:string;related?:number;educationChildId?:string;educationMonth?:string}
+export function analyzeBenefits(catalog:{id:number;name:string;code?:string}[],rows:Observation[],threshold=50){
  const risks:Risk[]=[],normalized=(s:string)=>s.toLowerCase().replace(/[\s.,;:—–"'“”«»()]/g,'')
  const groups=new Map<number,Observation[]>();for(const r of rows){const group=groups.get(r.benefitId)??[];group.push(r);groups.set(r.benefitId,group)}
  for(const b of catalog){const c=capabilityFor(b.id),data=groups.get(b.id)??[],s=summarize(data),auto=c.eligibility==='auto'&&c.usage==='auto'
@@ -18,5 +19,15 @@ export function analyzeBenefits(catalog:{id:number;name:string}[],rows:Observati
  for(const list of names.values()){if(list.length<2)continue;const first=list[0]!;for(const b of list.slice(1)){const both=[...(groups.get(first.id)??[]),...(groups.get(b.id)??[])];risks.push({id:`overlap:${first.id}:${b.id}`,kind:'overlap',benefitId:first.id,related:b.id,title:first.name,severity:'Ko‘rib chiqish',people:summarize(both).people,amount:null,evidence:`№${first.id} va №${b.id} nomlari yozuv va tinish belgilarini normallashtirganda bir xil.`,limits:'O‘xshash nom bir xil imtiyoz degani emas. Oluvchilar, maqsad, huquqiy asos va shartlar farq qilishi mumkin.',proposal:'Ikki chorani oluvchilar, shartlar va maqsad bo‘yicha taqqoslash; takrorlanish tasdiqlansagina birlashtirish taklifini tayyorlash.'})}}
  const available=rows.filter(r=>capabilityFor(r.benefitId).eligibility==='auto'&&capabilityFor(r.benefitId).usage==='auto'&&r.amount!==null&&r.sourceEventId),overall=summarize(available),avg=overall.people?overall.amount/overall.people:0
  const cats=[...new Set(people.flatMap(p=>p.categories))];for(const category of cats){const group=available.filter(r=>personFor(r.personId).categories.includes(category)),s=summarize(group),ratio=s.people&&avg?s.amount/s.people/avg:0;if(s.people>=5&&ratio>=1.25){risks.push({id:`balance:${category}`,kind:'balance',benefitId:0,category,title:category,severity:'Ko‘rib chiqish',people:s.people,amount:s.amount,evidence:`Bir qamrab olingan shaxsga ma’lum summa ${(s.amount/s.people).toFixed(0)} so‘m; tanlangan qamrov o‘rtachasiga nisbatan ${ratio.toFixed(2)} baravar. Signal chegarasi ≥1.25.`,limits:'Bu ortiqcha imtiyoz berilganini isbotlamaydi. Ehtiyoj og‘irligi, chora turi, ma’lumot qamrovi va kontingentlar kesishishi farq qiladi. Summasi noma’lum holatlar kiritilmagan.',proposal:'Ehtiyoj va xizmat turi bir xil bo‘lgan guruhlarni taqqoslab, qayta taqsimlash yoki yangi imtiyoz bilan bo‘shliqni to‘ldirish taklifini tayyorlash.'})}}
+ const education=catalog.find(b=>b.code==='EDU-VOUCHER')
+ if(education)for(const child of educationState.children)for(const month of new Set(rows.filter(r=>r.benefitId===education.id&&r.personId===child.personId).map(r=>r.date.slice(0,7)))){
+  const monthly=educationState.monthly.filter(m=>m.month===month&&educationState.vouchers.some(v=>v.id===m.voucherId&&v.childId===child.id)),travel=transportResult(monthly,child.region)
+  const base={benefitId:education.id,title:education.name+' · '+child.name,people:1,amount:null,educationChildId:child.id,educationMonth:month}
+  if(travel.state==='review')risks.push({...base,id:'education-attendance:'+child.id+':'+month,kind:'criteria',severity:'O‘rta',evidence:month+' · '+travel.reason,limits:'90% va to‘liq davomat haqidagi talablar o‘zaro aniqlashtirilmagan. Bu rad etish yoki qonunbuzilish emas.',proposal:'Davomat mezonini kelishish; shu davr uchun yo‘lkira hisobini aniqlashtirish.'})
+  const missing=monthly.filter(m=>paidFor(m.voucherId,month,'course')===null).length
+  if(missing)risks.push({...base,id:'education-finance:'+child.id+':'+month,kind:'source',severity:'O‘rta',evidence:month+' · '+missing+' ta vaucher bo‘yicha moliya to‘lov javobi olinmagan.',limits:'Manba mavjud bo‘lsa ham javob kelmagan bo‘lishi mumkin. Ma’lumot yo‘qligi nol to‘lov yoki qarzdorlik emas.',proposal:'Moliya manbasidan tegishli oy va vaucher bo‘yicha javobni olish.'})
+  const differences=monthly.filter(m=>{const paid=paidFor(m.voucherId,month,'course');return paid!==null&&paid!==m.courseBudget})
+  if(differences.length)risks.push({...base,id:'education-difference:'+child.id+':'+month,kind:'balance',severity:'Ko‘rib chiqish',evidence:month+' · '+differences.length+' ta vaucherda hisoblangan va amalda to‘langan to‘garak summasi farq qiladi.',limits:'Farq avtomatik qarzdorlik yoki qonunbuzilish hisoblanmaydi; davr, tuzatish va qaytarishlar tekshiriladi.',proposal:'Kelajak hisobini moliya xabarlari bilan solishtirish.'})
+ }
  return risks
 }

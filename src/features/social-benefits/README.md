@@ -7,7 +7,7 @@ Modul imtiyozlarning taqsimlanishi, foydalanilishi va tekshirish qamrovini tahli
 ## Ekranlar
 
 - Tahliliy boshqaruv: umumiy monitoring, risklar va takliflar, kontingent–imtiyoz matritsasi.
-- Asosiy sahifalar: shaxslar reyestri, foydalanish holatlari, bog‘cha vaucherlari.
+- Asosiy sahifalar: shaxslar reyestri, foydalanish holatlari, bog‘cha va qo‘shimcha ta’lim vaucherlari.
 - Yordamchi sahifalar: muvofiqlik tekshiruvi.
 - Hisobotlar: ustunlar va filtrlar sozlanadigan hisobot konstruktori.
 - Sozlamalar: imtiyozlar katalogi, kontingentlar, tekshirish imkoniyatlari va manbalar.
@@ -21,6 +21,22 @@ Oldingi `/flow` va `/integrations` URLlari risklar va tekshirish imkoniyatlariga
 Matritsada qatorlarda kontingentlar, ustunlarda imtiyozlar ko‘rsatiladi. Qator jamisi nomdan keyingi birinchi sonli ustunda, ustun jamisi birinchi ma’lumot qatorida. Excel ham shu tartibda tuziladi. Umumiy jamilar qidiruvga mos barcha imtiyozlarni qamrab oladi. Katakdagi holatlar baholash yozuvlari sonidir; jami shaxslar qayta takrorlanmas hisoblanadi. Katakdan shaxslar ro‘yxatiga o‘tiladi.
 
 Tekshiruv uchun maxsus faol qoida kiritilgan bo‘lsa, yosh, jins, reyestr va kontingent mezonlari qo‘llanadi. Yosh profil qiymatidan olinadi; tarixiy tug‘ilgan sana hisoblanmaydi. Maxsus qoida bo‘lmasa eng so‘nggi demo fakt ishlatiladi. Bu to‘liq huquqiy qoida mexanizmi emas.
+
+## Qo‘shimcha ta’lim va yo‘lkira
+
+02.11.2026 texnik talabidagi 2-imtiyoz EDU-VOUCHER kodi bilan qo‘shilgan. Eski katalog identifikatorlari saqlanadi; hujjat tartib raqami alohida yuritiladi. Vaucherlar sahifasida bog‘cha va qo‘shimcha ta’lim alohida tablarda.
+
+Murojaat → ijtimoiy xodim rejasi → yettilik tasdig‘i → shakllangan vaucher → to‘garak bilan shartnoma jarayoni ishlaydi. Ikki yakunlanmagan vaucher limiti, yosh va yo‘nalish, davlat maktabi va yangi berishda reyestr sharti tekshiriladi. Muddat shartnomadan 12 kalendar oy; rasmiy chiqishda to‘xtatiladi. Bekor qilish, qolgan muddatga o‘rnini bosish, muddat tugagach qayta berish va maktab holati xabarlari bor.
+
+Kelajak va moliya xabarlari ssenariylar bilan namoyish qilinadi. Davomat, masofa, 80/20 ulush, hisoblangan va to‘langan summalar alohida. Yo‘lkira uzoqroq nodavlat to‘garakdan hisoblanadi; uning davomati yetarli bo‘lmasa yaqinrog‘iga o‘tilmaydi. 90–99% davomat texnik talabdagi kamida 90% va to‘liq qatnashish bandlari kelishilmagani uchun aniqlashtirish holatida qoladi. BHM 400 000 so‘m — faqat demo qiymat. Moliya javobi yo‘qligi nol yoki qarzdorlik hisoblanmaydi.
+
+Yangi xizmat umumiy katalog, monitoring, matritsa va hisobotlarga bog‘langan. Risklardan tegishli bola va oyga o‘tish, Excel eksporti va lokal saqlash mavjud. Bu tashqi integratsiya emas. Rasmiy bayramlar, QR/SMS, manzil almashishidagi ko‘p davrli hisoblar va real xabarlarning navbatsiz kelishini to‘liq qayta ishlash alohida ishlab chiqiladi.
+
+### Jarayon va nazorat paneli
+
+Qo‘shimcha ta’lim tabida barcha bolalar bo‘yicha joriy murojaat va vaucher holatlari jamlanadi. Kartalar tegishli yozuvlar ro‘yxatini ochadi. Xodim/yettilik muddatidan kechikish, sozlanadigan muddat davomida bog‘lanmagan vaucher, past yoki noaniq davomat, to‘garak/yo‘lkira moliya javobi yo‘qligi va hisob/to‘lov farqi alohida signallar bilan ko‘rsatiladi. Bir bolada bir nechta signal bo‘lishi mumkin; ta’sirlangan bolalar takrorlanmaydi.
+
+Hudud barcha kartalarni, hisob oyi davomat va moliya signallarini filtrlaydi. Bosqichlar tarixiy sana kesimi emas, joriy holatdir. 14 kunlik bog‘lanmaganlik chegarasi demo nazorat mezoni, normativ talab emas. Signalni ochish tegishli bola, tab, oy va yozuvga olib boradi. Qidiruv, sahifalash va filtrlangan Excel eksporti mavjud.
 
 ## Tekshirish imkoniyatlari va risklar
 
@@ -47,7 +63,7 @@ Hisobot ustunlari, tartibi va filtrlarini nomlab saqlash mumkin. Excelda filtrla
 
 ```text
 node node_modules/vue-tsc/bin/vue-tsc.js -b
-node --test src/features/social-benefits/domain.test.mjs src/features/social-benefits/prototype-store.test.mjs src/features/auth/data/demo-accounts.test.mjs
+node --test src/features/social-benefits/domain.test.mjs src/features/social-benefits/prototype-store.test.mjs src/features/social-benefits/education.test.mjs src/features/auth/data/demo-accounts.test.mjs
 node node_modules/vite/bin/vite.js build
 ```
 
