@@ -1,6 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import { eiProductionRoutes } from '@/features/ei/routes'
-import { socialBenefitsPages } from '@/features/social-benefits/config'
+import { socialBenefitsPages, socialTransportPages } from '@/features/social-benefits/config'
 import { governancePages } from '@/features/project-governance/config'
 
 const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
@@ -45,12 +45,23 @@ export const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
     children: [
+      { path: 'apps/social-benefits/vouchers', redirect: to => {
+        const { voucherType, ...query } = to.query
+        return { path: '/apps/social-benefits/vouchers/' + (voucherType === 'kindergarten' ? 'kindergarten' : 'education'), query }
+      } },
       { path: 'apps/social-benefits/flow', redirect: '/apps/social-benefits/risks' },
       { path: 'apps/social-benefits/integrations', redirect: '/apps/social-benefits/coverage' },
       ...socialBenefitsPages.map(page => ({
         path: 'apps/social-benefits' + page.path, name: 'social-benefits-' + page.key,
-        component: () => import('@/features/social-benefits/pages/SocialBenefitsPage.vue'), props: { pageKey: page.key },
+        component: () => import('@/features/social-benefits/pages/SocialBenefitsPage.vue'), props: { pageKey: 'voucherType' in page ? 'vouchers' : page.key, voucherType: 'voucherType' in page ? page.voucherType : undefined },
         meta: { requiresAuth: true, permission: 'social-benefits.view' as const, moduleKey: 'social-benefits', moduleTitle: 'Ijtimoiy imtiyozlar moduli', title: page.title, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar moduli', page.title] },
+      })),
+      { path: 'apps/social-benefits/transport', redirect: '/apps/social-benefits/transport/contingents' },
+      { path: 'apps/social-benefits/transport/references', redirect: '/apps/social-benefits/transport/references/categories' },
+      ...socialTransportPages.map(page => ({
+        path: page.route.slice(1), name: 'social-benefits-transport-' + page.key,
+        component: TransportBenefitsPage, props: { pageKey: page.key },
+        meta: { requiresAuth: true, permission: 'social-benefits.view' as const, moduleKey: 'social-benefits', moduleTitle: 'Ijtimoiy imtiyozlar moduli', title: page.title, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar moduli', 'Transport', page.title] },
       })),
       ...governancePages.map((page) => ({
         path: `apps/project-governance${page.path}`,

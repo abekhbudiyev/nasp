@@ -184,3 +184,18 @@ test('live guard redirects an unauthenticated deep link, allows the own module a
     assert.equal(instance.currentRoute.value.path, '/apps')
   }
 })
+
+test('social benefits transport pages reuse transport views within social module access',()=>{
+ const social=data.demoModuleAccounts.find(a=>a.moduleId==='social-benefits'),transport=data.demoModuleAccounts.find(a=>a.moduleId==='transport-benefits')
+ const definitions=load('features/social-benefits/config.ts').socialTransportPages
+ assert.equal(definitions.length,12)
+ for(const page of definitions){
+  const target=router.resolve(page.route);assert.equal(target.meta.moduleKey,'social-benefits');assert.equal(target.meta.permission,'social-benefits.view')
+  assert.equal(target.matched.at(-1).props.default.pageKey,page.key)
+  assert.equal(guard.canAccessDemoRoute(data.createDemoUser(social.id),target),true)
+  assert.equal(guard.canAccessDemoRoute(data.createDemoUser(transport.id),target),false)
+ }
+ const group=load('features/social-benefits/config.ts').socialBenefitsMenuGroups.find(g=>g.id==='transport')
+ assert.deepEqual(group.items.map(i=>i.id),['transport-contingents','transport-ticket-events','transport-settlements']);assert.ok(group.items.every(i=>i.route.startsWith('/apps/social-benefits/transport/')))
+ assert.equal(guard.canAccessDemoRoute(data.createDemoUser(transport.id),router.resolve('/apps/transport-benefits/contingents')),true)
+})

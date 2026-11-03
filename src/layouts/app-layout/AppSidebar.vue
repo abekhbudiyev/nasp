@@ -36,6 +36,8 @@ const modules = computed(() => appModules.filter((module) => (
 )))
 const activeModuleKey = computed(() => route.meta.moduleKey ?? null)
 const openSections = ref<Record<string, boolean>>({})
+const openGroups = ref<Record<string, boolean>>({})
+let groupsModule: unknown = null
 const brandHomeRoute = computed(() => {
   if (typeof activeModuleKey.value === 'string') {
     const activeModule = modules.value.find((module) => module.id === activeModuleKey.value)
@@ -209,6 +211,10 @@ function syncOpenSections() {
   }
 
   openSections.value = nextState
+  if (groupsModule !== activeModuleKey.value) { openGroups.value = {}; groupsModule = activeModuleKey.value }
+  if (activeModuleKey.value === 'social-benefits') {
+    for (const group of groupedNavigation.value) if (group.items.some(isItemActive)) openGroups.value[group.id] = true
+  }
 }
 
 function toggleSection(sectionId: string) {
@@ -276,14 +282,30 @@ watch(() => route.path, syncOpenSections, { immediate: true })
           :key="group.id"
           role="group"
           :aria-label="t(group.title ?? 'Bosh sahifa')"
-          :class="!collapsed && index > 0 ? (activeModuleKey === 'social-benefits' ? 'mt-4' : 'mt-5') : undefined"
+          :class="!collapsed && index > 0 ? (activeModuleKey === 'social-benefits' ? 'mt-1' : 'mt-5') : undefined"
         >
           <hr v-if="collapsed && index > 0" class="mx-4 my-3 border-sidebar-border" />
-          <p v-if="group.title && !collapsed" :class="cn('px-2 pb-2 text-[11px] font-semibold text-muted-foreground', activeModuleKey === 'social-benefits' && 'flex items-center gap-2 text-[10px] tracking-[0.06em]', activeModuleKey === 'social-benefits' && group.items.some(isItemActive) && 'text-primary')">
+          <button
+            v-if="activeModuleKey === 'social-benefits' && group.title && !collapsed"
+            type="button"
+            :aria-expanded="!!openGroups[group.id]"
+            :aria-controls="'sidebar-group-'+group.id"
+            :class="cn('flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50', group.items.some(isItemActive) && 'text-primary')"
+            @click="openGroups[group.id]=!openGroups[group.id]"
+          >
+            <component :is="group.items[0]?.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span class="flex-1">{{ t(group.title) }}</span>
+            <ChevronDown :class="cn('h-3.5 w-3.5 shrink-0 transition-transform duration-150', openGroups[group.id] && 'rotate-180')" aria-hidden="true" />
+          </button>
+          <p v-else-if="group.title && !collapsed" :class="cn('px-2 pb-2 text-[11px] font-semibold text-muted-foreground', activeModuleKey === 'social-benefits' && 'flex items-center gap-2 text-[10px] tracking-[0.06em]', activeModuleKey === 'social-benefits' && group.items.some(isItemActive) && 'text-primary')">
             <span v-if="activeModuleKey === 'social-benefits'" :class="cn('h-1 w-1 rounded-full bg-sidebar-border', group.items.some(isItemActive) && 'bg-primary')" aria-hidden="true" />
             {{ t(group.title) }}
           </p>
-          <div class="space-y-1">
+          <div
+            :id="'sidebar-group-'+group.id"
+            v-show="activeModuleKey !== 'social-benefits' || collapsed || openGroups[group.id]"
+            :class="cn('space-y-1', activeModuleKey === 'social-benefits' && !collapsed && 'ml-4 border-l border-sidebar-border pl-2')"
+          >
             <RouterLink
               v-for="item in group.items"
               :key="item.id"
@@ -294,7 +316,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
               :title="collapsed ? sidebarTitle(item) : undefined"
               :class="cn(
                 'flex h-8 items-center gap-2 rounded-md text-sm outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring/50',
-                activeModuleKey === 'social-benefits' && 'h-8 text-[13px]',
+                activeModuleKey === 'social-benefits' && 'h-8 text-sm',
                 collapsed ? 'mx-auto w-8 justify-center p-0' : 'w-full px-2',
                 isItemActive(item)
                   ? 'bg-sidebar-accent font-medium text-foreground shadow-[inset_2px_0_0_var(--primary)] [&>svg]:text-primary'

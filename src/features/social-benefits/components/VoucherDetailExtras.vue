@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import {computed,ref} from 'vue'
+import {Button} from '@/shared/ui/shadcn/button'
+import {voucherAssessment,voucherSignals,type VoucherRecord} from '../voucher-analysis'
+const props=defineProps<{record:VoucherRecord;date:string;kind:'education'|'kindergarten'}>()
+const tab=ref('assessment'),copied=ref(false),a=computed(()=>voucherAssessment(props.record,props.date)),signals=computed(()=>voucherSignals(props.record,props.date))
+const d=(s:string|null)=>s?s.split('-').reverse().join('.'):'—'
+async function copyLink(){try{await navigator.clipboard.writeText(window.location.href);copied.value=true}catch{copied.value=false}}
+</script>
+<template>
+<section class="voucher-detail-extras">
+<div class="voucher-detail-identity"><span><b>{{ record.id }}</b> ({{ record.number }}) · Reja: {{ record.planId }}</span><span>{{ d(record.start) }} — {{ d(record.end) }}</span><Button size="sm" variant="outline" @click="copyLink">{{ copied?'Havola nusxalandi':'Havolani nusxalash' }}</Button></div>
+<div class="voucher-detail-tabs" aria-label="Batafsil ma’lumot bo‘limlari"><Button v-for="t in [{id:'assessment',name:'Nazorat'},{id:'placements',name:'Tashkilot / fan tarixi'},{id:'messages',name:'Manba xabarlari'}]" :key="t.id" size="sm" :variant="tab===t.id?'secondary':'ghost'" :aria-pressed="tab===t.id" @click="tab=t.id">{{ t.name }}</Button></div>
+<div v-if="tab==='assessment'" class="voucher-assessment"><span>Yakunlangan oylar <b>{{ a.expected }}</b></span><span>Ma’lumot kelgan <b>{{ a.reported }}</b></span><span :class="{'warning':a.missing}">Ma’lumot yetishmaydi <b>{{ a.missing }}</b></span><span :class="a.percent===null?'warning':a.percent<30?'danger':'good'">Foydalanish bahosi <b>{{ a.percent===null?'Baholanmagan':a.percent+'%' }}</b></span><p>Baholash {{ date.slice(0,7) }} oyidan oldingi yakunlangan oylar asosida. Kelmagan ma’lumot nol deb olinmaydi.</p><p v-if="signals.waiting||signals.ending||signals.missing||signals.low" class="warning">{{ [signals.waiting?'30 kundan ortiq kutmoqda':'',signals.ending?'30 kun ichida muddati tugaydi':'',signals.missing?'Oylik manba ma’lumoti yetishmaydi':'',signals.low?'Foydalanish darajasi past':''].filter(Boolean).join(' · ') }}</p></div>
+<div v-else-if="tab==='placements'" class="kg-table"><table><thead><tr><th>Kirish</th><th>Chiqish</th><th>Tashkilot (INN)</th><th>Hudud / tuman</th><th v-if="kind==='education'">Yo‘nalish / fan</th></tr></thead><tbody><tr v-for="(p,i) in record.placements" :key="i"><td>{{ d(p.entered) }}</td><td>{{ p.left?d(p.left):record.status==='Muddati yakunlangan'?'—':'Joriy' }}</td><td>{{ p.organization }} ({{ p.inn }})</td><td>{{ p.region }} / {{ p.district }}</td><td v-if="kind==='education'">{{ p.direction }} / {{ p.subject }}</td></tr><tr v-if="!record.placements.length"><td :colspan="kind==='education'?5:4">Faollashtirish xabari kutilmoqda.</td></tr></tbody></table></div>
+<div v-else class="voucher-source-messages"><h3>{{ kind==='education'?'Oliy ta’lim vazirligi':'Ta’lim vazirligi' }} · xabarlar tarixi</h3><ol><li v-for="(h,i) in record.history" :key="i">{{ h }}</li></ol><div class="kg-table"><table><thead><tr><th>Hisobot oyi</th><th>To‘langan mablag‘</th><th v-if="kind==='education'">Yo‘lkira</th><th>Oxirgi to‘lov xabari sanasi</th></tr></thead><tbody><tr v-for="m in record.months.filter(m=>m.amount!==null||m.travel!==null)" :key="m.month"><td>{{ m.month }}</td><td>{{ m.amount===null?'Ma’lumot yo‘q':m.amount.toLocaleString('uz-UZ')+' so‘m' }}</td><td v-if="kind==='education'">{{ m.travel===null?'Ma’lumot yo‘q':m.travel.toLocaleString('uz-UZ')+' so‘m' }}</td><td>{{ d(m.received??null) }}</td></tr></tbody></table></div></div>
+</section>
+</template>

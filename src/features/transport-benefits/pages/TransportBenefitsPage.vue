@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription, DialogClose } from 'reka-ui'
 import FilterPopover from '@/shared/components/FilterPopover.vue'
 import {
@@ -259,6 +259,8 @@ const props = withDefaults(defineProps<{
   pageKey: 'dashboard',
 })
 
+const transportRoute=useRoute()
+function transportPath(path:string){return transportRoute.meta.moduleKey==='social-benefits'?path.replace('/apps/transport-benefits','/apps/social-benefits/transport'):path}
 const authStore = useAuthStore()
 const returnReviewAuthority = computed(() => {
   const actor = authStore.currentUser
@@ -2443,7 +2445,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <p class="mt-0.5 text-xs text-muted-foreground">Imtiyoz oluvchilar va chiptalardan buyurtmanoma hamda to‘lov natijasigacha</p>
               </div>
               <RouterLink
-                to="/apps/transport-benefits/integrations"
+                :to="transportPath('/apps/transport-benefits/integrations')"
                 class="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 Arxitekturani ko‘rish
@@ -2453,7 +2455,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <div class="grid gap-2 p-4 lg:grid-cols-5">
               <template v-for="(step, index) in pipelineSteps" :key="step.title">
                 <RouterLink
-                  :to="step.route"
+                  :to="transportPath(step.route)"
                   class="group relative rounded-lg border border-border bg-background p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-sm"
                 >
                   <div class="flex items-center justify-between gap-2">
@@ -2575,7 +2577,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
               <h2 class="text-sm font-semibold text-foreground">So‘nggi kontingent eventlari</h2>
               <p class="mt-0.5 text-xs text-muted-foreground">Barcha manbalar uchun bitta kanonik contract family · demo dataset</p>
             </div>
-            <RouterLink to="/apps/transport-benefits/contingents" class="text-xs font-medium text-primary hover:underline">Barchasini ko‘rish</RouterLink>
+            <RouterLink :to="transportPath('/apps/transport-benefits/contingents')" class="text-xs font-medium text-primary hover:underline">Barchasini ko‘rish</RouterLink>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full min-w-[760px] text-left text-sm">
@@ -2657,7 +2659,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <section class="rounded-xl border border-border bg-card shadow-sm">
           <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
             <div><h2 class="text-sm font-semibold">AI agent bajaradigan ketma-ket roadmap</h2><p class="mt-1 text-xs text-muted-foreground">Har phase avvalgisining contract va migration natijasiga bog‘liq; ochiq D-gate uydirma qoida bilan aylanib o‘tilmaydi.</p></div>
-            <RouterLink to="/apps/transport-benefits/integrations" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">Servis arxitekturasi <ArrowRight class="h-3.5 w-3.5" /></RouterLink>
+            <RouterLink :to="transportPath('/apps/transport-benefits/integrations')" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">Servis arxitekturasi <ArrowRight class="h-3.5 w-3.5" /></RouterLink>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full min-w-[980px] text-left text-sm">
