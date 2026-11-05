@@ -1,6 +1,8 @@
+import type {VoucherProfile} from './voucher-profile'
+import type {VoucherIncome,FamilySavings} from './voucher-income'
 export interface VoucherMonth {month:string;amount:number|null;travel:number|null;attendance?:number|null;received?:string|null}
 export interface VoucherPlacement {organization:string;inn:string;region:string;district:string;subject:string;direction:string;entered:string;left:string|null}
-export interface VoucherRecord {id:string;number:string;planId:string;personId:string;name:string;pinfl:string;age:number;created:string;start:string|null;end:string|null;status:string;slot?:number;placements:VoucherPlacement[];months:VoucherMonth[];history:string[]}
+export interface VoucherRecord {profile?:VoucherProfile;service?:'education'|'kindergarten';familySavings?:FamilySavings;income?:VoucherIncome;id:string;number:string;planId:string;personId:string;name:string;pinfl:string;age:number;created:string;start:string|null;end:string|null;status:string;slot?:number;placements:VoucherPlacement[];months:VoucherMonth[];history:string[]}
 export interface VoucherFilters {query:string;status:string;region:string;district:string;organization:string;subject:string;direction:string;slot:string;dateField:'created'|'start'|'end';from:string;to:string;monthFrom:string;monthTo:string;usage:string;payment:string;changed:boolean;signal:string;waitingDays:number}
 export function emptyVoucherFilters():VoucherFilters{return {query:'',status:'',region:'',district:'',organization:'',subject:'',direction:'',slot:'',dateField:'created',from:'',to:'',monthFrom:'',monthTo:'',usage:'',payment:'',changed:false,signal:'',waitingDays:30}}
 export function scopedMonths(r:VoucherRecord,f:VoucherFilters){return r.months.filter(m=>(!f.monthFrom||m.month>=f.monthFrom)&&(!f.monthTo||m.month<=f.monthTo))}
@@ -21,10 +23,10 @@ export function summarizeVouchers(rows:VoucherRecord[],date:string,f=emptyVouche
  const values=rows.map(r=>voucherAssessment(r,date,f)),known=values.filter(a=>a.amount!==null),travel=values.filter(a=>a.travel!==null);
  return {travel:travel.length?travel.reduce((n,a)=>n+a.travel!,0):null,vouchers:rows.length,children:new Set(rows.map(r=>r.personId)).size,amount:known.length?known.reduce((n,a)=>n+a.amount!,0):null,missing:values.filter(a=>a.missing>0).length,used:values.filter(a=>a.used>0).length};
 }
-export type VoucherGrouping='region'|'district'|'organization'|'status'|'subject'|'month';
+export type VoucherGrouping='region'|'district'|'organization'|'status'|'subject'|'direction'|'month';
 export function voucherReport(rows:VoucherRecord[],group:VoucherGrouping,date:string,f=emptyVoucherFilters()){
  const groups=new Map<string,VoucherRecord[]>();
- for(const r of rows){const p=r.placements.slice(-1)[0],keys=group==='month'?[...new Set(scopedMonths(r,f).filter(m=>m.month<=date.slice(0,7)).map(m=>m.month))]:[group==='region'?p?.region??'Tashkilot belgilanmagan':group==='district'?p?.district??'Tashkilot belgilanmagan':group==='organization'?p?p.organization+' ('+p.inn+')':'Tashkilot belgilanmagan':group==='subject'?p?.subject||'Fan belgilanmagan':r.status];if(group==='month'&&!keys.length)keys.push('Faollashmagan');for(const key of keys){const subset=group==='month'&&/^\d{4}-\d{2}$/.test(key)?{...r,months:r.months.filter(m=>m.month===key)}:r;groups.set(key,[...(groups.get(key)??[]),subset])}}
+ for(const r of rows){const p=r.placements.slice(-1)[0],keys=group==='month'?[...new Set(scopedMonths(r,f).filter(m=>m.month<=date.slice(0,7)).map(m=>m.month))]:[group==='region'?p?.region??'Tashkilot belgilanmagan':group==='district'?p?.district??'Tashkilot belgilanmagan':group==='organization'?p?p.organization+' ('+p.inn+')':'Tashkilot belgilanmagan':group==='subject'?p?.subject||'Fan belgilanmagan':group==='direction'?p?.direction||'Yo‘nalish belgilanmagan':r.status];if(group==='month'&&!keys.length)keys.push('Faollashmagan');for(const key of keys){const subset=group==='month'&&/^\d{4}-\d{2}$/.test(key)?{...r,months:r.months.filter(m=>m.month===key)}:r;groups.set(key,[...(groups.get(key)??[]),subset])}}
  return [...groups].sort(([a],[b])=>a.localeCompare(b)).map(([name,items])=>({name,ids:items.map(r=>r.id),...summarizeVouchers(items,date,f)}));
 }
 export function placementDeparture(next:string|undefined,end:string|null){const date=next??(end?new Date(Date.parse(end+'T00:00:00Z')+86400000).toISOString().slice(0,10):null);return date?new Date(Date.parse(date+'T00:00:00Z')-86400000).toISOString().slice(0,10):null}
