@@ -303,8 +303,8 @@ watch(() => route.path, syncOpenSections, { immediate: true })
           </p>
           <div
             :id="'sidebar-group-'+group.id"
-            v-show="activeModuleKey !== 'social-benefits' || collapsed || openGroups[group.id]"
-            :class="cn('space-y-1', activeModuleKey === 'social-benefits' && !collapsed && 'ml-4 border-l border-sidebar-border pl-2')"
+            v-show="activeModuleKey !== 'social-benefits' || !group.title || collapsed || openGroups[group.id]"
+            :class="cn('space-y-1', activeModuleKey === 'social-benefits' && group.title && !collapsed && 'ml-4 border-l border-sidebar-border pl-2')"
           >
             <RouterLink
               v-for="item in group.items"

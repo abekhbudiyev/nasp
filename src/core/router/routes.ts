@@ -1,6 +1,7 @@
+import { platformViews } from '@/features/social-benefits/platform-demo'
 import type { RouteRecordRaw } from 'vue-router'
 import { eiProductionRoutes } from '@/features/ei/routes'
-import { socialBenefitsPages, socialTransportPages } from '@/features/social-benefits/config'
+import { socialBenefitsPages, socialBenefitsPlatformPage, socialTransportPages } from '@/features/social-benefits/config'
 import { governancePages } from '@/features/project-governance/config'
 
 const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
@@ -51,6 +52,21 @@ export const routes: RouteRecordRaw[] = [
       } },
       { path: 'apps/social-benefits/flow', redirect: '/apps/social-benefits/risks' },
       { path: 'apps/social-benefits/integrations', redirect: '/apps/social-benefits/coverage' },
+      { path: 'apps/social-benefits/rollout', redirect: { name: 'social-benefits-platform' } },
+      ...platformViews.map(view => ({
+        path: 'apps/social-benefits' + view.path,
+        name: 'social-benefits-' + view.key,
+        component: () => import('@/features/social-benefits/pages/SocialSupportPlatform.vue'),
+        props: { view: view.key },
+        meta: {
+          requiresAuth: true,
+          permission: 'social-benefits.view' as const,
+          moduleKey: 'social-benefits',
+          moduleTitle: 'Ijtimoiy imtiyozlar moduli',
+          title: view.key === 'platform' ? socialBenefitsPlatformPage.title : view.title,
+          breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar moduli', view.title],
+        },
+      })),
       ...socialBenefitsPages.map(page => ({
         path: 'apps/social-benefits' + page.path, name: 'social-benefits-' + page.key,
         component: () => import('@/features/social-benefits/pages/SocialBenefitsPage.vue'), props: { pageKey: 'voucherType' in page ? 'vouchers' : page.key, voucherType: 'voucherType' in page ? page.voucherType : undefined },

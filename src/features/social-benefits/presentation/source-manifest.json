@@ -1,0 +1,36 @@
+{
+  "source": "https://claude.ai/artifact/FsB5c9NuHmxbW5QweP5bpv",
+  "captured": "2026-11-14",
+  "blocks": [
+    {
+      "index": 0,
+      "sha256": "72e1f045d3dd5f9ea218358d6d325b0d14b1155c7967e196e0aeb733bf3dcb3c",
+      "bytes": 26770
+    },
+    {
+      "index": 1,
+      "sha256": "7db52c74e7bc82b35ccfd92c7ecee31f70c1129241ce0d0215fcc3d9a0d09252",
+      "bytes": 7517
+    },
+    {
+      "index": 2,
+      "sha256": "23ed6bf41fd115cf6960c9457fa7f9a86f2d745dbaf60bd882491c8704cc2edf",
+      "bytes": 255639
+    },
+    {
+      "index": 3,
+      "sha256": "c7ab74f728042178ce672a9fdbd6673cc2d75f8831fc0b215e940a7b449b213e",
+      "bytes": 28477
+    },
+    {
+      "index": 4,
+      "sha256": "5d941aa35e141dd576e017104e3a069962b9bbf7a2da0ef1c2335574a917a048",
+      "bytes": 1064627
+    },
+    {
+      "index": 5,
+      "sha256": "e82db7d3054a95825c90a7b3d2883f57ae48d200ede3de13105751a2ec5af681",
+      "bytes": 141826
+    }
+  ]
+}
