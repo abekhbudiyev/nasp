@@ -7,6 +7,7 @@ import {
   HeartHandshake,
   HeartPulse,
   Baby,
+  Building2,
   LayoutGrid,
   Navigation,
   Shield,
@@ -18,8 +19,19 @@ import {
   Workflow,
 } from 'lucide-vue-next'
 import type { AppModule } from '../types'
+import { modulePath, moduleTitle } from '@/features/regional-centers/config'
 
 export const appModules: AppModule[] = [
+  {
+    id: 'regional-centers',
+    title: moduleTitle,
+    description: 'Markazlar, xizmatlar quvvati, ko‘rsatuvchilar, yo‘llanmalar va xizmat natijalarini boshqarish.',
+    route: modulePath,
+    icon: Building2,
+    enabled: true,
+    permission: 'regional-centers.view',
+    hasInternalNavigation: true,
+  },
   { id: 'social-benefits', title: 'Ijtimoiy imtiyozlar moduli', description: 'Barcha kontingentlar va imtiyozlar yagona katalogi, muvofiqlik tekshiruvi va foydalanish monitoringi.', route: '/apps/social-benefits', icon: Shield, enabled: true, permission: 'social-benefits.view', hasInternalNavigation: true },
   {
     id: 'project-governance',

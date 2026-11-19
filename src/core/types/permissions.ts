@@ -18,6 +18,7 @@ export type PermissionKey =
   | 'muruvvat.view'
   | 'snav.view'
   | 'ei.view'
+  | 'regional-centers.view'
   | 'transport-benefits.view'
   | 'transport-benefits.return-review'
 

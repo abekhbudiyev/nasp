@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { eiProductionRoutes } from '@/features/ei/routes'
 import { socialBenefitsPages, socialBenefitsPlatformPage, socialTransportPages } from '@/features/social-benefits/config'
 import { governancePages } from '@/features/project-governance/config'
+import { modulePath, moduleTitle, regionalCenterPages } from '@/features/regional-centers/config'
 
 const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
 const LoginPage = () => import('@/features/auth/pages/LoginPage.vue')
@@ -46,6 +47,20 @@ export const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
     children: [
+      ...regionalCenterPages.map(page => ({
+        path: (modulePath + page.path).slice(1),
+        name: `regional-centers-${page.key}`,
+        component: () => import('@/features/regional-centers/RegionalCentersPage.vue'),
+        props: { pageKey: page.key },
+        meta: {
+          requiresAuth: true,
+          permission: 'regional-centers.view' as const,
+          moduleKey: 'regional-centers',
+          moduleTitle,
+          title: page.title,
+          breadcrumb: ['Ilovalar', moduleTitle, page.title],
+        },
+      })),
       { path: 'apps/social-benefits/vouchers', redirect: to => {
         const { voucherType, ...query } = to.query
         return { path: '/apps/social-benefits/vouchers/' + (voucherType === 'kindergarten' ? 'kindergarten' : 'education'), query }

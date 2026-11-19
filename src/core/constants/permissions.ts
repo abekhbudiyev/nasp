@@ -8,5 +8,6 @@ export const MODULE_PERMISSION_BY_KEY: Partial<Record<string, PermissionKey>> = 
   muruvvat: 'muruvvat.view',
   snav: 'snav.view',
   ei: 'ei.view',
+  'regional-centers': 'regional-centers.view',
   'transport-benefits': 'transport-benefits.view',
 }

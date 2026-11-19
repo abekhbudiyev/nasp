@@ -12,6 +12,7 @@ import { transportBenefitsMenu } from '@/features/transport-benefits/config'
 import { ptpkMenu } from '@/features/ptpk/config'
 import { socialBenefitsMenu, socialBenefitsMenuGroups } from '@/features/social-benefits/config'
 import { governanceMenu } from '@/features/project-governance/config'
+import { regionalCenterMenuGroups } from '@/features/regional-centers/config'
 import { palliativeMenu, palliativeMenuGroups } from '@/features/palliative-care/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
@@ -96,9 +97,18 @@ const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
   return []
 })
 
-const groupedNavigation = computed(() => activeModuleKey.value === 'social-benefits'
-  ? socialBenefitsMenuGroups
-  : activeModuleKey.value === 'palliative-care' ? palliativeMenuGroups : [])
+const groupedNavigation = computed(() => {
+  if (activeModuleKey.value === 'social-benefits') return socialBenefitsMenuGroups
+  if (activeModuleKey.value === 'palliative-care') return palliativeMenuGroups
+  if (activeModuleKey.value === 'regional-centers') return regionalCenterMenuGroups
+  return []
+})
+
+const groupedNavigationLabel = computed(() => {
+  if (activeModuleKey.value === 'social-benefits') return 'Ijtimoiy imtiyozlar bo‘limlari'
+  if (activeModuleKey.value === 'palliative-care') return t('Bolalar palliativ yordami bo‘limlari')
+  return currentModuleLabel.value
+})
 
 const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/ptpk': 'nav.dashboard',
@@ -275,7 +285,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
     <div class="flex-1 overflow-y-auto p-2">
       <nav
         v-if="groupedNavigation.length"
-        :aria-label="activeModuleKey === 'social-benefits' ? 'Ijtimoiy imtiyozlar bo‘limlari' : t('Bolalar palliativ yordami bo‘limlari')"
+        :aria-label="groupedNavigationLabel"
       >
         <div
           v-for="(group, index) in groupedNavigation"

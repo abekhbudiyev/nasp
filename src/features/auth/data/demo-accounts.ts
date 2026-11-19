@@ -23,6 +23,7 @@ const credentials: Record<string, { username: string; password: string }> = {
   muruvvat: { username: 'muruvvat', password: 'MuruvvatDemo!26' },
   snav: { username: 'snav', password: 'NavigatorDemo!26' },
   ei: { username: 'ei', password: 'ErtaDemo!26' },
+  'regional-centers': { username: 'regional-centers', password: 'HududiyDemo!26' },
   dashboard: { username: 'dashboard', password: 'DashboardDemo!26' },
   citizens: { username: 'citizens', password: 'FuqarolarDemo!26' },
   applications: { username: 'applications', password: 'ArizalarDemo!26' },
