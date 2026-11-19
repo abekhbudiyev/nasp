@@ -2,18 +2,21 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
-  Activity, ArrowUpRight, Building2, ClipboardCheck, Clock3, Download,
-  Info, Layers3, Plus, UsersRound,
+  Activity, Building2, ClipboardCheck, Clock3, Download,
+  Fingerprint, Info, Layers3, Plus, UsersRound, Wallet,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { modulePath, regionalCenterPages } from './config'
 import type { RegionalCenterPage } from './config'
 import { applyEditor, hasCompetition } from './actions'
 import type { Editor } from './actions'
+import AttendanceDesk from './AttendanceDesk.vue'
+import LeadershipDashboard from './LeadershipDashboard.vue'
+import { dailyVisits, quotaRows } from './attendance'
 import { createDemoData } from './demo'
 import {
   centerFor, financeKinds, financeLabels, findingKinds, isOperational, leaseStartDeadline, outcomeLabels,
-  providerLabels, queueFor, referralLabels, reviewReferral, seatsUsed, serviceName,
+  providerLabels, queueFor, referralLabels, relativeDate, reviewReferral, seatsUsed, serviceName,
   services, startReferral, today, workingDayDeadline,
 } from './model'
 import type {
@@ -33,9 +36,19 @@ const readError = ref(false)
 const saving = ref(false)
 const search = ref('')
 const statusFilter = ref<ReferralStatus | ''>('')
-const from = ref('')
-const to = ref('')
+const overviewFiltersOpen = ref(false)
 const date = today()
+const from = ref(relativeDate(date, -13))
+const to = ref(date)
+const actor = computed(() => ({
+  name: auth.currentUser?.role ?? 'Demo foydalanuvchi',
+  curator: auth.hasPermission('regional-centers.curate'),
+}))
+
+function selectPeriod(days: number) {
+  from.value = relativeDate(date, 1 - days)
+  to.value = date
+}
 
 function refreshState() {
   try {
@@ -69,7 +82,8 @@ function filterBy(key: 'center' | 'service' | 'region', value: string) {
 }
 
 function location(path: string, filters: Record<string, string> = {}) {
-  return { path: modulePath + path, query: { ...route.query, ...filters } }
+  const { from, to, referral, ...scope } = route.query
+  return { path: modulePath + path, query: { ...scope, ...filters } }
 }
 
 const centers = computed(() => regionCenters.value.filter(c => !centerFilter.value || c.id === centerFilter.value))
@@ -96,13 +110,21 @@ const number = (value: number) => formattedNumber.format(value)
 const money = (value: number) => `${number(value)} so‘m`
 const displayDate = (value: string) => value ? value.split('-').reverse().join('.') : '—'
 const withinPeriod = (value: string) => (!from.value || value >= from.value) && (!to.value || value <= to.value)
+const visibleDays = computed(() => dailyVisits(state.value).filter(item => placementIds.value.has(item.placementId)))
+const periodDays = computed(() => visibleDays.value.filter(item => withinPeriod(item.date)))
+const currentDays = computed(() => visibleDays.value.filter(item => item.date === date))
+const todayFunding = computed(() => currentDays.value.reduce((sum, item) => {
+  sum[item.funding]++
+  return sum
+}, { voucher: 0, paid: 0, unknown: 0 }))
+const quotaReport = computed(() => quotaRows(state.value, placements.value, visibleDays.value, date))
 const periodVisits = computed(() => visits.value.filter(item => withinPeriod(item.date)))
 const periodFindings = computed(() => findings.value.filter(item => withinPeriod(item.date)))
 const periodFinance = computed(() => {
   const periodVisitIds = new Set(periodVisits.value.map(item => item.id))
   return finance.value.filter(item => periodVisitIds.has(item.visitId))
 })
-const visited = computed(() => new Set(periodVisits.value.map(item => referralById(item.referralId)?.beneficiary).filter(Boolean)))
+const visited = computed(() => new Set(periodDays.value.map(item => item.beneficiary)))
 const openFindings = computed(() => findings.value.filter(item => item.status === 'open'))
 const scores = computed(() => periodFindings.value.flatMap(item => item.score === undefined ? [] : [item.score]))
 const satisfaction = computed(() => scores.value.length ? `${number(scores.value.reduce((sum, score) => sum + score, 0) / scores.value.length)} / 5` : '—')
@@ -111,17 +133,27 @@ const seats = computed(() => activePlacements.value.reduce((sum, item) => sum + 
 const overviewRows = computed(() => placements.value.map(item => {
   const used = seatsUsed(state.value, item.id)
   const active = isOperational(state.value, item, date)
-  const count = periodVisits.value.filter(visit => referralById(visit.referralId)?.placementId === item.id).length
+  const count = periodDays.value.filter(visit => visit.placementId === item.id).length
   const queued = referrals.value.filter(referral => referral.placementId === item.id && referral.status === 'queued').length
   return { item, used, active, count, queued }
 }))
 const summary = computed(() => [
-  { title: 'Faol markazlar', value: number(centers.value.filter(item => item.status === 'active').length), icon: Building2, path: '/centers', hint: `${centers.value.length} ta ro‘yxatda` },
-  { title: 'Bo‘sh o‘rinlar', value: number(capacity.value - seats.value), icon: Layers3, path: '/services', hint: `${seats.value} band / ${capacity.value} o‘rin` },
-  { title: 'Xizmat oluvchilar', value: number(visited.value.size), icon: UsersRound, path: '/delivery', hint: `${periodVisits.value.length} ta davomat qaydi` },
-  { title: 'Navbatdagi yo‘llanmalar', value: number(referrals.value.filter(item => item.status === 'queued').length), icon: Clock3, path: '/referrals', hint: 'Joriy holat' },
-  { title: 'Ochiq kamchiliklar', value: number(openFindings.value.length), icon: ClipboardCheck, path: '/quality', hint: `${openFindings.value.filter(item => item.due < date).length} ta muddati o‘tgan` },
-  { title: 'Qoniqish bahosi', value: satisfaction.value, icon: Activity, path: '/quality', hint: `${scores.value.length} ta baho` },
+  { title: 'Faol markazlar', value: number(centers.value.filter(item => item.status === 'active'
+    && (!serviceFilter.value || activePlacements.value.some(place => centerFor(state.value, place.id)?.id === item.id))).length),
+    icon: Building2, path: '/centers', tone: 'blue', hint: `${activePlacements.value.length} ta faol xizmat joyi` },
+  { title: 'Bugungi tashriflar', value: number(currentDays.value.length), icon: Fingerprint, path: '/visits', tone: 'purple',
+    hint: `${todayFunding.value.voucher} vaucherli · ${todayFunding.value.paid} pullik${todayFunding.value.unknown ? ' · ' + todayFunding.value.unknown + ' aniqlanmagan' : ''}` },
+  { title: 'Xizmat oluvchilar', value: number(visited.value.size), icon: UsersRound, path: '/visits', tone: 'mint',
+    hint: `Davrda ${periodDays.value.length} ta tashrif`, period: true },
+  { title: 'Navbatdagi yo‘llanmalar', value: number(referrals.value.filter(item => item.status === 'queued').length), icon: Clock3, path: '/referrals', tone: 'amber',
+    hint: `${referrals.value.filter(item => item.status === 'new').length} ta yangi murojaat` },
+  { title: 'Yo‘llanma uchun bo‘sh o‘rin', value: number(Math.max(0, capacity.value - seats.value)), icon: Layers3, path: '/services', tone: 'blue',
+    hint: `${seats.value} band / ${capacity.value} o‘rin` },
+  { title: 'Ochiq kamchiliklar', value: number(openFindings.value.length), icon: ClipboardCheck, path: '/quality', tone: 'rose',
+    hint: `${openFindings.value.filter(item => item.due < date).length} ta muddati o‘tgan` },
+  { title: 'Qoniqish bahosi', value: satisfaction.value, icon: Activity, path: '/quality', tone: 'mint', hint: `Davrda ${scores.value.length} ta baho` },
+  { title: 'To‘langan summa', value: money(totals('paid', periodFinance.value)), icon: Wallet, path: '/finance', tone: 'purple',
+    hint: `Davr tashriflariga bog‘liq ${periodFinance.value.filter(item => item.status === 'paid').length} ta qayd` },
 ])
 const outcomes = computed(() => referrals.value.filter(item => item.status === 'closed'
   && withinPeriod(item.history[item.history.length - 1]?.date ?? item.created)).length)
@@ -168,12 +200,18 @@ async function exportOverview() {
       ['Yakunlangan rejalar', outcomes.value],
       ...Object.entries(financeLabels).map(([kind, label]) => [label, totals(kind as FinanceRecord['status'], periodFinance.value), 'so‘m']),
       [],
-      ['Markaz', 'Xizmat', 'Xona', 'Quvvat', 'Band', 'Navbat', 'Davomat qaydlari', 'Xizmat holati'],
+      ['Markaz', 'Xizmat', 'Xona', 'Quvvat', 'Band', 'Navbat', 'Yagona tashriflar', 'Xizmat holati'],
       ...overviewRows.value.map(({ item, used, queued, count, active }) => [
         centerFor(state.value, item.id)?.name, serviceName(item.serviceId), roomById(item.roomId)?.name,
         item.capacity, used, queued, count, active ? 'Faol' : 'Faol emas',
       ]),
     ]), 'Monitoring')
+    utils.book_append_sheet(workbook, utils.aoa_to_sheet([
+      ['Kunlik kvota va haqiqiy tashrif', date],
+      ['Markaz', 'Xizmat', 'Ko‘rsatuvchi', 'Vaucherli kvota', 'Vaucherli tashrif', 'Pullik kvota', 'Pullik tashrif', 'Signal'],
+      ...quotaReport.value.map(row => [row.center?.name, serviceName(row.placement.serviceId), providerName(row.placement),
+        row.passport?.voucher, row.actual.voucher, row.passport?.paid, row.actual.paid, row.alerts.join(' · ')]),
+    ]), 'Kunlik kvota')
     writeFile(workbook, 'hududiy-markazlar-monitoringi-demo.xlsx')
   } catch {
     error.value = 'Hisobot faylini yaratib bo‘lmadi.'
@@ -184,7 +222,7 @@ const editorTitles: Record<Editor, string> = {
   center: 'Markaz pasporti', room: 'Xona kartasi', staff: 'Xodim kartasi', placement: 'Xizmat joyi',
   provider: 'Talabgor so‘rovnomasi', decision: 'Talabgor bo‘yicha qaror', lease: 'Ijara shartnomasi',
   referral: 'Yangi murojaat', plan: 'Individual reja', reject: 'Rad etish', close: 'Xizmat natijasi',
-  visit: 'Davomat qaydi', finding: 'Sifat nazorati qaydi', resolve: 'Bajarilgan chora', finance: 'Moliyaviy qayd',
+  finding: 'Sifat nazorati qaydi', resolve: 'Bajarilgan chora', finance: 'Moliyaviy qayd',
 }
 type Field = {
   key: string
@@ -336,14 +374,6 @@ async function openEditor(kind: Editor, id = '') {
         choices('disposition', 'Qaror', options(outcomeLabels)),
       ]
       break
-    case 'visit':
-      fields.value = [
-        input('date', 'Xizmat sanasi', 'date'),
-        { ...input('minutes', 'Davomiyligi (daqiqa)', 'number'), min: 1, max: 1440 },
-        input('evidence', 'Davomat qaydi yoki dalolatnoma raqami'),
-      ]
-      defaults = { date }
-      break
     case 'finding':
       fields.value = [
         choices('placementId', 'Xizmat va xona', placementChoices(placements.value)),
@@ -439,8 +469,11 @@ watch(() => props.pageKey, () => {
 })
 
 const integrations = [
-  { name: 'Erta aralashuv', data: 'Ko‘rsatuvchi va xizmat manzili, vaucher, buyurtma, reja, davomat, subsidiya', route: '/apps/ei' },
-  { name: 'Kunduzgi parvarish', data: 'PTPK xulosasi, guruhlar va bandlik, DXSh bitimi, davomat, subsidiya va transport kompensatsiyasi' },
+  { name: 'Markaziy CRM · ins.ihma.uz', data: 'Yagona tashriflar reyestri, yo‘llanmalar, vaucherga havola, quvvat va psixosotsial reabilitatsiya' },
+  { name: 'Kompleks reabilitatsiya · rbt.ihma.uz', data: 'Bolalar va kattalar reabilitatsiyasi, xizmat joyi va tashrif tasdig‘i' },
+  { name: 'Erta aralashuv · chh.ihma.uz', data: 'Ko‘rsatuvchi va xizmat manzili, vaucher, buyurtma, reja, davomat, subsidiya', route: '/apps/ei' },
+  { name: 'Kunduzgi parvarish · cdc.ihma.uz', data: 'PTPK xulosasi, guruhlar va bandlik, DXSh bitimi, davomat, subsidiya va transport kompensatsiyasi' },
+  { name: '18+ kunduzgi qarab turish · eld.ihma.uz', data: 'Kattalar uchun kunduzgi qatnov, xizmat joyi va tashrif tasdig‘i' },
   { name: 'Oila hamkori', data: 'Tibbiy-ijtimoiy reabilitatsiya va kunduzgi qarab turish, vaucher, Bartel va Lauton baholari, tabel va to‘lov' },
   { name: 'Bolalarni himoya qilish', data: 'Yo‘naltirilgan xizmat, himoya yoki integratsiya rejasi, bajarish muddati va natija' },
   { name: 'Inson markazlari va Ijtimoiy reyestr', data: 'Eksterritorial yo‘llanma, reyestrda mavjudlik va xizmatdan foydalanish asosi' },
@@ -452,25 +485,37 @@ const integrations = [
 
 <template>
   <div class="regional-page overflow-y-auto">
-    <header class="page-heading">
+    <header v-if="pageKey === 'overview'" class="leadership-hero">
+      <div>
+        <p class="hero-date"><Activity :size="16" /> Rahbariyat monitoringi <span>·</span> {{ displayDate(date) }} <span>·</span> Demo ma’lumotlar</p>
+        <h1>Hududiy ijtimoiy xizmatlar markazlari</h1>
+        <p>Markazlarda kimga xizmat ko‘rsatilayotgani, navbat va o‘rinlar bandligini bitta oynada kuzating.</p>
+        <div class="hero-actions">
+          <RouterLink class="button hero-primary" :to="location('/capacity')"><Layers3 :size="17" /> Kvota va tashriflar</RouterLink>
+          <button class="button hero-secondary" type="button" @click="exportOverview"><Download :size="17" /> Excel hisobot</button>
+        </div>
+      </div>
+      <div class="hero-emblem" aria-hidden="true"><Building2 :size="86" :stroke-width="1.3" /></div>
+    </header>
+    <header v-else class="page-heading work-heading" :data-section="page.group">
       <div>
         <h1>{{ page.title }}</h1>
-        <p v-if="pageKey === 'overview'">Hududiy ijtimoiy xizmatlar markazlari faoliyati</p>
-        <p v-else-if="pageKey === 'integrations'">Manba tizimlari va almashinadigan ma’lumotlar</p>
+        <p v-if="pageKey === 'integrations'">Manba tizimlari va almashinadigan ma’lumotlar</p>
+        <p v-if="pageKey === 'visits'">Joriy rol · {{ actor.name }}</p>
       </div>
-      <button v-if="pageKey === 'overview'" class="button" type="button" @click="exportOverview">
-        <Download :size="17" /> Excel hisobot
-      </button>
-      <button v-else-if="action" class="button primary" type="button" :disabled="readError" @click="openEditor(action.editor)">
+      <button v-if="action" class="button primary" type="button" :disabled="readError" @click="openEditor(action.editor)">
         <Plus :size="18" /> {{ action.label }}
       </button>
     </header>
 
-    <div class="demo-note"><Info :size="16" /> Demo muhiti. Faqat namuna ma’lumotlaridan foydalaning. O‘zgarishlar shu brauzerda saqlanadi.</div>
+    <div v-if="pageKey !== 'overview'" class="demo-note"><Info :size="16" /> Demo muhiti. Faqat namuna ma’lumotlaridan foydalaning. O‘zgarishlar shu brauzerda saqlanadi.</div>
     <p v-if="notice" class="message" role="status">{{ notice }}</p>
     <p v-if="error" class="message error" role="alert">{{ error }}</p>
 
-    <div v-if="pageKey !== 'integrations'" class="filters">
+    <button v-if="pageKey === 'overview'" class="button mobile-filter-toggle" type="button" :aria-expanded="overviewFiltersOpen" aria-controls="regional-overview-filters"
+      @click="overviewFiltersOpen = !overviewFiltersOpen">Hisobot filtrlari · {{ displayDate(from) }} – {{ displayDate(to) }}</button>
+    <div v-if="pageKey !== 'integrations'" :id="pageKey === 'overview' ? 'regional-overview-filters' : undefined"
+      class="filters" :class="{ 'overview-filter': pageKey === 'overview', 'filters-open': overviewFiltersOpen }">
       <label>Hudud
         <select aria-label="Hudud" :value="regionFilter" @change="filterBy('region', ($event.target as HTMLSelectElement).value)">
           <option value="">Barcha hududlar</option>
@@ -492,6 +537,9 @@ const integrations = [
       <template v-if="pageKey === 'overview'">
         <label>Davr boshi <input v-model="from" type="date" :max="to || undefined"></label>
         <label>Davr oxiri <input v-model="to" type="date" :min="from || undefined"></label>
+        <div class="period-buttons" role="group" aria-label="Hisobot davri">
+          <button v-for="days in [7, 14, 30]" :key="days" type="button" :aria-pressed="to === date && from === relativeDate(date, 1 - days)" @click="selectPeriod(days)">{{ days }} kun</button>
+        </div>
       </template>
       <template v-if="pageKey === 'referrals'">
         <label>Holat
@@ -505,17 +553,11 @@ const integrations = [
     </div>
 
     <template v-if="pageKey === 'overview'">
-      <div class="metrics">
-        <RouterLink v-for="metric in summary" :key="metric.title" :to="location(metric.path)" class="metric">
-          <div class="metric-top"><component :is="metric.icon" :size="20" /><ArrowUpRight :size="15" /></div>
-          <div class="metric-value">{{ metric.value }}</div>
-          <div class="metric-title">{{ metric.title }}</div>
-          <small>{{ metric.hint }}</small>
-        </RouterLink>
-      </div>
+      <LeadershipDashboard :state="state" :placements="placements" :visible-days="visibleDays" :period-days="periodDays"
+        :today="date" :from="from" :to="to" :metrics="summary" :location="location" />
       <section class="panel">
         <div class="section-heading">
-          <div><h2>Xizmatlar kesimida holat</h2><p>Quvvat va navbat joriy holatni, davomat tanlangan davrni aks ettiradi.</p></div>
+          <div><h2>Xizmatlar kesimida holat</h2><p>Bandlik va navbat joriy holatni, tashriflar tanlangan davrni aks ettiradi.</p></div>
           <dl class="mini-stats">
             <div><dt>Birinchi xizmatgacha</dt><dd>{{ waitingDays }}</dd></div>
             <div><dt>Yakunlangan rejalar</dt><dd>{{ outcomes }}</dd></div>
@@ -523,7 +565,7 @@ const integrations = [
         </div>
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Markaz va xizmat</th><th>Bandlik</th><th>Navbat</th><th>Davomat qaydlari</th><th>Holat</th></tr></thead>
+            <thead><tr><th>Markaz va xizmat</th><th>Bandlik</th><th>Navbat</th><th>Tashriflar</th><th>Holat</th></tr></thead>
             <tbody>
               <tr v-for="{ item, used, active, queued, count } in overviewRows" :key="item.id">
                 <td>
@@ -549,6 +591,10 @@ const integrations = [
         </dl>
       </section>
     </template>
+
+    <AttendanceDesk v-else-if="pageKey === 'visits' || pageKey === 'passports'" :mode="pageKey" :state="state" :placements="placements"
+      :actor="actor" :busy="saving" :read-only="readError" :referral-id="String(route.query.referral ?? '')"
+      :range-start="String(route.query.from ?? '')" :range-end="String(route.query.to ?? '')" @change="run" />
 
     <template v-else-if="pageKey === 'centers'">
       <section v-for="center in centers" :key="center.id" class="panel">
@@ -715,7 +761,7 @@ const integrations = [
                   <td><div class="actions">
                     <button v-if="item.status !== 'closed'" class="text-link" @click="openEditor('plan', item.id)">{{ item.plan ? 'Rejani yangilash' : 'Reja tuzish' }}</button>
                     <button v-if="item.status === 'referred' && item.plan" class="text-link" @click="advanceReferral(item.id, 'start')">Xizmatni boshlash</button>
-                    <button v-if="item.status === 'active'" class="text-link" @click="openEditor('visit', item.id)">Davomat qo‘shish</button>
+                    <RouterLink v-if="item.status === 'active'" class="text-link" :to="location('/visits', { referral: item.id })">Tashrifni qayd etish</RouterLink>
                     <button v-if="item.status === 'active'" class="text-link" @click="openEditor('close', item.id)">Natijani baholash</button>
                   </div></td>
                 </tr>

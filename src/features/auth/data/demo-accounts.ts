@@ -10,6 +10,8 @@ export interface DemoModuleAccount {
   username: string
   password: string
   permission: PermissionKey
+  role?: string
+  extraPermissions?: readonly PermissionKey[]
 }
 
 // Public frontend examples, intentionally shown on the demo login page.
@@ -42,23 +44,38 @@ export const demoModuleAccounts: readonly DemoModuleAccount[] = Object.freeze(ap
   return Object.freeze({ id: `demo-module-${module.id}`, moduleId: module.id, title: module.title, route: module.route, permission: module.permission, ...login })
 }))
 
+export const demoLoginAccounts: readonly DemoModuleAccount[] = Object.freeze([
+  ...demoModuleAccounts,
+  Object.freeze({
+    id: 'demo-regional-centers-curator', moduleId: 'regional-centers', title: 'HIXM kuratori',
+    route: '/apps/regional-centers', username: 'regional-curator', password: 'KuratorDemo!26',
+    permission: 'regional-centers.view' as const, role: 'HIXM kuratori', extraPermissions: ['regional-centers.curate'] as const,
+  }),
+])
+
 export const DEMO_ADMIN_ID = 'demo-admin'
 
 export function getDemoAccountForUser(user: CurrentUser | null | undefined) {
-  return user ? demoModuleAccounts.find(account => account.id === user.id && account.username === user.username) : undefined
+  return user ? demoLoginAccounts.find(account => account.id === user.id && account.username === user.username) : undefined
 }
 
 export function createDemoUser(accountId: string): CurrentUser | null {
   if (accountId === DEMO_ADMIN_ID) {
-    return { id: DEMO_ADMIN_ID, username: 'admin', fullName: 'Administrator', role: 'Administrator', permissions: ['apps.view', ...demoModuleAccounts.map(account => account.permission)] }
+    const permissions = new Set<PermissionKey>(['apps.view'])
+    for (const account of demoLoginAccounts) {
+      permissions.add(account.permission)
+      account.extraPermissions?.forEach(permission => permissions.add(permission))
+    }
+    return { id: DEMO_ADMIN_ID, username: 'admin', fullName: 'Administrator', role: 'Administrator', permissions: [...permissions] }
   }
-  const account = demoModuleAccounts.find(item => item.id === accountId)
+  const account = demoLoginAccounts.find(item => item.id === accountId)
   if (!account) return null
-  return { id: account.id, username: account.username, fullName: `${account.title} · demo`, role: 'Modul operatori', permissions: ['apps.view', account.permission] }
+  const role = account.role ?? (account.moduleId === 'regional-centers' ? 'HIXM operatori' : 'Modul operatori')
+  return { id: account.id, username: account.username, fullName: `${account.title} · demo`, role, permissions: ['apps.view', account.permission, ...(account.extraPermissions ?? [])] }
 }
 
 export function authenticateDemoModule(username: string, password: string): CurrentUser | null {
-  const account = demoModuleAccounts.find(item => item.username === username.trim() && item.password === password)
+  const account = demoLoginAccounts.find(item => item.username === username.trim() && item.password === password)
   return account ? createDemoUser(account.id) : null
 }
 

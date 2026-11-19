@@ -1,12 +1,12 @@
 import {
-  centerFor, closeReferral, fillVacancies, isOperational, referralLabels, rejectReferral, seatsUsed, services, today,
+  centerFor, closeReferral, fillVacancies, isOperational, rejectReferral, seatsUsed, services, today,
 } from './model'
 import type {
   CarePlan, Center, CenterState, FinanceRecord, Finding, Placement, ProviderApplication, Referral, Room, ServiceId, StaffMember,
 } from './model'
 
 export type Editor = 'center' | 'room' | 'staff' | 'placement' | 'provider' | 'decision' | 'lease'
-  | 'referral' | 'plan' | 'reject' | 'close' | 'visit' | 'finding' | 'resolve' | 'finance'
+  | 'referral' | 'plan' | 'reject' | 'close' | 'finding' | 'resolve' | 'finance'
 
 export function applyEditor(data: CenterState, activeEditor: Editor, id: string, values: Record<string, string>) {
   const get = (key: string) => values[key] ?? ''
@@ -160,23 +160,6 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
       else closeReferral(data, item, get('outcome'), get('disposition') as NonNullable<CarePlan['disposition']>)
       break
     }
-    case 'visit': {
-      const item = data.referrals.find(row => row.id === id)
-      const serviceDate = get('date')
-      const evidence = get('evidence')
-      const minutes = Number(get('minutes'))
-      if (item?.status !== 'active') throw new Error('Davomat faqat faol xizmat bo‘yicha qayd etiladi.')
-      const start = item.history.find(event => event.label === referralLabels.active)?.date ?? item.created
-      if (serviceDate < start || serviceDate > date) throw new Error('Xizmat sanasi faol xizmat davrida bo‘lishi kerak.')
-      const placement = data.placements.find(row => row.id === item.placementId)
-      if (!placement || !isOperational(data, placement, serviceDate)) throw new Error('Xizmat joyi tanlangan sanada faol emas.')
-      if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) throw new Error('Davomiylik 1 dan 1440 daqiqagacha bo‘lishi kerak.')
-      if (data.visits.some(row => row.referralId === id && row.evidence.toLowerCase() === evidence.toLowerCase())) {
-        throw new Error('Bu tasdiqlovchi qayd avval kiritilgan.')
-      }
-      data.visits.push({ id: crypto.randomUUID(), referralId: id, date: serviceDate, minutes, evidence })
-      break
-    }
     case 'finding': {
       const kind = get('kind') as Finding['kind']
       const feedback = kind === 'feedback'
@@ -204,6 +187,7 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
       const visit = data.visits.find(item => item.id === visitId)
       const referral = data.referrals.find(item => item.id === visit?.referralId)
       if (!referral || ((kind === 'income') !== (referral.funding === 'paid'))) throw new Error('To‘lov turi xizmat shartiga mos emas.')
+      if (kind !== 'income' && !visit?.verification) throw new Error('To‘lov asosi uchun tashrifning tasdiq turi kerak.')
       if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error('Summa musbat butun son bo‘lishi kerak.')
       if (data.finance.some(item => item.visitId === visitId && item.kind === kind)) throw new Error('Bunday moliyaviy qayd mavjud.')
       data.finance.push({ id, visitId, kind, amount, reference: get('reference'), status: 'calculated' })

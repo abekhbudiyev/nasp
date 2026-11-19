@@ -8,7 +8,7 @@ import { APP_TITLE } from '@/core/constants/app'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { ref } from 'vue'
-import { demoModuleAccounts, type DemoModuleAccount } from '../data/demo-accounts'
+import { demoLoginAccounts, type DemoModuleAccount } from '../data/demo-accounts'
 
 const {
   form,
@@ -80,13 +80,13 @@ function handleForgotPassword() {
               aria-controls="demo-module-accounts"
               @click="demoAccountsOpen = !demoAccountsOpen"
             >
-              <span>Demo hisoblar <span class="ml-1 text-xs font-normal text-muted-foreground">{{ demoModuleAccounts.length }} modul</span></span>
+              <span>Demo hisoblar <span class="ml-1 text-xs font-normal text-muted-foreground">{{ demoLoginAccounts.length }} ta</span></span>
               <span aria-hidden="true">{{ demoAccountsOpen ? '−' : '+' }}</span>
             </button>
             <div v-if="demoAccountsOpen" id="demo-module-accounts" class="border-t border-border">
               <p class="px-4 py-3 text-xs leading-5 text-muted-foreground">Har bir hisob faqat o‘z modulini ochadi. Login va parolni formaga qo‘yib, Kirish tugmasini bosing. Bular frontend demo hisoblaridir.</p>
               <ul class="max-h-80 divide-y divide-border overflow-y-auto border-t border-border">
-                <li v-for="account in demoModuleAccounts" :key="account.id" class="space-y-2 px-4 py-3">
+                <li v-for="account in demoLoginAccounts" :key="account.id" class="space-y-2 px-4 py-3">
                   <p class="text-sm font-medium">{{ account.title }}</p>
                   <div class="flex flex-wrap items-end justify-between gap-2">
                     <dl class="min-w-0 space-y-1 text-xs">

@@ -19,6 +19,7 @@ export type PermissionKey =
   | 'snav.view'
   | 'ei.view'
   | 'regional-centers.view'
+  | 'regional-centers.curate'
   | 'transport-benefits.view'
   | 'transport-benefits.return-review'
 

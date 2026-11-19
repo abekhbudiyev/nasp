@@ -1,15 +1,17 @@
 import {
   Activity, Building2, ClipboardCheck, ClipboardList, Handshake, LayoutDashboard,
-  LibraryBig, Link2, Wallet,
+  Fingerprint, LibraryBig, Link2, Wallet,
 } from 'lucide-vue-next'
 
 export const moduleTitle = 'Hududiy ijtimoiy xizmatlar markazlari moduli'
 export const modulePath = '/apps/regional-centers'
 export const regionalCenterPages = [
   { key: 'referrals', group: 'workflow', title: 'Yo‘llanmalar va navbat', path: '/referrals', icon: ClipboardList },
+  { key: 'visits', group: 'workflow', title: 'Tashrifni qayd etish', path: '/visits', icon: Fingerprint },
   { key: 'delivery', group: 'workflow', title: 'Rejalar va davomat', path: '/delivery', icon: Activity },
   { key: 'centers', group: 'setup', title: 'Markazlar va xonalar', path: '/centers', icon: Building2 },
   { key: 'services', group: 'setup', title: 'Xizmatlar va quvvat', path: '/services', icon: LibraryBig },
+  { key: 'passports', group: 'setup', title: 'Quvvat pasportlari', path: '/capacity', icon: Building2 },
   { key: 'providers', group: 'setup', title: 'Ko‘rsatuvchilar va ijara', path: '/providers', icon: Handshake },
   { key: 'quality', group: 'control', title: 'Sifat nazorati', path: '/quality', icon: ClipboardCheck },
   { key: 'finance', group: 'control', title: 'Moliyalashtirish', path: '/finance', icon: Wallet },

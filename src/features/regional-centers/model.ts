@@ -8,6 +8,7 @@ export const services = [
   { id: 'education', title: 'Ta’lim va kasbga o‘rgatish', group: 'Ta’lim xizmatiga ehtiyoji bo‘lgan shaxslar', source: 'Hududiy markaz / Ijtimoiy reyestr', law: 'VMQ 555', url: 'https://lex.uz/uz/docs/-8540128#-8542703' },
   { id: 'family', title: 'Oilani va parvarishlovchilarni qo‘llab-quvvatlash', group: 'Oila a’zolari va parvarishlovchilar', source: 'Hududiy markaz', law: 'VMQ 555', url: 'https://lex.uz/uz/docs/-8540128#-8542619' },
   { id: 'counsel', title: 'Psixologik, pedagogik va huquqiy maslahat', group: 'Maslahatga ehtiyoji bo‘lgan shaxslar', source: 'Hududiy markaz', law: 'VMQ 555', url: 'https://lex.uz/uz/docs/-8540128#-8542645' },
+  { id: 'psychosocial', title: 'Psixosotsial reabilitatsiya', group: 'Psixosotsial yordamga ehtiyoji bo‘lgan shaxslar', source: 'ins.ihma.uz', law: 'VMQ 555', url: 'https://lex.uz/uz/docs/-8540128#-8542645' },
 ] as const
 
 export type ServiceId = typeof services[number]['id']
@@ -83,6 +84,8 @@ export interface Referral {
   channel: string
   funding: 'preferential' | 'paid'
   reference: string
+  voucherRef?: string
+  reserveSeat?: boolean
   created: string
   status: ReferralStatus
   plan?: CarePlan
@@ -96,6 +99,25 @@ export interface Visit {
   date: string
   minutes: number
   evidence: string
+  verification?: 'face-id' | 'act'
+  confirmedBy?: 'beneficiary' | 'representative'
+  recordedBy?: string
+  recordedAt?: string
+  reason?: string
+  voucherRef?: string
+}
+
+export interface CapacityPassport {
+  id: string
+  placementId: string
+  voucher: number
+  paid: number
+  effectiveFrom: string
+  createdBy: string
+  approvedBy?: string
+  approvedAt?: string
+  rejectedBy?: string
+  rejectedAt?: string
 }
 
 export interface Finding {
@@ -127,6 +149,7 @@ export interface CenterState {
   providers: ProviderApplication[]
   referrals: Referral[]
   visits: Visit[]
+  passports: CapacityPassport[]
   findings: Finding[]
   finance: FinanceRecord[]
 }
@@ -191,6 +214,7 @@ export function centerFor(state: CenterState, placementId: string) {
 
 export function seatsUsed(state: CenterState, placementId: string) {
   return state.referrals.filter(item => item.placementId === placementId
+    && item.reserveSeat !== false
     && (item.status === 'referred' || item.status === 'active')).length
 }
 

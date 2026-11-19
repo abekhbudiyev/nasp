@@ -1,5 +1,5 @@
 import { referralLabels, relativeDate, today } from './model'
-import type { CenterState, Referral, ReferralStatus } from './model'
+import type { CenterState, Referral, ReferralStatus, ServiceId } from './model'
 
 export function createDemoData(): CenterState {
   const date = today()
@@ -22,10 +22,10 @@ export function createDemoData(): CenterState {
       : undefined
     const history = [{ date: created, label: 'Murojaat qayd etildi' }]
     if (status !== 'new') history.push({ date: relativeDate(created, 1), label: referralLabels[status] })
-    return { id: id!, placementId: placementId!, beneficiary: beneficiary!, residence: residence!, issuer: issuer!,
+    return { id: id!, placementId: placementId!, beneficiary: beneficiary!, residence: residence!, issuer: issuer!, voucherRef: `NAM-VAU-${index + 1}`,
       channel: 'Inson markazi', funding: 'preferential', reference: `DEMO-Y-${index + 1}`, created, status, plan, history }
   })
-  return {
+  const data: CenterState = {
     centers: [
       { id: 'andijon', name: 'Andijon shahar hududiy markazi', region: 'Andijon viloyati', address: 'Andijon shahri', director: 'Demo mas’ul', status: 'active' },
       { id: 'shayxontohur', name: 'Shayxontohur hududiy markazi', region: 'Toshkent shahri', address: 'Shayxontohur tumani', director: 'Demo mas’ul', status: 'active' },
@@ -56,10 +56,11 @@ export function createDemoData(): CenterState {
       { id: 'n3', placementId: 'p6', name: 'Bolalar reabilitatsiyasi · demo', qualificationRef: 'AB-DEMO-03', submitted: previous, status: 'new' },
     ],
     referrals,
+    passports: [],
     visits: [
-      { id: 'v1', referralId: 'r1', date: previous, minutes: 120, evidence: 'EA-DEMO-T-01' },
-      { id: 'v2', referralId: 'r2', date: previous, minutes: 480, evidence: 'KP-DEMO-T-02' },
-      { id: 'v3', referralId: 'r5', date: relativeDate(date, -2), minutes: 120, evidence: 'OH-DEMO-T-03' },
+      { id: 'v1', referralId: 'r1', date: previous, minutes: 120, evidence: 'EA-DEMO-T-01', verification: 'face-id' },
+      { id: 'v2', referralId: 'r2', date: previous, minutes: 480, evidence: 'KP-DEMO-T-02', verification: 'face-id' },
+      { id: 'v3', referralId: 'r5', date: relativeDate(date, -2), minutes: 120, evidence: 'OH-DEMO-T-03', verification: 'face-id' },
     ],
     findings: [
       { id: 's1', placementId: 'p2', date: previous, kind: 'inspection', note: 'Jihoz inventarini yangilash', due: relativeDate(date, -1), status: 'open' },
@@ -72,4 +73,71 @@ export function createDemoData(): CenterState {
       { id: 'f3', visitId: 'v3', kind: 'subsidy', amount: 105_000, reference: 'DEMO-S-03', status: 'calculated' },
     ],
   }
+  addMonitoringExamples(data, date)
+  return data
+}
+
+function addMonitoringExamples(data: CenterState, date: string) {
+  const since = relativeDate(date, -28)
+  const sites = [
+    { id: 'buxoro', region: 'Buxoro viloyati', address: 'Buxoro shahri', programs: ['adult-rehab', 'family'] },
+    { id: 'samarqand', region: 'Samarqand viloyati', address: 'Samarqand shahri', programs: ['child-rehab', 'psychosocial'] },
+  ] as const
+  for (const site of sites) {
+    data.centers.push({
+      id: site.id, region: site.region, address: site.address, name: `${site.address} hududiy markazi`, director: 'Demo mas’ul', status: 'active',
+    })
+    site.programs.forEach((serviceId: ServiceId, index) => {
+      const id = `${site.id}-${index}`
+      data.rooms.push({ id, centerId: site.id, name: `${index + 1}-xizmat xonasi`, accessible: true, equipment: 'Mashg‘ulot jihozlari' })
+      data.placements.push({ id, roomId: id, serviceId, capacity: 9 + index * 3, schedule: 'Du–Ju · 09:00–17:00', operator: 'center' })
+    })
+  }
+  const live = data.placements.filter(item => item.id !== 'p6')
+  live.forEach((placement, index) => {
+    const voucher = placement.id === 'p2' ? 1 : 4 + index % 4
+    const paid = placement.id === 'p2' ? 1 : 2 + index % 3
+    if (placement.id !== 'samarqand-1') {
+      data.passports.push({
+        id: `demo-passport-${index}`, placementId: placement.id, voucher, paid, effectiveFrom: since,
+        createdBy: 'Demo operator', approvedBy: 'Demo kurator', approvedAt: `${since}T09:00:00Z`,
+      })
+    }
+    if (placement.id === 'p2') {
+      data.visits.push({ id: 'demo-daycare-today', referralId: 'r2', date, minutes: 360, evidence: 'NAM-CDC-TODAY', verification: 'face-id', confirmedBy: 'representative' })
+      return
+    }
+    const audience = placement.id === 'p5' ? 3 : 5
+    for (let person = 0; person < audience; person++) {
+      const id = `${placement.id}-mock-${person}`
+      const beneficiary = `NAM-${200 + index * 10 + person}`
+      const paidVisit = person >= Math.ceil(audience / 2)
+      data.referrals.push({
+        id, placementId: placement.id, beneficiary, residence: 'Demo hudud', issuer: paidVisit ? '' : 'Demo «Inson» markazi',
+        channel: paidVisit ? 'Hududiy markaz' : 'Inson markazi', funding: paidVisit ? 'paid' : 'preferential', reserveSeat: !paidVisit,
+        reference: `NAM-Y-${index}-${person}`, voucherRef: paidVisit ? undefined : `NAM-V-${index}-${person}`,
+        created: since, status: 'active',
+        plan: { goal: 'Kundalik faoliyat ko‘nikmalarini rivojlantirish', specialist: 'Demo mutaxassis', reviewDate: relativeDate(date, 12 + person) },
+        history: [{ date: since, label: referralLabels.active }],
+      })
+      for (let offset = 0; offset < 14; offset++) {
+        if ((offset + person * 2 + index * 3) % 9 >= (offset % 3) + 2) continue
+        const day = relativeDate(date, -offset)
+        const visitId = `visit-${id}-${offset}`
+        data.visits.push({
+          id: visitId, referralId: id, date: day, minutes: 60 + (index % 4) * 30, evidence: `NAM-T-${index}-${person}-${offset}`,
+          verification: 'face-id', confirmedBy: person % 3 === 0 ? 'representative' : 'beneficiary',
+          recordedBy: 'Demo operator', recordedAt: `${day}T05:30:00Z`,
+        })
+        if (offset % 3 === 0) data.finance.push({
+          id: `finance-${visitId}`, visitId, kind: paidVisit ? 'income' : 'subsidy', amount: 70_000 + index * 8_000,
+          reference: `NAM-M-${index}-${person}-${offset}`, status: offset > 4 ? 'paid' : offset === 0 ? 'calculated' : 'confirmed',
+        })
+      }
+    }
+    if (index > 2) data.findings.push({
+      id: `demo-feedback-${index}`, placementId: placement.id, date: relativeDate(date, -(index % 4)),
+      kind: 'feedback', status: 'closed', note: 'Demo qoniqish so‘rovi', score: index % 2 ? 5 : 4, due: '',
+    })
+  })
 }

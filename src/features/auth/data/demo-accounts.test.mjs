@@ -91,7 +91,20 @@ test('unknown, malformed and future-version sessions are rejected; legacy admini
   const admin = data.resolveDemoSession({ id: 'mock-user', username: 'admin', permissions: [] })
   assert.ok(admin)
   for (const account of data.demoModuleAccounts) assert.equal(data.canAccessDemoPath(admin, account.route), true)
-  assert.equal(admin.permissions.length, appModules.length + 1)
+  assert.deepEqual(new Set(admin.permissions), new Set([
+    'apps.view', ...appModules.map(module => module.permission), 'regional-centers.curate',
+  ]))
+})
+
+test('HIXM curator is scoped to the regional module and operators cannot restore curator permission', () => {
+  const curatorAccount = data.demoLoginAccounts.find(account => account.role === 'HIXM kuratori')
+  const curator = data.authenticateDemoModule(curatorAccount.username, curatorAccount.password)
+  assert.ok(curator.permissions.includes('regional-centers.curate'))
+  assert.equal(guard.canAccessDemoRoute(curator, router.resolve('/apps/regional-centers/capacity')), true)
+  assert.equal(guard.canAccessDemoRoute(curator, router.resolve('/apps/ei')), false)
+  const operator = data.demoModuleAccounts.find(account => account.moduleId === 'regional-centers')
+  const restored = data.resolveDemoSession({ version: 1, accountId: operator.id, permissions: curator.permissions })
+  assert.equal(restored.permissions.includes('regional-centers.curate'), false)
 })
 
 test('all actual module routes, including nested and generic routes without metadata, enforce module isolation', () => {
