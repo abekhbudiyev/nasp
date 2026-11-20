@@ -1,4 +1,4 @@
-import { createDemoData } from './demo'
+import { createDemoData, demoPersonProfiles } from './demo'
 import type { CenterState } from './model'
 
 export const regionalCenterStorageKey = 'nasp.regional-centers.demo.v1'
@@ -13,6 +13,7 @@ export function loadState(): CenterState {
   }
   const state = { ...parsed, staff: Array.isArray(parsed.staff) ? parsed.staff : [], passports: Array.isArray(parsed.passports) ? parsed.passports : [] }
   if (!Array.isArray(parsed.passports)) addExamplesToExistingDemo(state)
+  if (!Array.isArray(parsed.people)) state.people = demoPersonProfiles(state.referrals)
   return state
 }
 

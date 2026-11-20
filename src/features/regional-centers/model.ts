@@ -1,8 +1,8 @@
 export const services = [
   { id: 'early', title: 'Erta aralashuv', group: '3 yoshgacha bo‘lgan bolalar', source: 'Erta aralashuv', law: 'VMQ 271 va 539', url: 'https://lex.uz/uz/docs/-8218769#-8227496' },
   { id: 'daycare', title: 'Bolalar uchun kunduzgi parvarish', group: '3–18 yoshdagi nogironligi bo‘lgan bolalar', source: 'Kunduzgi parvarish', law: 'PQ-41 va VMQ 126', url: 'https://lex.uz/uz/docs/-7410361' },
-  { id: 'adult-rehab', title: 'Tibbiy-ijtimoiy reabilitatsiya', group: 'O‘zgalar parvarishiga muhtoj voyaga yetganlar', source: 'Oila hamkori', law: 'PQ-171 va VMQ 376', url: 'https://lex.uz/uz/docs/-7581160' },
-  { id: 'adult-day', title: 'Kattalar uchun kunduzgi qarab turish', group: 'O‘zgalar parvarishiga muhtoj voyaga yetganlar', source: 'Oila hamkori', law: 'PQ-171 va VMQ 376', url: 'https://lex.uz/uz/docs/-7581160' },
+  { id: 'adult-rehab', title: 'Tibbiy-ijtimoiy reabilitatsiya', program: 'Faol hayotga qadam', group: 'O‘zgalar parvarishiga muhtoj voyaga yetganlar', source: 'Oila hamkori', law: 'PQ-171 va VMQ 376', url: 'https://lex.uz/uz/docs/-7581160' },
+  { id: 'adult-day', title: 'Kattalar uchun kunduzgi qarab turish', program: 'Faol hayotga qadam', group: 'O‘zgalar parvarishiga muhtoj voyaga yetganlar', source: 'Oila hamkori', law: 'PQ-171 va VMQ 376', url: 'https://lex.uz/uz/docs/-7581160' },
   { id: 'protection', title: 'Bolalar uchun ijtimoiy moslashuv', group: 'Zo‘ravonlikdan jabrlangan yoki xavf ostidagi bolalar', source: 'Bolalarni himoya qilish', law: 'VMQ 48 va 555', url: 'https://lex.uz/uz/docs/-8045207' },
   { id: 'child-rehab', title: 'Bolalar abilitatsiyasi va reabilitatsiyasi', group: 'Ijtimoiy reyestrdagi oilalarning nogironligi bo‘lgan bolalari', source: 'Hududiy markaz / Ijtimoiy reyestr', law: 'VMQ 555', url: 'https://lex.uz/uz/docs/-8540128#-8542693' },
   { id: 'education', title: 'Ta’lim va kasbga o‘rgatish', group: 'Ta’lim xizmatiga ehtiyoji bo‘lgan shaxslar', source: 'Hududiy markaz / Ijtimoiy reyestr', law: 'VMQ 555', url: 'https://lex.uz/uz/docs/-8540128#-8542703' },
@@ -25,6 +25,17 @@ export type CarePlan = {
   disposition?: 'closed' | 'continued' | 'changed' | 'redirected'
 }
 export type History = { date: string; label: string }
+export type SetupStatus = 'active' | 'planned' | 'paused'
+export const setupStatusLabels: Record<SetupStatus, string> = {
+  active: 'Faol', planned: 'Rejada', paused: 'Vaqtincha yopilgan',
+}
+export const provinceNames = {
+  andijon: 'Andijon viloyati', namangan: 'Namangan viloyati', fargona: 'Farg‘ona viloyati',
+  karakalpakstan: 'Qoraqalpog‘iston Respublikasi', xorazm: 'Xorazm viloyati', navoiy: 'Navoiy viloyati',
+  surxondaryo: 'Surxondaryo viloyati', samarqand: 'Samarqand viloyati', 'toshkent-v': 'Toshkent viloyati',
+  sirdaryo: 'Sirdaryo viloyati', jizzax: 'Jizzax viloyati', buxoro: 'Buxoro viloyati',
+  qashqadaryo: 'Qashqadaryo viloyati', 'toshkent-sh': 'Toshkent shahri',
+} as const
 
 export interface Center {
   id: string
@@ -32,7 +43,12 @@ export interface Center {
   region: string
   address: string
   director: string
-  status: 'active' | 'planned'
+  status: SetupStatus
+  code?: string
+  district?: string
+  phone?: string
+  hours?: string
+  document?: string
 }
 
 export interface Room {
@@ -41,6 +57,11 @@ export interface Room {
   name: string
   accessible: boolean
   equipment: string
+  status?: SetupStatus
+  code?: string
+  floor?: string
+  area?: number
+  notes?: string
 }
 
 export interface StaffMember {
@@ -61,6 +82,9 @@ export interface Placement {
   schedule: string
   operator: 'center' | 'partner'
   providerId?: string
+  status?: SetupStatus
+  staffId?: string
+  sourceRef?: string
 }
 
 export interface ProviderApplication {
@@ -91,6 +115,16 @@ export interface Referral {
   plan?: CarePlan
   previousPlans?: CarePlan[]
   history: History[]
+}
+
+export interface PersonProfile {
+  id: string
+  fullName: string
+  birthDate?: string
+  residence?: string
+  identifierMasked?: string
+  phoneMasked?: string
+  representative?: { fullName: string; relationship: string; phoneMasked?: string }
 }
 
 export interface Visit {
@@ -152,6 +186,18 @@ export interface CenterState {
   passports: CapacityPassport[]
   findings: Finding[]
   finance: FinanceRecord[]
+  people?: PersonProfile[]
+  setupHistory?: SetupHistory[]
+}
+
+export interface SetupHistory {
+  id: string
+  at: string
+  actor: string
+  centerId: string
+  entity: string
+  label: string
+  changes: { label: string; from: string; to: string }[]
 }
 
 export const referralLabels: Record<ReferralStatus, string> = {
@@ -212,13 +258,17 @@ export function centerFor(state: CenterState, placementId: string) {
   return state.centers.find(item => item.id === room?.centerId)
 }
 
+export function reservesSeat(referral: Referral) {
+  return referral.reserveSeat !== false && (referral.status === 'referred' || referral.status === 'active')
+}
+
 export function seatsUsed(state: CenterState, placementId: string) {
-  return state.referrals.filter(item => item.placementId === placementId
-    && item.reserveSeat !== false
-    && (item.status === 'referred' || item.status === 'active')).length
+  return state.referrals.filter(item => item.placementId === placementId && reservesSeat(item)).length
 }
 
 export function isOperational(state: CenterState, placement: Placement, date = today()) {
+  if ((placement.status ?? 'active') !== 'active') return false
+  if ((state.rooms.find(item => item.id === placement.roomId)?.status ?? 'active') !== 'active') return false
   if (centerFor(state, placement.id)?.status !== 'active') return false
   if (placement.operator === 'center') return true
   const provider = state.providers.find(item => item.id === placement.providerId)

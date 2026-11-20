@@ -14,6 +14,7 @@ const viewportWidth = ref(typeof window === 'undefined' ? DESKTOP_SIDEBAR_BREAKP
 const sidebarOpen = ref(false)
 const sidebarCollapsed = ref(false)
 const showSidebar = computed(() => route.path !== '/apps')
+const fitViewport = computed(() => route.meta.moduleKey === 'regional-centers')
 const enableSidebarCollapse = computed(() => viewportWidth.value >= DESKTOP_SIDEBAR_BREAKPOINT)
 const effectiveSidebarCollapsed = computed(() => enableSidebarCollapse.value && sidebarCollapsed.value)
 
@@ -75,6 +76,7 @@ watch(showSidebar, (visible) => {
     :sidebar-open="sidebarOpen"
     :show-sidebar="showSidebar"
     :sidebar-collapsed="effectiveSidebarCollapsed"
+    :fit-viewport="fitViewport"
     @close-sidebar="closeSidebar"
   >
     <template

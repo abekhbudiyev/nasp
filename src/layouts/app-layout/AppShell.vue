@@ -3,6 +3,7 @@ defineProps<{
   sidebarOpen: boolean
   showSidebar: boolean
   sidebarCollapsed: boolean
+  fitViewport?: boolean
 }>()
 
 defineEmits<{
@@ -11,7 +12,8 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="ui-density min-h-screen overflow-x-hidden bg-background text-foreground xl:h-screen xl:overflow-hidden">
+  <div class="ui-density bg-background text-foreground"
+    :class="fitViewport ? 'h-dvh overflow-clip' : 'min-h-screen overflow-x-hidden xl:h-screen xl:overflow-hidden'">
     <div
       v-if="showSidebar && sidebarOpen"
       class="fixed inset-0 z-[80] bg-black/35 dark:bg-black/55 lg:hidden"
@@ -31,17 +33,18 @@ defineEmits<{
 
     <div
       :class="[
-        'flex min-h-screen flex-col overflow-visible xl:h-screen xl:overflow-hidden',
+        'flex flex-col',
+        fitViewport ? 'h-full overflow-clip' : 'min-h-screen overflow-visible xl:h-screen xl:overflow-hidden',
         showSidebar ? (sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64') : '',
       ]"
     >
-      <header class="sticky top-0 z-20">
+      <header class="sticky top-0 z-20 shrink-0">
         <div class="border-b border-border bg-background/95 backdrop-blur">
           <slot name="header" />
         </div>
       </header>
 
-      <main class="min-h-0 flex-1 overflow-visible xl:overflow-hidden">
+      <main class="min-h-0 flex-1" :class="fitViewport ? 'overflow-clip' : 'overflow-visible xl:overflow-hidden'">
         <slot />
       </main>
     </div>

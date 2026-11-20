@@ -1,12 +1,31 @@
 import {
-  centerFor, closeReferral, fillVacancies, isOperational, rejectReferral, seatsUsed, services, today,
+  centerFor, closeReferral, isOperational, rejectReferral, seatsUsed, services, today,
 } from './model'
 import type {
-  CarePlan, Center, CenterState, FinanceRecord, Finding, Placement, ProviderApplication, Referral, Room, ServiceId, StaffMember,
+  CarePlan, Center, CenterState, FinanceRecord, Finding, Placement, ProviderApplication, Referral, Room, ServiceId, SetupStatus, StaffMember,
 } from './model'
+import { approvedPassport, isPendingPassport } from './attendance'
 
 export type Editor = 'center' | 'room' | 'staff' | 'placement' | 'provider' | 'decision' | 'lease'
   | 'referral' | 'plan' | 'reject' | 'close' | 'finding' | 'resolve' | 'finance'
+
+export function placementSourceKey(serviceId: ServiceId) {
+  return services.find(service => service.id === serviceId)?.source ?? ''
+}
+
+function validateSetupStatus(value: string): SetupStatus {
+  if (value !== 'active' && value !== 'planned' && value !== 'paused') throw new Error('Holatni tanlang.')
+  return value
+}
+
+function preventClosing(data: CenterState, placements: Placement[]) {
+  const ids = new Set(placements.map(item => item.id))
+  if (data.referrals.some(item => ids.has(item.placementId) && !['closed', 'rejected'].includes(item.status))) {
+    throw new Error('Ochiq yo‘llanmalari bor xizmatni yopib bo‘lmaydi. Avval manba tizimida yo‘llanmalarni hal qiling.')
+  }
+}
+
+const normalized = (value?: string) => value?.trim().toLocaleLowerCase('uz') ?? ''
 
 export function applyEditor(data: CenterState, activeEditor: Editor, id: string, values: Record<string, string>) {
   const get = (key: string) => values[key] ?? ''
@@ -14,21 +33,27 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
   switch (activeEditor) {
     case 'center': {
       const existing = data.centers.find(item => item.id === id)
-      const status = get('status') as Center['status']
-      if (status === 'planned' && data.placements.some(item =>
-        centerFor(data, item.id)?.id === id && seatsUsed(data, item.id) > 0)) {
-        throw new Error('Band o‘rinlari bor markazni reja holatiga o‘tkazib bo‘lmaydi.')
+      const status = validateSetupStatus(get('status'))
+      const code = get('code')
+      if (code && data.centers.some(item => item.id !== id && normalized(item.code) === normalized(code))) {
+        throw new Error('Ushbu markaz kodi band.')
       }
-      const record: Center = { id, name: get('name'), region: get('region'), address: get('address'), director: get('director'), status }
+      if (existing?.status !== status && status !== 'active') {
+        preventClosing(data, data.placements.filter(item => centerFor(data, item.id)?.id === id))
+      }
+      const record: Center = {
+        id, name: get('name'), region: get('region'), address: get('address'), director: get('director'), status,
+        code, district: get('district'), phone: get('phone'), hours: get('hours'), document: get('document'),
+      }
       if (existing) Object.assign(existing, record)
       else data.centers.push(record)
-      data.placements.filter(item => centerFor(data, item.id)?.id === id)
-        .forEach(item => fillVacancies(data, item.id))
       break
     }
     case 'room': {
       const existing = data.rooms.find(item => item.id === id)
       const centerId = get('centerId')
+      const status = validateSetupStatus(get('status') || 'active')
+      const code = get('code')
       if (!data.centers.some(center => center.id === centerId)) throw new Error('Markaz topilmadi.')
       if (existing && existing.centerId !== centerId && data.placements.some(item => item.roomId === id)) {
         throw new Error('Xizmat biriktirilgan xonani boshqa markazga ko‘chirib bo‘lmaydi.')
@@ -36,7 +61,18 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
       if (data.rooms.some(item => item.id !== id && item.centerId === centerId && item.name.toLowerCase() === get('name').toLowerCase())) {
         throw new Error('Bu markazda shu nomli xona mavjud.')
       }
-      const record: Room = { id: existing?.id ?? crypto.randomUUID(), centerId, name: get('name'), accessible: get('accessible') === 'yes', equipment: get('equipment') }
+      if (code && data.rooms.some(item => item.id !== id && item.centerId === centerId && normalized(item.code) === normalized(code))) {
+        throw new Error('Bu kod shu markazdagi boshqa xonaga tegishli.')
+      }
+      if ((existing?.status ?? 'active') !== status && status !== 'active') {
+        preventClosing(data, data.placements.filter(item => item.roomId === id))
+      }
+      const area = get('area') ? Number(get('area')) : undefined
+      if (area !== undefined && (!Number.isFinite(area) || area <= 0)) throw new Error('Xona maydoni musbat son bo‘lishi kerak.')
+      const record: Room = {
+        id, centerId, name: get('name'), accessible: get('accessible') === 'yes', equipment: get('equipment'),
+        status, code, floor: get('floor'), area, notes: get('notes'),
+      }
       if (existing) Object.assign(existing, record)
       else data.rooms.push(record)
       break
@@ -46,8 +82,12 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
       const centerId = get('centerId')
       if (!data.centers.some(center => center.id === centerId)) throw new Error('Markaz topilmadi.')
       const record: StaffMember = {
-        id: existing?.id ?? crypto.randomUUID(), centerId, name: get('name'), position: get('position'),
+        id, centerId, name: get('name'), position: get('position'),
         qualification: get('qualification'), validUntil: get('validUntil'), active: get('active') === 'yes',
+      }
+      if (existing && data.placements.some(item => item.staffId === id
+        && (existing.centerId !== centerId || (!record.active && isOperational(data, item))))) {
+        throw new Error('Avval bog‘langan xizmat joylarida boshqa mas’ul xodimni belgilang.')
       }
       if (existing) Object.assign(existing, record)
       else data.staff.push(record)
@@ -58,8 +98,11 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
       const record: Placement = {
         id, roomId: get('roomId'), serviceId: get('serviceId') as ServiceId, capacity: Number(get('capacity')),
         schedule: get('schedule'), operator: get('operator') as Placement['operator'], providerId: existing?.providerId,
+        status: validateSetupStatus(get('status') || 'active'), staffId: get('staffId'), sourceRef: get('sourceRef'),
       }
-      if (!data.rooms.some(item => item.id === record.roomId) || !services.some(item => item.id === record.serviceId)) {
+      if (record.operator !== 'center' && record.operator !== 'partner') throw new Error('Xizmat ko‘rsatuvchini tanlang.')
+      const room = data.rooms.find(item => item.id === record.roomId)
+      if (!room || !services.some(item => item.id === record.serviceId)) {
         throw new Error('Xona va xizmatni tanlang.')
       }
       if (!Number.isInteger(record.capacity) || record.capacity < 1 || record.capacity > 10_000) {
@@ -68,18 +111,36 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
       if (record.operator === 'center' && ['early', 'daycare', 'protection'].includes(record.serviceId)) {
         throw new Error('Bu xizmat uchun huquqi tasdiqlangan nodavlat ko‘rsatuvchi biriktiriladi.')
       }
-      if (data.placements.some(item => item.id !== id && item.roomId === record.roomId)) {
-        throw new Error('Bu xonaga xizmat joyi biriktirilgan.')
+      if (data.placements.some(item => item.id !== id && item.roomId === record.roomId && item.serviceId === record.serviceId)) {
+        throw new Error('Bu xizmat tanlangan xonaga allaqachon biriktirilgan.')
+      }
+      if (record.staffId && !data.staff.some(item => item.id === record.staffId && item.centerId === room.centerId && item.active)) {
+        throw new Error('Tanlangan markazning faol mas’ul xodimini belgilang.')
+      }
+      if (record.sourceRef && data.placements.some(item => item.id !== id
+        && placementSourceKey(item.serviceId) === placementSourceKey(record.serviceId)
+        && normalized(item.sourceRef) === normalized(record.sourceRef))) {
+        throw new Error('Bu tashqi identifikator ushbu manbada boshqa xizmat joyiga bog‘langan.')
+      }
+      if (existing && (existing.status ?? 'active') !== record.status && record.status !== 'active') {
+        preventClosing(data, [existing])
       }
       if (record.capacity < seatsUsed(data, id)) throw new Error('Quvvat band o‘rinlardan kam bo‘lishi mumkin emas.')
       const hasHistory = data.referrals.some(item => item.placementId === id) || data.providers.some(item => item.placementId === id)
-        || data.findings.some(item => item.placementId === id)
+        || data.findings.some(item => item.placementId === id) || data.passports.some(item => item.placementId === id)
+      if (existing && record.capacity < existing.capacity) {
+        const current = approvedPassport(data, id, date)
+        const conflicting = data.passports.some(item => item.placementId === id
+          && (item.id === current?.id || (item.effectiveFrom > date && !!item.approvedAt)
+            || (item.effectiveFrom >= date && isPendingPassport(item)))
+          && item.voucher + item.paid > record.capacity)
+        if (conflicting) throw new Error('Quvvat amaldagi yoki rejalashtirilgan kvotadan kam bo‘lishi mumkin emas.')
+      }
       if (existing && hasHistory && (record.roomId !== existing.roomId || record.serviceId !== existing.serviceId || record.operator !== existing.operator)) {
         throw new Error('Bog‘langan yozuvlar bor. Boshqa xona, xizmat yoki ijrochi uchun yangi xizmat joyi oching.')
       }
       if (existing) Object.assign(existing, record)
       else data.placements.push(record)
-      fillVacancies(data, id)
       break
     }
     case 'provider': {
@@ -97,7 +158,7 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
       const placement = data.placements.find(row => row.id === item?.placementId)
       if (!item || !placement || item.status !== 'new') throw new Error('Talabgor qayta ko‘rib chiqilmaydi.')
       const status = get('status') as ProviderApplication['status']
-      if (status === 'registered' && placement.providerId) throw new Error('Bu xona bo‘yicha ko‘rsatuvchi tanlangan.')
+      if (status === 'registered' && placement.providerId) throw new Error('Bu xizmat joyi bo‘yicha ko‘rsatuvchi tanlangan.')
       if (hasCompetition(data, item)) {
         const group = [get('director'), get('member1'), get('member2')]
         if (group.some(member => !member) || new Set(group.map(member => member.toLowerCase())).size !== 3) {
@@ -122,7 +183,6 @@ export function applyEditor(data: CenterState, activeEditor: Editor, id: string,
         throw new Error('Band o‘rinlari bor xizmat joyining faol ijara davrini saqlang.')
       }
       item.lease = { number: get('number'), from: get('from'), to: get('to'), started: started || undefined }
-      fillVacancies(data, item.placementId)
       break
     }
     case 'referral': {

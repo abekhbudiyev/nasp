@@ -16,11 +16,11 @@ export interface DailyVisit {
   confirmations: Visit[]
 }
 
-export function dailyVisits(state: CenterState) {
+export function dailyVisits(state: CenterState, visits: readonly Visit[] = state.visits) {
   const referrals = new Map(state.referrals.map(item => [item.id, item]))
   const placements = new Map(state.placements.map(item => [item.id, item]))
   const days = new Map<string, DailyVisit>()
-  for (const visit of state.visits) {
+  for (const visit of visits) {
     const referral = referrals.get(visit.referralId)
     const placement = placements.get(referral?.placementId ?? '')
     if (!referral || !placement) continue
@@ -67,10 +67,12 @@ function validDate(value: string) {
 export function draftPassport(state: CenterState, actor: RegionalActor, values: {
   placementId: string; voucher: number; paid: number; effectiveFrom: string
 }) {
-  if (!state.placements.some(item => item.id === values.placementId)) throw new Error('Xizmat joyini tanlang.')
+  const placement = state.placements.find(item => item.id === values.placementId)
+  if (!placement) throw new Error('Xizmat joyini tanlang.')
   const quantities = [values.voucher, values.paid]
   if (quantities.some(value => !Number.isInteger(value) || value < 0 || value > 10_000)
     || values.voucher + values.paid === 0) throw new Error('Kvotalarni to‘g‘ri kiriting. Jami kamida bitta o‘rin bo‘lishi kerak.')
+  if (values.voucher + values.paid > placement.capacity) throw new Error('Jami kvota xizmat joyining quvvatidan oshishi mumkin emas.')
   if (!validDate(values.effectiveFrom) || values.effectiveFrom < today()) throw new Error('Amal qilish sanasi bugundan oldin bo‘lishi mumkin emas.')
   if (state.passports.some(item => item.placementId === values.placementId && isPendingPassport(item))) {
     throw new Error('Bu xizmat joyi uchun tasdiqlash kutilayotgan pasport bor.')
@@ -88,6 +90,10 @@ export function decidePassport(state: CenterState, actor: RegionalActor, id: str
     return
   }
   if (item.effectiveFrom < today()) throw new Error('Pasport sanasi o‘tgan. Yangi loyiha kiriting.')
+  const placement = state.placements.find(row => row.id === item.placementId)
+  if (!placement || item.voucher + item.paid > placement.capacity) {
+    throw new Error('Jami kvota joriy quvvatga mos kelmaydi. Pasportni rad etib, yangisini yuboring.')
+  }
   item.approvedAt = new Date().toISOString()
   item.approvedBy = actor.name
 }

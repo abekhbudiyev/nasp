@@ -12,7 +12,7 @@ import { transportBenefitsMenu } from '@/features/transport-benefits/config'
 import { ptpkMenu } from '@/features/ptpk/config'
 import { socialBenefitsMenu, socialBenefitsMenuGroups } from '@/features/social-benefits/config'
 import { governanceMenu } from '@/features/project-governance/config'
-import { regionalCenterMenuGroups } from '@/features/regional-centers/config'
+import { modulePath as regionalModulePath, regionalAdministrationPages, regionalAdministrationPath, regionalCenterMenuGroups } from '@/features/regional-centers/config'
 import { palliativeMenu, palliativeMenuGroups } from '@/features/palliative-care/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
@@ -192,6 +192,10 @@ function sidebarTitle(item: MuruvvatMenuItem) {
 function isActive(path: string) {
   if (route.path === path) {
     return true
+  }
+
+  if (path === regionalAdministrationPath) {
+    return regionalAdministrationPages.some(page => route.path === regionalModulePath + page.path)
   }
 
   if (['/apps/ptpk/cases', '/apps/palliative-care/cases'].includes(path) && route.path.startsWith(`${path}/`)) {
