@@ -1,3 +1,5 @@
+import { toUzbekCyrillic } from "../../shared/uzbek-script";
+export { toUzbekCyrillic };
 import type { QuestionnaireTranslations } from "./questionnaire-languages";
 
 type QuestionTranslationSeed = {
@@ -2469,94 +2471,6 @@ export const assessmentQuestionTranslationSeeds: Record<
       "«Hámmesi» mánisin túsinip, barlıq qálemler soralǵanda olardıń hámmesin beredi",
   },
 };
-
-const latinDigraphs: Array<[string, string]> = [
-  ["O‘", "Ў"],
-  ["O'", "Ў"],
-  ["o‘", "ў"],
-  ["o'", "ў"],
-  ["G‘", "Ғ"],
-  ["G'", "Ғ"],
-  ["g‘", "ғ"],
-  ["g'", "ғ"],
-  ["Sh", "Ш"],
-  ["sh", "ш"],
-  ["Ch", "Ч"],
-  ["ch", "ч"],
-  ["Ng", "Нг"],
-  ["ng", "нг"],
-  ["Yo", "Ё"],
-  ["yo", "ё"],
-  ["Yu", "Ю"],
-  ["yu", "ю"],
-  ["Ya", "Я"],
-  ["ya", "я"],
-];
-
-const latinCharacters: Record<string, string> = {
-  A: "А",
-  a: "а",
-  B: "Б",
-  b: "б",
-  D: "Д",
-  d: "д",
-  E: "Е",
-  e: "е",
-  F: "Ф",
-  f: "ф",
-  G: "Г",
-  g: "г",
-  H: "Ҳ",
-  h: "ҳ",
-  I: "И",
-  i: "и",
-  J: "Ж",
-  j: "ж",
-  K: "К",
-  k: "к",
-  L: "Л",
-  l: "л",
-  M: "М",
-  m: "м",
-  N: "Н",
-  n: "н",
-  O: "О",
-  o: "о",
-  P: "П",
-  p: "п",
-  Q: "Қ",
-  q: "қ",
-  R: "Р",
-  r: "р",
-  S: "С",
-  s: "с",
-  T: "Т",
-  t: "т",
-  U: "У",
-  u: "у",
-  V: "В",
-  v: "в",
-  X: "Х",
-  x: "х",
-  Y: "Й",
-  y: "й",
-  Z: "З",
-  z: "з",
-};
-
-export function toUzbekCyrillic(value: string) {
-  let result = value
-    .replace(/(^|[\s([{"«“])E/g, "$1Э")
-    .replace(/(^|[\s([{"«“])e/g, "$1э");
-
-  latinDigraphs.forEach(([latin, cyrillic]) => {
-    result = result.split(latin).join(cyrillic);
-  });
-
-  return [...result]
-    .map((character) => latinCharacters[character] ?? character)
-    .join("");
-}
 
 export function getSeededQuestionTranslations(
   questionId: string,

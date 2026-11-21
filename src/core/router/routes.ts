@@ -1,7 +1,6 @@
-import { platformViews } from '@/features/social-benefits/platform-demo'
 import type { RouteRecordRaw } from 'vue-router'
 import { eiProductionRoutes } from '@/features/ei/routes'
-import { socialBenefitsPages, socialBenefitsPlatformPage, socialTransportPages } from '@/features/social-benefits/config'
+import { platformPath, platformTitle, platformViews } from '@/features/social-benefits/config'
 import { governancePages } from '@/features/project-governance/config'
 import { modulePath, moduleTitle, regionalCenterPages } from '@/features/regional-centers/config'
 
@@ -61,15 +60,8 @@ export const routes: RouteRecordRaw[] = [
           breadcrumb: ['Ilovalar', moduleTitle, page.title],
         },
       })),
-      { path: 'apps/social-benefits/vouchers', redirect: to => {
-        const { voucherType, ...query } = to.query
-        return { path: '/apps/social-benefits/vouchers/' + (voucherType === 'kindergarten' ? 'kindergarten' : 'education'), query }
-      } },
-      { path: 'apps/social-benefits/flow', redirect: '/apps/social-benefits/risks' },
-      { path: 'apps/social-benefits/integrations', redirect: '/apps/social-benefits/coverage' },
-      { path: 'apps/social-benefits/rollout', redirect: { name: 'social-benefits-platform' } },
       ...platformViews.map(view => ({
-        path: 'apps/social-benefits' + view.path,
+        path: (platformPath + view.path).slice(1),
         name: 'social-benefits-' + view.key,
         component: () => import('@/features/social-benefits/pages/SocialSupportPlatform.vue'),
         props: { view: view.key },
@@ -77,23 +69,19 @@ export const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           permission: 'social-benefits.view' as const,
           moduleKey: 'social-benefits',
-          moduleTitle: 'Ijtimoiy imtiyozlar moduli',
-          title: view.key === 'platform' ? socialBenefitsPlatformPage.title : view.title,
-          breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar moduli', view.title],
+          moduleTitle: platformTitle,
+          title: view.key === 'platform' ? platformTitle : view.title,
+          breadcrumb: ['Ilovalar', platformTitle, view.title],
         },
       })),
-      ...socialBenefitsPages.map(page => ({
-        path: 'apps/social-benefits' + page.path, name: 'social-benefits-' + page.key,
-        component: () => import('@/features/social-benefits/pages/SocialBenefitsPage.vue'), props: { pageKey: 'voucherType' in page ? 'vouchers' : page.key, voucherType: 'voucherType' in page ? page.voucherType : undefined },
-        meta: { requiresAuth: true, permission: 'social-benefits.view' as const, moduleKey: 'social-benefits', moduleTitle: 'Ijtimoiy imtiyozlar moduli', title: page.title, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar moduli', page.title] },
-      })),
-      { path: 'apps/social-benefits/transport', redirect: '/apps/social-benefits/transport/contingents' },
-      { path: 'apps/social-benefits/transport/references', redirect: '/apps/social-benefits/transport/references/categories' },
-      ...socialTransportPages.map(page => ({
-        path: page.route.slice(1), name: 'social-benefits-transport-' + page.key,
-        component: TransportBenefitsPage, props: { pageKey: page.key },
-        meta: { requiresAuth: true, permission: 'social-benefits.view' as const, moduleKey: 'social-benefits', moduleTitle: 'Ijtimoiy imtiyozlar moduli', title: page.title, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar moduli', 'Transport', page.title] },
-      })),
+      { path: 'apps/social-benefits/:legacy(overview|rollout)', redirect: platformPath },
+      { path: 'apps/social-benefits/:legacy(catalog|matrix|contingents)', redirect: platformPath + '/registry' },
+      { path: 'apps/social-benefits/:legacy(risks|eligibility)', redirect: platformPath + '/control' },
+      { path: 'apps/social-benefits/usage', redirect: platformPath + '/finance' },
+      { path: 'apps/social-benefits/people', redirect: platformPath + '/citizens' },
+      { path: 'apps/social-benefits/flow', redirect: platformPath + '/execution' },
+      { path: 'apps/social-benefits/:legacy(coverage|integrations)', redirect: platformPath + '/about' },
+      { path: 'apps/social-benefits/:legacy(vouchers|transport)/:rest(.*)*', redirect: platformPath + '/registry' },
       ...governancePages.map((page) => ({
         path: `apps/project-governance${page.path}`,
         name: `project-governance-${page.key}`,

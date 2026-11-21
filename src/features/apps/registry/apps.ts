@@ -32,7 +32,7 @@ export const appModules: AppModule[] = [
     permission: 'regional-centers.view',
     hasInternalNavigation: true,
   },
-  { id: 'social-benefits', title: 'Ijtimoiy imtiyozlar moduli', description: 'Barcha kontingentlar va imtiyozlar yagona katalogi, muvofiqlik tekshiruvi va foydalanish monitoringi.', route: '/apps/social-benefits', icon: Shield, enabled: true, permission: 'social-benefits.view', hasInternalNavigation: true },
+  { id: 'social-benefits', title: 'Yagona ijtimoiy platforma', description: 'Davlat ijtimoiy yordami, xizmatlari va imtiyozlarining yagona hisobi, tahlili hamda fuqaro va oila pasporti.', route: '/apps/social-benefits', icon: Shield, enabled: true, permission: 'social-benefits.view', hasInternalNavigation: true },
   {
     id: 'project-governance',
     title: 'Loyihalarni boshqarish',

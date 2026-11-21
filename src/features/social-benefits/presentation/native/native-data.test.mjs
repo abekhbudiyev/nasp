@@ -29,5 +29,32 @@ test('annual family amount matches the passport reference and source funds are n
 test('platform renders native Vue panels and never embeds source HTML',()=>{
  const ui=read('../../pages/SocialSupportPlatform.vue')
  assert.ok(!/<iframe|srcdoc|platform\.html\?raw|v-html/.test(ui))
- for(const component of ['RegistryPanel','FamilyPanel','AuditPanel','FinancialPanel','ExecutionFlow'])assert.ok(ui.includes('<'+component))
+ for(const component of ['RegistryPanel','FamilyPanel','AuditPanel','FinancialPanel','LiveOperations','ReportPanel'])assert.ok(ui.includes('<'+component))
+})
+test('recipient profiles and monthly sample records retain source values',()=>{
+ const source=vm.runInNewContext(original[4]+';REAL',{}, {timeout:1000})
+ assert.deepEqual(data.recipientDistribution,JSON.parse(JSON.stringify(source.dist)))
+ const members=data.families.flatMap(f=>f.members)
+ assert.ok(members.some(m=>m.allowances.length>1))
+ for(const member of members)for(const [type,values] of member.allowances){
+   assert.ok(data.benefitTypes[type])
+   assert.equal(values.length,12)
+   assert.ok(values.every(Number.isFinite))
+ }
+})
+
+test('workbook measures retain row identity, separate reporting periods and unreported values',()=>{
+ const source=JSON.parse(read('svod-data.json'))
+ assert.equal(source.rows.length,577)
+ assert.equal(new Set(source.rows.map(r=>r.row)).size,577)
+ const linked=source.rows.flatMap(r=>r.registryIds)
+ assert.equal(new Set(linked).size,linked.length)
+ const registry=new Set(data.registry.map(r=>r.id))
+ assert.ok(linked.every(id=>registry.has(id)))
+ assert.deepEqual(source.rows.find(r=>r.row===8).figures,[1058,7902.23,49,398.62])
+ assert.deepEqual(source.rows.find(r=>r.row===7).figures,[null,null,null,null])
+ assert.deepEqual([0,2].map(i=>source.rows.filter(r=>r.figures[i]!==null&&r.figures[i+1]!==null).length),[101,97])
+ const rows=new Set(source.rows.map(r=>r.row))
+ assert.ok(source.proposals.every(p=>p.masterRow===null||rows.has(p.masterRow)))
+ assert.equal(source.proposals.length,290)
 })

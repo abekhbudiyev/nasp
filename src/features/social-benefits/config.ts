@@ -1,47 +1,38 @@
-import { transportBenefitsMenu, transportBenefitsPages } from '@/features/transport-benefits/config'
-import { LayoutDashboard, BookOpen, Users, ShieldCheck, Activity, Ticket, FileBarChart, Table2, ShieldAlert, Database, Landmark } from 'lucide-vue-next'
+import { Landmark, LayoutDashboard, ChartColumn, MapPin, Users, BookOpen, UserRound, ShieldCheck, FileSpreadsheet, Activity, Settings, Briefcase, Smartphone } from 'lucide-vue-next'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
-export const socialBenefitsPlatformPage = { key: 'platform', title: 'Yagona ijtimoiy platforma', path: '' }
-export const socialBenefitsPages = [
- { key: 'overview', title: 'Umumiy monitoring', path: '/overview' },
- { key: 'risks', title: 'Risklar va maqbullashtirish', path: '/risks' },
- { key: 'coverage', title: 'Tekshirish imkoniyatlari', path: '/coverage' },
- { key: 'matrix', title: 'Kontingent va imtiyozlar matritsasi', path: '/matrix' },
- { key: 'catalog', title: 'Imtiyozlar katalogi', path: '/catalog' },
- { key: 'contingents', title: 'Kontingentlar', path: '/contingents' },
- { key: 'people', title: 'Shaxslar reyestri', path: '/people' },
- { key: 'eligibility', title: 'Muvofiqlikni tekshirish', path: '/eligibility' },
- { key: 'usage', title: 'Foydalanish monitoringi', path: '/usage' },
- { key: 'kindergarten-vouchers', title: 'Bog‘cha vaucherlari', path: '/vouchers/kindergarten', voucherType: 'kindergarten' as const },
- { key: 'education-vouchers', title: 'Qo‘shimcha ta’lim va yo‘lkira', path: '/vouchers/education', voucherType: 'education' as const },
- { key: 'reports', title: 'Hisobot konstruktori', path: '/reports' },
-]
-const icons = [LayoutDashboard, ShieldAlert, Database, Table2, BookOpen, Users, Users, ShieldCheck, Activity, Ticket, Ticket, FileBarChart]
-export const socialTransportPages = transportBenefitsPages.map(page=>({ ...page, route:page.key==='dashboard'?'/apps/social-benefits/transport/overview':page.route.replace('/apps/transport-benefits','/apps/social-benefits/transport') }))
-const transportItems=transportBenefitsMenu.filter(item=>!!item.route)
-export const socialTransportMenu: MuruvvatMenuItem[] = transportItems.map(item=>({...item,id:'transport-'+item.id,route:item.route?.replace('/apps/transport-benefits','/apps/social-benefits/transport'),icon:item.icon??BookOpen}))
-export const socialBenefitsMenu: MuruvvatMenuItem[] = [
- { id: socialBenefitsPlatformPage.key, title: socialBenefitsPlatformPage.title, route: '/apps/social-benefits', icon: Landmark },
- ...socialBenefitsPages.map((p,i)=>({ id:p.key,title:p.title,route:'/apps/social-benefits'+p.path,icon:icons[i] })),
-]
 
+export const platformTitle = 'Davlat ijtimoiy qo‘llab-quvvatlash choralarining yagona platformasi'
+export const platformPath = '/apps/social-benefits'
 
+export const platformViews = [
+  { key: 'platform', path: '', tab: 'overview', title: 'Umumiy ko‘rinish' },
+  { key: 'registry', path: '/registry', tab: 'registry', title: 'Idoralar va choralar' },
+  { key: 'finance', path: '/finance', tab: 'finance', title: 'Choralar tahlili' },
+  { key: 'regions', path: '/regions', tab: 'finance', cut: 'regions', title: 'Hududlar' },
+  { key: 'citizens', path: '/citizens', tab: 'finance', cut: 'people', title: 'Fuqarolar kesimi' },
+  { key: 'platform-family', path: '/family', tab: 'family', title: 'Fuqaro va oila pasporti' },
+  { key: 'platform-control', path: '/control', tab: 'audit', title: 'Nazorat markazi' },
+  { key: 'services', path: '/services', tab: 'services', title: 'Huquqlar va xizmatlar' },
+  { key: 'platform-execution', path: '/execution', tab: 'flow', title: 'Ijro oqimi' },
+  { key: 'reports', path: '/reports', tab: 'reports', title: 'Hisobotlar' },
+  { key: 'benefit-figures', path: '/benefit-figures', tab: 'svod', title: 'Imtiyozlar hisoboti' },
+  { key: 'benefit-proposals', path: '/benefit-proposals', tab: 'proposals', title: 'Taklif va qaydlar' },
+  { key: 'cabinet', path: '/cabinet', tab: 'family', title: 'Fuqaro kabineti' },
+  { key: 'about', path: '/about', tab: 'about', title: 'Platforma haqida' },
+] as const
 
+const groups = [
+  { id: 'analytics', title: 'Monitoring va hisobotlar', pages: [['platform', LayoutDashboard], ['finance', ChartColumn], ['regions', MapPin], ['citizens', Users], ['reports', FileSpreadsheet], ['benefit-figures', FileSpreadsheet]] },
+  { id: 'service', title: 'Fuqarolarga xizmat', pages: [['platform-family', UserRound], ['services', Briefcase], ['cabinet', Smartphone]] },
+  { id: 'management', title: 'Boshqaruv', pages: [['registry', BookOpen], ['benefit-proposals', Briefcase], ['platform-control', ShieldCheck], ['platform-execution', Activity], ['about', Settings]] },
+] as const
 
-
-
-const socialMenuItem = (id: string, title?: string): MuruvvatMenuItem => {
- const item = socialBenefitsMenu.find(item => item.id === id)
- if (!item) throw new Error(`Sidebar sahifasi topilmadi: ${id}`)
- return { ...item, title: title ?? item.title }
-}
-export const socialBenefitsMenuGroups = [
- { id: 'platform', title: '', items: [socialMenuItem('platform')] },
- { id: 'analytics', title: 'Tahliliy boshqaruv', items: [socialMenuItem('overview'), socialMenuItem('risks', 'Risklar va takliflar'), socialMenuItem('matrix', 'Imtiyozlar matritsasi')] },
- { id: 'main', title: 'Asosiy sahifalar', items: [socialMenuItem('people'), socialMenuItem('usage', 'Foydalanish holatlari')] },
- { id: 'vouchers', title: 'Vaucherlar', items: [socialMenuItem('kindergarten-vouchers'), socialMenuItem('education-vouchers')] },
- { id: 'transport', title: 'Transport', items: socialTransportMenu },
- { id: 'tools', title: 'Yordamchi sahifalar', items: [socialMenuItem('eligibility', 'Muvofiqlik tekshiruvi')] },
- { id: 'reports', title: 'Hisobotlar', items: [socialMenuItem('reports')] },
- { id: 'settings', title: 'Sozlamalar', items: [socialMenuItem('catalog'), socialMenuItem('contingents'), socialMenuItem('coverage', 'Manbalar va tekshiruvlar')] },
-]
+export const socialBenefitsMenuGroups = groups.map(group => ({
+  id: group.id,
+  title: group.title,
+  items: group.pages.map(([id, icon]): MuruvvatMenuItem => {
+    const view = platformViews.find(item => item.key === id)!
+    return { id, title: view.title, route: platformPath + view.path, icon: icon ?? Landmark }
+  }),
+}))
+export const socialBenefitsMenu = socialBenefitsMenuGroups.flatMap(group => group.items)

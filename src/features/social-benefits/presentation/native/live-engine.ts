@@ -2,7 +2,7 @@ export type EventStatus = 'processing' | 'delivered' | 'duplicate' | 'returned' 
 export type Scenario = 'normal' | 'duplicates' | 'invalid' | 'delay'
 export interface LiveEvent {id:number;region:number;agency:number;amount:number;kind:'payment'|'service'|'benefit';outcome:'delivered'|'duplicate'|'returned'|'waiting';stage:number;status:EventStatus;created:number;updated:number;resolved:boolean}
 export interface LiveState {tick:number;nextId:number;events:LiveEvent[]}
-export const statuses: {key:EventStatus;label:string;color:string}[]=[{key:'processing',label:'Jarayonda',color:'blue'},{key:'delivered',label:'Kabinetga yetdi',color:'green'},{key:'duplicate',label:'Takror ajratildi',color:'amber'},{key:'returned',label:'Tuzatishga qaytdi',color:'red'},{key:'waiting',label:'Idora kutilmoqda',color:'purple'}]
+export const statuses: {key:EventStatus;label:string;color:string}[]=[{key:'processing',label:'Jarayonda',color:'blue'},{key:'delivered',label:'Ijro yakunlandi',color:'green'},{key:'duplicate',label:'Takroriy so‘rov rad etildi',color:'amber'},{key:'returned',label:'Idoraga qaytarildi',color:'red'},{key:'waiting',label:'Ijro tasdig‘i kutilmoqda',color:'purple'}]
 export function freshState():LiveState{return {tick:0,nextId:1,events:[]}}
 export function advance(current:LiveState,scenario:Scenario,inject=true):LiveState{
  const tick=current.tick+1
@@ -25,3 +25,11 @@ export function advance(current:LiveState,scenario:Scenario,inject=true):LiveSta
 }
 export function acknowledge(current:LiveState,id:number):LiveState{return {...current,events:current.events.map(item=>item.id===id&&item.status==='waiting'?{...item,status:'processing',resolved:true,updated:current.tick}:item)}}
 export function summarize(events:LiveEvent[]){const counts={processing:0,delivered:0,duplicate:0,returned:0,waiting:0};let deliveredAmount=0,duplicateAmount=0;for(const item of events){counts[item.status]++;if(item.status==='delivered')deliveredAmount+=item.amount;if(item.status==='duplicate')duplicateAmount+=item.amount}return {...counts,received:events.length,deliveredAmount,duplicateAmount,regions:new Set(events.map(x=>x.region)).size}}
+
+// A fixed example batch shared by the overview and the operations register.
+export function requestBatch(scenario:Scenario='normal'):LiveState {
+ let batch=freshState()
+ for(let i=0;i<40;i++) batch=advance(batch,scenario)
+ for(let step=0;step<4;step++) batch=advance(batch,scenario,false)
+ return batch
+}

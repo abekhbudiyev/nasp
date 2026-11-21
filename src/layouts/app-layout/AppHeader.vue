@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ChevronRight, LayoutGrid, Menu, PanelLeft } from 'lucide-vue-next'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { usePageMeta } from '@/shared/composables/use-page-meta'
 import { Button } from '@/shared/ui/shadcn/button'
 import ThemeToggle from '@/shared/components/ThemeToggle.vue'
@@ -22,6 +22,8 @@ defineEmits<{
   toggleSidebarCollapse: []
 }>()
 
+const route = useRoute()
+const hasModulePageHeading = computed(() => String(route.name).startsWith('social-benefits-'))
 const { title, breadcrumbs } = usePageMeta()
 const currentTitle = computed(() => title.value || 'Ishchi maydon')
 const contextBreadcrumbs = computed(() => breadcrumbs.value.slice(0, -1))
@@ -60,11 +62,11 @@ const contextBreadcrumbs = computed(() => breadcrumbs.value.slice(0, -1))
           :items="contextBreadcrumbs"
         />
         <ChevronRight
-          v-if="contextBreadcrumbs.length"
+          v-if="contextBreadcrumbs.length && !hasModulePageHeading"
           class="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground/60 sm:block"
           aria-hidden="true"
         />
-        <h1 class="min-w-0 line-clamp-2 text-xs font-semibold leading-4 text-foreground sm:line-clamp-none sm:truncate sm:text-sm" :title="currentTitle">
+        <h1 v-if="!hasModulePageHeading" class="min-w-0 line-clamp-2 text-xs font-semibold leading-4 text-foreground sm:line-clamp-none sm:truncate sm:text-sm" :title="currentTitle">
           {{ currentTitle }}
         </h1>
       </div>

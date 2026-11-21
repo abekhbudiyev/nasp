@@ -1,13 +1,15 @@
+import { uzbekScript } from './uzbek-script'
 import { computed, ref } from 'vue'
 
-export type AppLocale = 'uz' | 'en' | 'ru' | 'i18n'
+export type AppLocale = 'uz-Cyrl' | 'uz' | 'en' | 'ru' | 'i18n'
 
 type TranslationMap = Partial<Record<Exclude<AppLocale, 'uz'>, string>>
 
 const storageKey = 'nasp-locale'
 
 export const appLanguages: Array<{ code: AppLocale, label: string, shortLabel: string }> = [
-  { code: 'uz', label: "O'zbek", shortLabel: 'UZ' },
+  { code: 'uz', label: "Özbekça (lotin)", shortLabel: 'UZ' },
+  { code: 'uz-Cyrl', label: 'Ўзбекча (кирилл)', shortLabel: 'ЎЗ' },
   { code: 'en', label: 'English', shortLabel: 'EN' },
   { code: 'ru', label: 'Русский', shortLabel: 'RU' },
   { code: 'i18n', label: 'i18n', shortLabel: 'i18n' },
@@ -916,6 +918,7 @@ const translations: Record<string, TranslationMap> = {
 }
 
 export function translateText(value: string, targetLocale = locale.value) {
+  if (targetLocale === 'uz-Cyrl') return uzbekScript(value,true)
   if (targetLocale === 'uz') return value
 
   const key = translationKeys[value] ?? value
@@ -944,4 +947,9 @@ export function useI18n() {
     setLocale,
     t,
   }
+}
+
+export function benefitText(value:unknown):string {
+  const text=String(value??'')
+  return uzbekScript(text,locale.value==='uz-Cyrl')
 }

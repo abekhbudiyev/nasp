@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useI18n } from '@/shared/i18n'
+import { benefitText, useI18n } from '@/shared/i18n'
 
 const pageI18nKeysByRoute: Record<string, string> = {
   '/apps': 'nav.apps',
@@ -105,19 +105,20 @@ export function usePageMeta() {
   const route = useRoute()
   const { locale, t } = useI18n()
 
+  const label = (value:string) => route.meta.moduleKey === 'social-benefits' && locale.value === 'uz' ? benefitText(value) : t(value)
   const title = computed(() => {
     if (locale.value === 'i18n') {
       return pageI18nKeysByRoute[route.path] ?? String(route.meta.title ?? '')
     }
 
-    return t(String(route.meta.title ?? ''))
+    return label(String(route.meta.title ?? ''))
   })
 
   const breadcrumbs = computed(() => {
     const items = route.meta.breadcrumb ?? []
 
     if (locale.value !== 'i18n') {
-      return items.map((item) => t(item))
+      return items.map((item) => label(item))
     }
 
     return items.map((item, index) => {
