@@ -199,8 +199,8 @@
 
 .module-content{display:contents}
 .native-platform .cabinet-device{
-  box-sizing:border-box;width:min(100%,390px,max(276px,calc(48.65dvh - 85px)));aspect-ratio:9/18.5;margin:0 auto 20px;
-  display:grid;grid-template-rows:24px auto minmax(0,1fr) 18px;min-width:0;
+  box-sizing:border-box;width:min(100%,390px);aspect-ratio:9/18.5;margin:0 auto 20px;
+  display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:24px auto minmax(0,1fr) 18px;min-width:0;
   border:7px solid #20353d;border-radius:46px;overflow:hidden;background:var(--card);
   box-shadow:0 0 0 1px #84949c,0 0 0 3px #c4d1d3,0 16px 36px #153f4229;
 }
@@ -234,3 +234,38 @@
 .native-platform .cabinet-device .suggest-launch{background:color-mix(in srgb,#02b878 13%,var(--card));border-color:color-mix(in srgb,#02a973 45%,var(--border))}
 .native-platform .cabinet-device .np-tabs button.active{background:linear-gradient(115deg,#008b63,#006b83);color:white}
 .native-platform .np-view .dimension-row:focus-visible,.native-platform .np-view button:focus-visible{outline:2px solid var(--np-sky);outline-offset:2px}
+
+
+.native-platform .np-section-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  row-gap: inherit;
+}
+
+.native-platform .np-section-stack > :not(.np-overlay) {
+  min-width: 0;
+  margin-block: 0;
+}
+
+.native-platform .cabinet-device {
+  container-type: inline-size;
+  max-height: min(810px, max(560px, 80dvh));
+  overflow-wrap: anywhere;
+}
+.cabinet-device .family-total { padding: 16px }
+.cabinet-device .family-total > strong { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px }
+.cabinet-device .family-total > strong > .metric-value { font-size: clamp(20px, 8cqi, 30px); margin: 0 }
+.cabinet-device .family-total > div, .cabinet-device .heading-actions { flex-wrap: wrap; gap: 6px 12px }
+.cabinet-device .family-members button, .cabinet-device .mobile-ledger button {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  justify-items: start;
+}
+.cabinet-device .application-row { flex-wrap: wrap }
+.cabinet-device .family-view :is(.np-notice,.np-tag,.np-button) { white-space: normal; max-width: 100% }
+.cabinet-months { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 16px 0 }
+.cabinet-months button { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px; font-size: 12px; text-align: start }
+.cabinet-months button.dim { color: var(--muted-foreground) }
+.cabinet-months i { flex-basis: 100%; height: 4px; border-radius: 4px; background: var(--muted) }
+.cabinet-months em { display: block; height: 100%; border-radius: inherit; background: var(--primary) }

@@ -218,12 +218,13 @@ test('social support uses the unified platform, with standalone transport access
     ['/vouchers', '/registry'],
     ['/vouchers/education', '/registry'],
     ['/transport/references/categories', '/registry'],
-    ['/people', '/citizens'],
+    ['/people', '/finance?view=people'],
+    ...Object.entries(config.viewFilters).flatMap(([page, options]) => options.filter(option => option.path).map(option => [option.path, config.platformViews.find(view => view.key === page).path + '?view=' + option.key])),
     ['/usage', '/finance'],
     ['/integrations', '/about'],
   ]) {
     await instance.push(config.platformPath + from)
-    assert.equal(instance.currentRoute.value.path, config.platformPath + to)
+    assert.equal(instance.currentRoute.value.fullPath, config.platformPath + to)
   }
   assert.equal(guard.canAccessDemoRoute(transport, router.resolve('/apps/transport-benefits/contingents')), true)
 })

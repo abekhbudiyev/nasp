@@ -1,6 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import { eiProductionRoutes } from '@/features/ei/routes'
-import { platformPath, platformTitle, platformViews } from '@/features/social-benefits/config'
+import { platformPath, platformTitle, platformViews, viewFilters } from '@/features/social-benefits/config'
 import { governancePages } from '@/features/project-governance/config'
 import { modulePath, moduleTitle, regionalCenterPages } from '@/features/regional-centers/config'
 
@@ -74,6 +74,16 @@ export const routes: RouteRecordRaw[] = [
           breadcrumb: ['Ilovalar', platformTitle, view.title],
         },
       })),
+      ...Object.entries(viewFilters).flatMap(([page, options]) =>
+        options.filter(option => option.path).map((option): RouteRecordRaw => ({
+          path: (platformPath + option.path).slice(1),
+          redirect: to => ({
+            name: 'social-benefits-' + page,
+            query: { ...to.query, view: option.key },
+            hash: to.hash,
+          }),
+        })),
+      ),
       { path: 'apps/social-benefits/:legacy(overview|rollout)', redirect: platformPath },
       { path: 'apps/social-benefits/:legacy(catalog|matrix|contingents)', redirect: platformPath + '/registry' },
       { path: 'apps/social-benefits/:legacy(risks|eligibility)', redirect: platformPath + '/control' },

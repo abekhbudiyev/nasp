@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import { data, latin, months, num, sum } from './data'
 
 const props = defineProps<{ region:string; district:string; benefit:string; sex:string; age:string; selectedMonths:number[] }>()
-const emit = defineEmits<{ family:[string] }>()
+const emit = defineEmits<{ family:[string, string?] }>()
 const query = ref('')
 const page = ref(1)
 const ageGroups = ['18 yoshgacha', '18–29 yosh', '30–59 yosh', '60 yosh va undan katta']
@@ -63,7 +63,7 @@ watch(recipients, () => page.value=1)
   <Teleport defer to="#support-filter-fields"><label>{{ benefitText("Fuqaro ismi yoki kodi") }}<input v-model="query" type="search"></label></Teleport>
   <section class="np-card"><h3>{{ benefitText("Fuqaro bo‘yicha to‘lovlar · ") }}{{ benefitText(recipients.length) }}</h3><small>{{ benefitText("Shaxsiy yozuvlar namunasi · so‘m") }}</small>
     <div class="np-table-wrap"><table class="np-table"><thead><tr><th>{{ benefitText("Fuqaro") }}</th><th>{{ benefitText("Jami") }}</th><th v-for="i in selectedMonths" :key="i">{{ benefitText(months[i]) }}</th></tr></thead>
-      <tbody><tr v-for="row in recipients.slice((page-1)*15,page*15)" :key="row.member.id"><td><button class="text-button" @click="emit('family',row.family)">{{ benefitText(row.member.name) }}</button><small>{{ benefitText(row.member.id) }}</small></td><td>{{ num(row.total) }}</td><td v-for="(value,i) in row.values" :key="i">{{ num(value) }}</td></tr></tbody></table></div>
+      <tbody><tr v-for="row in recipients.slice((page-1)*15,page*15)" :key="row.member.id"><td><button class="text-button" @click="emit('family',row.family,row.member.id)">{{ benefitText(row.member.name) }}</button><small>{{ benefitText(row.member.id) }}</small></td><td>{{ num(row.total) }}</td><td v-for="(value,i) in row.values" :key="i">{{ num(value) }}</td></tr></tbody></table></div>
     <p v-if="!recipients.length">{{ benefitText(district ? 'Manbada shaxsning tuman bilan bog‘lanishi berilmagan.' : 'Tanlov bo‘yicha yozuv topilmadi.') }}</p>
     <div v-if="recipients.length>15" class="np-pagination"><button :disabled="page===1" @click="page--">{{ benefitText("Oldingi") }}</button>{{ benefitText(page) }} / {{ Math.ceil(recipients.length/15) }}<button :disabled="page*15>=recipients.length" @click="page++">{{ benefitText("Keyingi") }}</button></div>
   </section>

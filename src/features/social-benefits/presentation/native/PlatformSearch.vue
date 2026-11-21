@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { benefitText } from '@/shared/i18n'
 import { computed, ref } from 'vue'
-import { platformViews } from '../../config'
+import { platformViews, viewFilters } from '../../config'
 import { data, latin, type Registry } from './data'
-const emit=defineEmits<{page:[string];registry:[Registry];family:[string];region:[number];finance:[string]}>()
+const emit=defineEmits<{page:[string, string?];registry:[Registry];family:[string, string?];region:[number];finance:[string]}>()
 const query=ref('')
 const normal=(value:string)=>latin(value).toLowerCase().replace(/[’‘ʻʼ']/g,'')
 const entries=[
   ...platformViews.map(view=>({category:'Sahifa',name:view.title,detail:'',select:()=>emit('page',view.key)})),
+  ...platformViews.flatMap(view => (viewFilters[view.key] ?? []).filter(option => option.path).map(option => ({
+    category: 'Kesim', name: option.title, detail: view.title, select: () => emit('page', view.key, option.key),
+  }))),
   ...data.regions.map((name,i)=>({category:'Hudud',name:latin(name),detail:'',select:()=>emit('region',i)})),
   ...data.finance.map(row=>({category:'Moliyaviy chora',name:latin(row.n),detail:row.id,select:()=>emit('finance',row.id)})),
   ...data.registry.map(row=>({category:'Reyestr',name:latin(row.n),detail:latin(row.o+' '+row.b),select:()=>emit('registry',row)})),
-  ...data.families.flatMap(f=>f.members.map(m=>({category:'Oila pasporti',name:latin(m.name),detail:m.id+' · '+f.id,select:()=>emit('family',f.id)}))),
+  ...data.families.flatMap(f=>f.members.map(m=>({category:'Oila pasporti',name:latin(m.name),detail:m.id+' · '+f.id,select:()=>emit('family',f.id,m.id)}))),
 ].map(entry=>({...entry,index:normal(entry.name+' '+entry.detail)}))
 const results=computed(()=>{const term=normal(query.value.trim());return term.length<2?[]:entries.filter(entry=>entry.index.includes(term))})
 const limit=ref(12)
