@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { benefitText } from '@/shared/i18n'
 import { computed, ref, watch } from 'vue'
-import { data, latin, months, num, sum } from './data'
+import { data, months, num, sum } from './data'
+import ReportActions from './ReportActions.vue'
+import { findText, scopeMonths, scopeRegion, type ReportOutput } from './report-output'
 
 const props = defineProps<{ region:string; district:string; benefit:string; sex:string; age:string; selectedMonths:number[] }>()
 const emit = defineEmits<{ family:[string, string?] }>()
@@ -34,17 +36,30 @@ const demographics = computed(() => {
 })
 const recipients = computed(() => {
   if (props.district) return []
-  const term = latin(query.value.trim()).toLowerCase()
   return data.families.filter(f => props.region === '' || f.region === +props.region).flatMap(f => f.members.flatMap(m => {
     if (props.age && (m.age === null || [17,29,59,Infinity].findIndex(limit => m.age! <= limit) !== +props.age)) return []
     if (props.sex && (m.sex === 'а' ? 1 : 0) !== +props.sex) return []
-    if (!latin(m.name+' '+m.id+' '+f.id).toLowerCase().includes(term)) return []
+    if (!findText(m.name+' '+m.id+' '+f.id, query.value)) return []
     const payments = m.allowances.filter(([type]) => props.benefit === '' || type === +props.benefit)
     const values = props.selectedMonths.map(i => sum(payments.map(([,arr]) => arr[i] ?? 0)))
     const total = sum(values)
     return total ? [{family:f.id, member:m, values,total}] : []
   })).sort((a,b) => b.total-a.total)
 })
+const output = computed<ReportOutput>(() => ({
+  title: 'Fuqaro bo‘yicha to‘lovlar',
+  metadata: [
+    ['Manba', 'Shaxsiy yozuvlar namunasi · 2025-yil'], ['Hudud', scopeRegion(props.region)],
+    ['Tuman', props.district ? data.districts[+props.district]?.[1] ?? '' : 'Barchasi'],
+    ['Oylar', scopeMonths(props.selectedMonths)],
+    ['Nafaqa turi', props.benefit ? data.benefitTypes[+props.benefit] ?? '' : 'Barchasi'],
+    ['Jins', props.sex === '0' ? 'Erkak' : props.sex === '1' ? 'Ayol' : 'Barchasi'],
+    ['Yosh guruhi', props.age ? ageGroups[+props.age] ?? '' : 'Barchasi'],
+    ['Qidirish', query.value || 'Barchasi'], ['Yozuvlar', recipients.value.length],
+  ],
+  columns: ['Fuqaro', 'Fuqaro kodi', 'Oila kodi', 'Jami, so‘m', ...props.selectedMonths.map(month => months[month] + ' · so‘m')],
+  rows: recipients.value.map(row => [row.member.name, row.member.id, row.family, row.total, ...row.values]),
+}))
 watch(recipients, () => page.value=1)
 </script>
 <template>
@@ -61,7 +76,11 @@ watch(recipients, () => page.value=1)
     </div></div>
   </section>
   <Teleport defer to="#support-filter-fields"><label>{{ benefitText("Fuqaro ismi yoki kodi") }}<input v-model="query" type="search"></label></Teleport>
-  <section class="np-card"><h3>{{ benefitText("Fuqaro bo‘yicha to‘lovlar · ") }}{{ benefitText(recipients.length) }}</h3><small>{{ benefitText("Shaxsiy yozuvlar namunasi · so‘m") }}</small>
+  <section class="np-card">
+    <header class="np-card-heading">
+      <div><h3>{{ benefitText("Fuqaro bo‘yicha to‘lovlar · ") }}{{ benefitText(recipients.length) }}</h3><small>{{ benefitText("Shaxsiy yozuvlar namunasi · so‘m") }}</small></div>
+      <ReportActions v-if="recipients.length" filename="Fuqaro_tolovlari.xlsx" :report="output" csv />
+    </header>
     <div class="np-table-wrap"><table class="np-table"><thead><tr><th>{{ benefitText("Fuqaro") }}</th><th>{{ benefitText("Jami") }}</th><th v-for="i in selectedMonths" :key="i">{{ benefitText(months[i]) }}</th></tr></thead>
       <tbody><tr v-for="row in recipients.slice((page-1)*15,page*15)" :key="row.member.id"><td><button class="text-button" @click="emit('family',row.family,row.member.id)">{{ benefitText(row.member.name) }}</button><small>{{ benefitText(row.member.id) }}</small></td><td>{{ num(row.total) }}</td><td v-for="(value,i) in row.values" :key="i">{{ num(value) }}</td></tr></tbody></table></div>
     <p v-if="!recipients.length">{{ benefitText(district ? 'Manbada shaxsning tuman bilan bog‘lanishi berilmagan.' : 'Tanlov bo‘yicha yozuv topilmadi.') }}</p>

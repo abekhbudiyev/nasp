@@ -11,6 +11,7 @@ import { eiMenu } from '@/features/ei/config'
 import { transportBenefitsMenu } from '@/features/transport-benefits/config'
 import { ptpkMenu } from '@/features/ptpk/config'
 import { socialBenefitsMenu, socialBenefitsMenuGroups } from '@/features/social-benefits/config'
+import { socialBenefitsScope } from '@/features/social-benefits/filter-scope'
 import { governanceMenu } from '@/features/project-governance/config'
 import { modulePath as regionalModulePath, regionalAdministrationPages, regionalAdministrationPath, regionalCenterMenuGroups } from '@/features/regional-centers/config'
 import { palliativeMenu, palliativeMenuGroups } from '@/features/palliative-care/config'
@@ -304,7 +305,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             <RouterLink
               v-for="item in group.items"
               :key="item.id"
-              :to="item.route ?? '/apps'"
+              :to="activeModuleKey === 'social-benefits' && item.route ? {path:item.route, query:socialBenefitsScope(route.query)} : item.route ?? '/apps'"
               @click="$emit('navigate')"
               :aria-label="sidebarTitle(item)"
               :aria-current="isItemActive(item) ? 'page' : undefined"

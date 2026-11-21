@@ -101,7 +101,7 @@ export function legacyLatin(value:string|undefined) {
   })
 }
 
-const protectedTokens=/(https?:\/\/[^\s]+|[\w.-]+\.(?:uz|com|org)(?:\/[^\s]*)?|\b(?:CSV|PDF|Excel|OneID|Humo|UzCard|OSM|OCHA|geoBoundaries)\b|\b(?:IV|III|II|I)(?=\s+(?:çorak|chorak|чорак))|\b(?:SR|DEMO)-[\w-]+)/gi
+const protectedTokens=/(https?:\/\/[^\s]+|[\w.-]+\.(?:uz|com|org)(?:\/[^\s]*)?|\b(?:CSV|XLSX|PDF|Excel|OneID|Humo|UzCard|OSM|OCHA|geoBoundaries)\b|\b(?:IV|III|II|I)(?=\s+(?:çorak|chorak|чорак))|\b(?:SR|DEMO)-[\w-]+|\b[hcr]\d+\b)/gi
 
 function writeWords(text:string,cyrillic:boolean){
   if(!cyrillic) return legacyLatin(text).replace(/[oOgG][‘’ʻʼ'`]|sh|ch/gi,token=>{

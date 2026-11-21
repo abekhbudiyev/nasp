@@ -170,14 +170,23 @@
   --overview-rule:color-mix(in srgb,var(--foreground) 12%,var(--card));
 }
 .benefits-overview .executive-metrics{
-  gap:0;padding:8px 0;background:var(--card);border:1px solid var(--overview-rule);border-radius:18px;
+  gap:12px;
 }
 .native-platform.benefits-overview .executive-metric{
-  display:flex;flex-direction:column;align-items:stretch;background:transparent;color:var(--foreground);
-  border:0;border-radius:0;box-shadow:none;padding:12px clamp(12px,1.35vw,23px);position:relative;
+  --metric-accent:var(--np-green);
+  display:flex;flex-direction:column;align-items:stretch;color:var(--foreground);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--metric-accent) 9%,var(--card)),var(--card) 80%);
+  border:1px solid color-mix(in srgb,var(--metric-accent) 22%,var(--border));
+  border-radius:16px;box-shadow:none;position:relative;
 }
-.benefits-overview .executive-metric+.executive-metric{border-inline-start:1px solid var(--overview-rule)}
-.native-platform.benefits-overview .executive-metric:hover{background:color-mix(in srgb,var(--primary) 4%,var(--card));transform:none}
+.native-platform.benefits-overview .executive-metric:nth-child(2){--metric-accent:var(--np-sky)}
+.native-platform.benefits-overview .executive-metric:nth-child(3){--metric-accent:var(--np-violet)}
+.native-platform.benefits-overview .executive-metric.attention{--metric-accent:var(--np-amber)}
+.native-platform.benefits-overview .executive-metric:hover{
+  border-color:var(--metric-accent);
+  background:color-mix(in srgb,var(--metric-accent) 12%,var(--card));
+  transform:none;
+}
 .benefits-overview .executive-metric .metric-icon{width:32px;height:32px;color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--card));border-radius:9px}
 .benefits-overview .executive-metric.attention .metric-icon{color:var(--np-amber);background:color-mix(in srgb,var(--np-amber) 10%,var(--card))}
 .benefits-overview .executive-metric>p{margin-top:10px}
@@ -192,10 +201,6 @@
 .benefits-overview .comparison-grid article:nth-child(2) .comparison-amount strong{color:var(--foreground)}
 .native-platform.benefits-overview .quarter-comparison button{background:transparent;border-color:var(--overview-rule);border-radius:10px}
 .native-platform.benefits-overview .quarter-comparison button[aria-pressed=true]{background:color-mix(in srgb,var(--primary) 6%,var(--card));border-color:var(--primary)}
-@media(max-width:950px){
-  .native-platform.benefits-overview .executive-metric:nth-child(odd){border-inline-start:0}
-  .native-platform.benefits-overview .executive-metric:nth-child(n+3){border-top:1px solid var(--overview-rule)}
-}
 
 .module-content{display:contents}
 .native-platform .cabinet-device{
@@ -269,3 +274,60 @@
 .cabinet-months button.dim { color: var(--muted-foreground) }
 .cabinet-months i { flex-basis: 100%; height: 4px; border-radius: 4px; background: var(--muted) }
 .cabinet-months em { display: block; height: 100%; border-radius: inherit; background: var(--primary) }
+
+.native-platform .scope-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -10px 0 16px;
+}
+.native-platform .filter-count {
+  min-width: 1.4em;
+  text-align: center;
+  border-radius: 1rem;
+  background: #fff2;
+  font-variant-numeric: tabular-nums;
+}
+.native-platform .prototype-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.native-platform.benefits-overview .executive-metric {
+  min-width: 0;
+  padding: clamp(12px, 1.4vw, 20px);
+}
+.native-platform.benefits-overview .executive-metric > strong {
+  font-size: clamp(22px, 2.3vw, 36px);
+  font-variant-numeric: tabular-nums;
+}
+.native-platform.benefits-overview .executive-metric footer {
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+@media (max-width: 460px) {
+  .native-platform.benefits-overview .executive-metric footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .native-platform .scope-chips {
+    margin-top: 0;
+  }
+}
+
+.native-platform.benefits-overview .coverage-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 650px) {
+  .native-platform.benefits-overview .coverage-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .native-platform.benefits-overview .coverage-metrics .executive-metric:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.native-platform.benefits-overview .np-header { margin-bottom: 18px }
+.native-platform.benefits-overview .coverage-metrics .executive-metric { padding-block: 13px }

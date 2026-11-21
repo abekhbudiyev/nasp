@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { benefitText } from '@/shared/i18n'
 import { computed, ref } from 'vue'
-import { Download } from 'lucide-vue-next'
-import { data, latin, organization, months, financeMonths, num, saveCSV } from './data'
+import { data, latin, organization, months, num } from './data'
+import ReportActions from './ReportActions.vue'
+import { findText, financeSource, reportedMonth, scopeAgency, scopeMonths, scopeRegion, type ReportOutput } from './report-output'
 
 const props = defineProps<{year:number; region:string; agency:string; selectedMonths:number[]}>()
 const group = ref('agency')
@@ -15,14 +16,12 @@ const report = computed(() => {
   for (const line of data.finance) {
     if ((props.agency && line.o !== props.agency) || (type.value && line.t !== type.value) ||
         (direction.value && line.d !== direction.value) || (cohort.value && line.c !== cohort.value) ||
-        !latin(line.n).toLowerCase().includes(latin(query.value.trim()).toLowerCase())) continue
+        !findText(line.n, query.value)) continue
     for (const region of regions) {
-      if (region !== '' && !line.reg) continue
-      const values = financeMonths(line, props.year, region)
       for (const month of props.selectedMonths) {
-        const value = values[month]
-        if (!value || (!value.s && !value.p)) continue
-        const names: Record<string,string> = {agency:organization(line.o),measure:latin(line.n),month:months[month]!,region:latin(data.regions[+region]),type:latin(data.labels.types[line.t]),direction:latin(data.labels.directions[line.d]),cohort:latin(data.labels.cohorts[line.c])}
+        const value = reportedMonth(line, props.year, region, month)
+        if (!value) continue
+        const names: Record<string,string> = {agency:organization(line.o),measure:latin(line.n),month:months[month]!,region:scopeRegion(region),type:latin(data.labels.types[line.t]),direction:latin(data.labels.directions[line.d]),cohort:latin(data.labels.cohorts[line.c])}
         const label = names[group.value]!
         const key = group.value === 'measure' ? line.id : label
         const row = buckets.get(key) ?? {label,amount:0,plan:0,plannedPaid:0,measures:new Set<string>()}
@@ -38,14 +37,26 @@ const report = computed(() => {
 })
 const total = computed(()=>report.value.reduce((sum,row)=>sum+row.amount,0))
 const headings = computed(()=>[dimensions[group.value]!, 'Choralar soni','Summa, mlrd so‘m','Vedomost, mlrd so‘m','Ijro, %'])
-function download() {
-  saveCSV('Ijtimoiy_komak_hisoboti.csv', [
-    ['Yil',props.year,'Oylar',props.selectedMonths.map(i=>months[i]).join(', ')],
-    ['Hudud',props.region===''?'Respublika':latin(data.regions[+props.region]),'Idora',props.agency?organization(props.agency):'Barcha idoralar'],
-    headings.value,...report.value.map(row=>[row.label,row.measures.size,row.amount,row.plan||'—',row.plan?num(row.plannedPaid/row.plan*100,1):'—']),
-    ['Jami','',total.value],
-  ])
-}
+const title = computed(() => dimensions[group.value] + ' bo‘yicha hisobot')
+const source = computed(() => financeSource(props.year, props.selectedMonths))
+const scope = computed(() => [props.year, scopeMonths(props.selectedMonths), scopeRegion(props.region), scopeAgency(props.agency)].join(' · '))
+const output = computed<ReportOutput>(() => ({
+  title: title.value,
+  metadata: [
+    ['Yil', props.year], ['Oylar', scopeMonths(props.selectedMonths)], ['Hudud', scopeRegion(props.region)],
+    ['Idora', scopeAgency(props.agency)], ['Kesim', dimensions[group.value]!], ['Manba', source.value],
+    ['Chora nomi', query.value || 'Barchasi'], ['Tur', type.value ? latin(data.labels.types[type.value]) : 'Barchasi'],
+    ['Yo‘nalish', direction.value ? latin(data.labels.directions[direction.value]) : 'Barchasi'],
+    ['Aholi toifasi', cohort.value ? latin(data.labels.cohorts[cohort.value]) : 'Barchasi'],
+    ['Eng kam summa, mlrd so‘m', minimum.value === '' ? null : minimum.value],
+    ['Eng katta summa, mlrd so‘m', maximum.value === '' ? null : maximum.value],
+    ['Qatorlar soni', report.value.length], ['Jami summa, mlrd so‘m', report.value.length ? total.value : null],
+    ['Qamrov', group.value === 'region' || props.region !== '' ? 'Hududiy ma’lumot manbada berilgan choralar' : 'Moliyaviy chora jadvallari'],
+    ['Vedomost ijrosi', 'Reja summasi berilgan davr va choralar bo‘yicha'],
+  ],
+  columns: headings.value,
+  rows: report.value.map(row => [row.label, row.measures.size, row.amount, row.plan || null, row.plan ? row.plannedPaid / row.plan * 100 : null]),
+}))
 </script>
 <template>
   <Teleport defer to="#support-filter-fields">
@@ -58,10 +69,19 @@ function download() {
     <label>{{ benefitText("Eng katta summa, mlrd so‘m") }}<input v-model.number="maximum" type="number" step="any" min="0"/></label>
     <label>{{ benefitText("Tartiblash") }}<select v-model="order"><option value="desc">{{ benefitText("Summasi katta avval") }}</option><option value="asc">{{ benefitText("Summasi kichik avval") }}</option><option value="name">{{ benefitText("Nomi bo‘yicha") }}</option></select></label>
   </Teleport>
-  <section class="np-card"><header class="np-card-heading"><div><h3>{{ benefitText(dimensions[group]) }}{{ benefitText(" bo‘yicha hisobot") }}</h3><p>{{ benefitText(year) }} · {{ benefitText(props.selectedMonths.length) }}{{ benefitText(" oy · ") }}{{ benefitText(report.length) }}{{ benefitText(" qator · ") }}{{ num(total,2) }}{{ benefitText(" mlrd so‘m") }}</p></div><button class="np-button" @click="download"><Download :size="15"/>{{ benefitText("CSV") }}</button></header>
+  <section class="np-card">
+    <header class="np-card-heading">
+      <div>
+        <h3>{{ benefitText(title) }}</h3>
+        <p>{{ benefitText(scope) }}</p>
+        <p>{{ benefitText(source) }}</p>
+      </div>
+      <ReportActions filename="Ijtimoiy_komak_hisoboti.xlsx" :report="output" csv print />
+    </header>
     <div class="np-table-wrap"><table class="np-table"><thead><tr><th v-for="name in headings" :key="name">{{ benefitText(name) }}</th></tr></thead><tbody>
       <tr v-for="(row,index) in report" :key="index"><td>{{ benefitText(row.label) }}</td><td>{{ benefitText(row.measures.size) }}</td><td>{{ num(row.amount,2) }}</td><td>{{ benefitText(row.plan?num(row.plan,2):'—') }}</td><td>{{ benefitText(row.plan?num(row.plannedPaid/row.plan*100,1):'—') }}</td></tr>
       <tr v-if="!report.length"><td colspan="5">{{ benefitText("Tanlangan shartlar bo‘yicha ma’lumot yo‘q.") }}</td></tr>
-    </tbody></table></div>
+    </tbody><tfoot v-if="report.length"><tr><th scope="row">{{ benefitText('Tanlangan qatorlar jami') }}</th><td>—</td><td><b>{{ num(total, 2) }}</b></td><td>—</td><td>—</td></tr></tfoot></table></div>
+    <p class="np-note">{{ benefitText('— Ma’lumot berilmagan. Vedomost ijrosi reja summasi mavjud yozuvlar bo‘yicha hisoblanadi.') }}</p>
   </section>
 </template>

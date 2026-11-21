@@ -26,6 +26,7 @@ export const viewFilters: Record<string, { key: string; title: string; path?: st
     { key: 'reports', title: 'Yig‘ma hisobot' },
     { key: 'svod', title: 'Imtiyozlar hisoboti', path: '/benefit-figures' },
     { key: 'proposals', title: 'Taklif va qaydlar', path: '/benefit-proposals' },
+    { key: 'requests', title: 'Ijro hisoboti' },
   ],
   'platform-family': [
     { key: 'family', title: 'Oila pasporti' },
