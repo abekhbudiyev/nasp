@@ -19,36 +19,39 @@ const scoped = computed(() => props.requests ?? events.value.filter(event =>
 const stages = computed(() => {
   const counts = requestTotals(scoped.value)
   return [
-    { count: counts.received, label: 'Qabul qilindi', detail: 'Idoralar yuborgan so‘rovlar', tone: 'intake', status: undefined },
-    { count: counts.processing, label: 'Tekshiruvda', detail: counts.checked + ' ta tekshiruv yakunlandi', tone: 'intake', status: 'processing' },
-    { count: counts.accepted, label: 'Tasdiqlandi', detail: 'Ijroga yo‘naltirildi', tone: 'success', status: 'accepted' },
-    { count: counts.delivered, label: 'Ijro yakunlandi', detail: 'Kabinetda aks etdi', tone: 'success', status: 'delivered' },
-    { count: counts.duplicate, label: 'Rad etildi', detail: 'Takroriy so‘rov', tone: 'danger', status: 'duplicate' },
-    { count: counts.returned, label: 'Qaytarildi', detail: 'Tuzatish uchun', tone: 'warning', status: 'returned' },
+    { count: counts.received, label: 'Qabul qilindi', detail: 'Qo‘llab-quvvatlash choralari uchun murojaatlar', tone: 'intake', status: undefined },
+    { count: counts.processing, label: 'Ko‘rib chiqilmoqda', detail: counts.checked + ' ta tekshiruv yakunlandi', tone: 'intake', status: 'processing' },
     { count: counts.waiting, label: 'Tasdiq kutilmoqda', detail: 'Idoradan ijro tasdig‘i', tone: 'pending', status: 'waiting' },
+    { count: counts.accepted, label: 'Tasdiqlandi', detail: '', tone: 'success', status: 'accepted' },
+    { count: counts.delivered, label: 'Moliyalashtirildi yoki xizmat ko‘rsatildi', detail: '', tone: 'success', status: 'delivered' },
+    { count: counts.returned, label: 'Qaytarildi', detail: 'Tuzatish uchun', tone: 'warning', status: 'returned' },
+    { count: counts.duplicate, label: 'Rad etildi', detail: '', tone: 'danger', status: 'duplicate' },
   ]
 })
 const layouts = [
   {
-    name: 'wide', view: '0 0 940 244', radius: 26,
-    points: [[75, 40], [310, 40], [545, 40], [810, 40], [425, 165], [615, 165], [810, 165]],
+    name: 'wide', view: '0 0 1240 244', radius: 26,
+    points: [[95,40],[355,40],[615,40],[855,40],[1115,40],[450,165],[750,165]],
     edges: [
-      ['intake', 'M101 40H284'], ['success', 'M336 40H519'], ['success', 'M571 40H784'],
-      ['danger', 'M389 40V146Q389 165 408 165H425'],
-      ['warning', 'M389 116H582Q600 116 600 134V148Q600 165 615 165'],
-      ['pending', 'M730 40V145Q730 165 750 165H784'],
+      ['intake','M121 40H329'], ['pending','M381 40H589'],
+      ['success','M641 40H829'], ['success','M881 40H1089'],
+      ['warning','M400 40V145Q400 165 420 165H424'],
+      ['danger','M400 115H700Q724 115 724 139V165'],
     ],
   },
   {
-    name: 'narrow', view: '0 0 320 448', radius: 19,
-    points: [[24, 28], [24, 91], [56, 154], [88, 215], [56, 340], [56, 405], [88, 274]],
+    name: 'narrow', view: '0 0 350 590', radius: 19,
+    points: [[24,28],[24,110],[56,192],[88,274],[120,356],[56,456],[56,538]],
     edges: [
-      ['intake', 'M24 47V72'], ['success', 'M24 110V136Q24 154 37 154'],
-      ['success', 'M56 173V198Q56 215 69 215'], ['pending', 'M56 193V257Q56 274 69 274'],
-      ['danger', 'M24 126V323Q24 340 37 340'], ['warning', 'M24 317V388Q24 405 37 405'],
+      ['intake','M24 47V91'], ['pending','M24 129V173Q24 192 37 192'],
+      ['success','M56 211V255Q56 274 69 274'],
+      ['success','M88 293V337Q88 356 101 356'],
+      ['warning','M24 145V437Q24 456 37 456'],
+      ['danger','M24 425V519Q24 538 37 538'],
     ],
   },
 ]
+
 </script>
 
 <template>
@@ -80,8 +83,8 @@ const layouts = [
         <text class="count" text-anchor="middle" dy=".35em" aria-hidden="true">{{ stage.count }}</text>
         <g :transform="layout.name === 'wide' ? 'translate(0 45)' : 'translate(34 -3)'"
           :text-anchor="layout.name === 'wide' ? 'middle' : 'start'" aria-hidden="true">
-          <text class="label">{{ benefitText(stage.label) }}</text>
-          <text y="18" class="detail">{{ benefitText(stage.detail) }}</text>
+          <text class="label"><template v-if="stage.status === 'delivered'"><tspan x="0">{{ benefitText('Moliyalashtirildi yoki') }}</tspan><tspan x="0" dy="17">{{ benefitText('xizmat ko‘rsatildi') }}</tspan></template><template v-else>{{ benefitText(stage.label) }}</template></text>
+          <text v-if="stage.detail" y="18" class="detail">{{ benefitText(stage.detail) }}</text>
         </g>
       </g>
     </svg>

@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { ArrowUpRight, Banknote, ScanSearch, ShieldAlert, Users } from 'lucide-vue-next'
 import { data, latin, money, num, sum } from './data'
 import { benefitText } from '@/shared/i18n'
+import FamilyPinflSearch from './FamilyPinflSearch.vue'
 import { usePrototypeRequests } from './prototype-requests'
 
 defineProps<{ active: boolean }>()
@@ -92,6 +93,7 @@ watch(pageCount, count => { page.value = Math.min(page.value, Math.max(1, count)
 
 <template>
   <section v-if="active" class="np-card passport-directory">
+    <FamilyPinflSearch @open="(family,member) => emit('open',family,member)" />
     <Teleport defer to="#support-filter-fields">
       <label>
         {{ benefitText('Pasport qidiruvi') }}

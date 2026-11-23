@@ -128,3 +128,24 @@ export function printReport({ title, columns, rows, metadata }: ReportOutput) {
   preview.focus()
   preview.setTimeout(() => preview.print(), 100)
 }
+
+export function fundingCoverageRange(lines: readonly Finance[], region: string, from: string, to: string) {
+  const last = new Date(to + 'T00:00:00Z')
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to) && from <= to && Number.isFinite(last.getTime())
+  const completeMonths = valid && from.endsWith('-01') && last.getUTCDate() === new Date(Date.UTC(last.getUTCFullYear(), last.getUTCMonth() + 1, 0)).getUTCDate()
+  if (!completeMonths) return { amount: null, measures: null }
+  let amount = 0, measures = 0, covered = false
+  for (const line of lines) {
+    let supported = false
+    for (const year of [2024, 2025, 2026]) for (let month = 0; month < 12; month++) {
+      const key = year + '-' + String(month + 1).padStart(2, '0')
+      if (key < from.slice(0, 7) || key > to.slice(0, 7)) continue
+      const value = reportedMonth(line, year, region, month)
+      if (!value) continue
+      covered = true; amount += value.s
+      if (value.s > 0 || value.c > 0) supported = true
+    }
+    if (supported) measures++
+  }
+  return { amount: covered ? Math.round(amount * 1e9) : null, measures: covered ? measures : null }
+}

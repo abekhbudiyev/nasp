@@ -137,6 +137,19 @@ const measuresReport = computed<ReportOutput>(() => ({
     row.plan > 0 ? row.total / row.plan * 100 : null, ...props.selectedMonths.map(month => monthValue(row, month)),
   ]),
 }))
+
+const supportBlocks = computed(() => [
+  { key: 'financial', title: 'Moliyaviy ko‘maklar', rows: rows.value.filter(row => row.line.d !== 'svc' && (row.line.t === 'mol' || row.line.d === 'comp')) },
+  { key: 'services', title: 'Ijtimoiy xizmatlar', rows: rows.value.filter(row => row.line.d === 'svc') },
+  { key: 'guarantees', title: 'Ijtimoiy kafolatlar', rows: rows.value.filter(row => row.line.d !== 'svc' && row.line.t !== 'mol' && row.line.d !== 'comp') },
+])
+function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutput {
+ const ids = new Set(block.rows.map(row => row.line.id))
+ return { ...measuresReport.value, title: block.title,
+   metadata: [...financeMetadata.value, ['Hudud', scopeRegion(props.region)], ['Tanlangan choralar', block.rows.length], ['Tanlangan summa, mlrd so‘m', block.rows.length ? sum(block.rows.map(row => row.total)) : null]],
+   rows: measuresReport.value.rows.filter((_,index) => ids.has(rows.value[index]!.line.id)),
+ }
+}
 </script>
 
 <template>
@@ -178,14 +191,14 @@ const measuresReport = computed<ReportOutput>(() => ({
         </div>
       </section>
       <FinanceComparison :lines="lines" :year="year" :region="region" :selected-months="selectedMonths" />
-      <section class="np-card">
+      <section v-for="block in supportBlocks" :key="block.key" class="np-card">
         <header class="np-card-heading">
           <div>
-            <h3>{{ benefitText('Ko‘rsatilgan ijtimoiy ko‘mak') }}</h3>
+            <h3>{{ benefitText(block.title) }}</h3>
             <p>{{ benefitText(scope) }}</p>
-            <p>{{ benefitText(rows.length ? rows.length + ' ta chora · ' + money(sum(rows.map(row => row.total)) * 1e9) + ' so‘m · ' + source : source) }}</p>
+            <p>{{ benefitText(block.rows.length ? block.rows.length + ' ta chora · ' + money(sum(block.rows.map(row => row.total)) * 1e9) + ' so‘m · ' + source : source) }}</p>
           </div>
-          <ReportActions filename="Korsatilgan_choralar.xlsx" :report="measuresReport" csv />
+          <ReportActions :filename="block.key + '_hisoboti.xlsx'" :report="supportReport(block)" csv />
         </header>
         <div class="np-table-wrap">
           <table class="np-table">
@@ -197,7 +210,7 @@ const measuresReport = computed<ReportOutput>(() => ({
               <th></th>
             </tr></thead>
             <tbody>
-              <tr v-for="row in rows" :key="row.line.id">
+              <tr v-for="row in block.rows" :key="row.line.id">
                 <td><button class="text-button" @click="emit('open', row)">{{ benefitText(row.line.n) }}</button>
                   <small>{{ benefitText(data.labels.types[row.line.t]) }} · {{ benefitText(data.labels.directions[row.line.d]) }}</small></td>
                 <td>{{ benefitText(organization(row.line.o)) }}</td>
@@ -207,7 +220,7 @@ const measuresReport = computed<ReportOutput>(() => ({
                 <td v-for="month in selectedMonths" :key="month">{{ monthValue(row, month) === null ? '—' : num(monthValue(row, month)!, metric === 'amount' ? 3 : 0) }}</td>
                 <td><button class="icon-button" :aria-label="benefitText(row.line.n + ' tafsiloti')" @click="emit('open', row)"><ArrowUpRight :size="16" /></button></td>
               </tr>
-              <tr v-if="!rows.length"><td :colspan="6 + selectedMonths.length" class="np-empty">{{ benefitText('Tanlangan kesim bo‘yicha ma’lumot yo‘q.') }}</td></tr>
+              <tr v-if="!block.rows.length"><td :colspan="6 + selectedMonths.length" class="np-empty">{{ benefitText('Tanlangan kesim bo‘yicha ma’lumot yo‘q.') }}</td></tr>
             </tbody>
           </table>
         </div>

@@ -5,12 +5,13 @@ export const platformTitle = 'Davlat ijtimoiy qo‘llab-quvvatlash choralarining
 export const platformPath = '/apps/social-benefits'
 
 export const platformViews = [
-  { key: 'platform', path: '', tab: 'overview', title: 'Umumiy ko‘rinish' },
+  { key: 'platform', path: '', tab: 'overview', title: 'Umumiy tahlil' },
   { key: 'registry', path: '/registry', tab: 'registry', title: 'Idoralar va choralar' },
-  { key: 'finance', path: '/finance', tab: 'finance', title: 'Choralar tahlili' },
+  { key: 'finance', path: '/finance', tab: 'finance', title: 'Qo‘llab-quvvatlash choralari tahlili' },
   { key: 'platform-family', path: '/family', tab: 'family', title: 'Fuqaro va oila pasporti' },
-  { key: 'platform-control', path: '/control', tab: 'audit', title: 'Nazorat markazi' },
-  { key: 'platform-execution', path: '/execution', tab: 'flow', title: 'Ijro oqimi' },
+  { key: 'platform-control', path: '/control', tab: 'audit', title: 'Xatarlar tahlili' },
+  { key: 'platform-execution', path: '/execution', tab: 'flow', title: 'Jarayon kuzatuvi' },
+  { key: 'difficult-families', path: '/difficult-families', tab: 'difficult-families', title: 'Og‘ir vaziyatdagi oilalar ro‘yxati' },
   { key: 'reports', path: '/reports', tab: 'reports', title: 'Hisobotlar' },
   { key: 'cabinet', path: '/cabinet', tab: 'family', title: 'Fuqaro kabineti' },
   { key: 'about', path: '/about', tab: 'about', title: 'Platforma haqida' },
@@ -35,9 +36,9 @@ export const viewFilters: Record<string, { key: string; title: string; path?: st
 }
 
 const groups = [
-  { id: 'analytics', title: 'Monitoring va hisobotlar', pages: [['platform', LayoutDashboard], ['finance', ChartColumn], ['reports', FileSpreadsheet]] },
+  { id: 'analytics', title: 'Monitoring va hisobotlar', pages: [['platform', LayoutDashboard], ['finance', ChartColumn], ['platform-control', ShieldCheck], ['platform-execution', Activity], ['difficult-families', UserRound], ['reports', FileSpreadsheet]] },
   { id: 'service', title: 'Fuqarolarga xizmat', pages: [['cabinet', Smartphone]] },
-  { id: 'management', title: 'Boshqaruv', pages: [['platform-family', UserRound], ['registry', BookOpen], ['platform-control', ShieldCheck], ['platform-execution', Activity], ['about', Settings]] },
+  { id: 'management', title: 'Boshqaruv', pages: [['platform-family', UserRound], ['registry', BookOpen], ['about', Settings]] },
 ] as const
 
 export const socialBenefitsMenuGroups = groups.map(group => ({
