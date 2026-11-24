@@ -5,6 +5,7 @@ export const platformTitle = 'Davlat ijtimoiy qo‘llab-quvvatlash choralarining
 export const platformPath = '/apps/social-benefits'
 
 export const platformViews = [
+  { key: 'dashboard', path: '/dashboard', tab: 'dashboard', title: 'Dashbord' },
   { key: 'platform', path: '', tab: 'overview', title: 'Umumiy tahlil' },
   { key: 'registry', path: '/registry', tab: 'registry', title: 'Idoralar va choralar' },
   { key: 'finance', path: '/finance', tab: 'finance', title: 'Qo‘llab-quvvatlash choralari tahlili' },
@@ -36,9 +37,12 @@ export const viewFilters: Record<string, { key: string; title: string; path?: st
 }
 
 const groups = [
-  { id: 'analytics', title: 'Monitoring va hisobotlar', pages: [['platform', LayoutDashboard], ['finance', ChartColumn], ['platform-control', ShieldCheck], ['platform-execution', Activity], ['difficult-families', UserRound], ['reports', FileSpreadsheet]] },
-  { id: 'service', title: 'Fuqarolarga xizmat', pages: [['cabinet', Smartphone]] },
-  { id: 'management', title: 'Boshqaruv', pages: [['platform-family', UserRound], ['registry', BookOpen], ['about', Settings]] },
+  { id: 'dashboard', title: 'Dashbord', pages: [['dashboard', LayoutDashboard]] },
+  { id: 'registry', title: '1. Idoralar va choralar', pages: [['registry', BookOpen]] },
+  { id: 'analytics', title: '2. Ko‘rilgan choralar', pages: [['platform', LayoutDashboard], ['finance', ChartColumn], ['reports', FileSpreadsheet]] },
+  { id: 'service', title: '3. Fuqaro va oila pasporti', pages: [['platform-family', UserRound], ['cabinet', Smartphone]] },
+  { id: 'management', title: '4. Nazorat markazi', pages: [['platform-control', ShieldCheck], ['platform-execution', Activity], ['difficult-families', UserRound]] },
+  { id: 'about', title: 'Platforma', pages: [['about', Settings]] },
 ] as const
 
 export const socialBenefitsMenuGroups = groups.map(group => ({

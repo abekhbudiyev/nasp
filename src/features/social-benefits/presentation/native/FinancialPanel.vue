@@ -193,6 +193,9 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
           <button class="np-button" @click="emit('district')">{{ benefitText('Tumanlar kesimi · 2025-yil nafaqa bazasi') }} <ArrowRight :size="14" /></button>
         </div>
       </section>
+      <div class="np-toolbar">
+        <label class="measure-search">{{ benefitText('Chora qidiruvi') }}<input v-model="query" type="search" /></label>
+      </div>
       <nav class="support-block-navigation" :aria-label="benefitText('Qo‘llab-quvvatlash turlari')">
         <a v-for="block in supportBlocks" :key="block.key" :href="'#support-block-' + block.key" @click.prevent="openSupportBlock(block.key)"><strong>{{ benefitText(block.title) }}</strong><span>{{ block.rows.length ? num(block.rows.length) + benefitText(' ta chora') : benefitText('Ma’lumot mavjud emas') }}</span><b v-if="block.rows.length">{{ benefitText(money(sum(block.rows.map(row=>row.total))*1e9) + ' so‘m') }}</b><ArrowRight :size="16" /></a>
       </nav>
@@ -306,6 +309,8 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
 </style>
 
 <style scoped>
+.measure-search { display:grid; gap:5px; font-size:12px; width:min(100%,360px); }
+.measure-search input { padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
 .support-block-navigation { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
 .support-block-navigation a { display: grid; gap: 8px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--foreground); }
 .support-block-navigation a:nth-child(1) { border-top: 3px solid #16866d; }

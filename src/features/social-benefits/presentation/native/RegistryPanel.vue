@@ -4,9 +4,15 @@ import {computed,ref,watch} from 'vue'
 import {Search,Download,ChevronLeft,ChevronRight,ArrowUpRight,Rows3,Table2,X} from 'lucide-vue-next'
 import {data,latin,num,colors,saveCSV,type Registry} from './data'
 import { byRegistry, searchKey } from './svod'
+const props = defineProps<{ selection?: { dimension: string; index: number } }>()
 const emit=defineEmits<{open:[Registry]}>()
 const query=ref(''),agency=ref(''),type=ref(''),field=ref(''),cohort=ref(''),page=ref(1),matrix=ref(false),matrixBy=ref('field'),matrixGroup=ref('agency')
 const linkage = ref('')
+if (props.selection) {
+ const filters = { type, field, cohort, agency }
+ const target = filters[props.selection.dimension as keyof typeof filters]
+ if (target) target.value = String(props.selection.index)
+}
 const active=computed(()=>!!(query.value||agency.value||type.value||field.value||cohort.value||linkage.value))
 const rows=computed(()=>data.registry.filter(x=>(!linkage.value || byRegistry.has(x.id) === (linkage.value === 'linked')) && (!query.value||searchKey(x.id+' '+x.n+' '+x.b+' '+x.o).includes(searchKey(query.value)))&&(agency.value===''||x.oi===+agency.value)&&(type.value===''||x.ti===+type.value)&&(field.value===''||x.fi===+field.value)&&(cohort.value===''||x.ci===+cohort.value)))
 watch([query,agency,type,field,cohort,linkage],()=>page.value=1)

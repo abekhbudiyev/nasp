@@ -6,9 +6,9 @@ import {data,latin,num,money,sum,auditTitles,saveCSV,type AuditCase} from './dat
 import RegionMap from './RegionMap.vue'
 import MetricValue from './MetricValue.vue'
 import RiskScopeAnalysis from './RiskScopeAnalysis.vue'
-const props=defineProps<{initial?:number;reviewRefresh?:number}>()
+const props=defineProps<{initial?:number;initialRegion?:string;reviewRefresh?:number}>()
 const emit=defineEmits<{open:[{item:AuditCase;category:number}];family:[string]}>()
-const selected=ref(props.initial??0),region=ref(''),query=ref(''),reviewState=ref('')
+const selected=ref(props.initial??0),region=ref(props.initialRegion ?? ''),query=ref(''),reviewState=ref('')
 const signal=computed(()=>data.audit[selected.value]!)
 const regions=computed(()=>data.regions.map((name,i)=>{const original=data.regionMap.indexOf(i);return {name,i,count:signal.value.reg[original]?.[0]??0,amount:signal.value.reg[original]?.[1]??0}}))
 const reviews = computed(() => {

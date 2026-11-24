@@ -94,6 +94,10 @@ const output = computed<ReportOutput>(() => ({
   </Teleport>
   <section class="np-card">
     <FamilyPinflSearch @open="emit('family', $event)" />
+    <div class="report-search">
+      <label>{{ benefitText('Hisobot kesimi') }}<select v-model="group"><option v-for="(name,id) in dimensions" :key="id" :value="id">{{ benefitText(name) }}</option></select></label>
+      <label>{{ benefitText('Chora nomi') }}<input v-model="query" type="search"></label>
+    </div>
     <div class="report-cuts" :aria-label="benefitText('Hisobot kesimi')"><button v-for="cut in [{key:'agency',label:'Vazirlik va idoralar'},{key:'region',label:'Hududlar'},{key:'family',label:'Oilalar'}]" :key="cut.key" type="button" :aria-pressed="group===cut.key" @click="group=cut.key">{{ benefitText(cut.label) }}</button></div>
     <header class="np-card-heading">
       <div>
@@ -112,6 +116,9 @@ const output = computed<ReportOutput>(() => ({
 </template>
 
 <style scoped>
+.report-search { display:flex; flex-wrap:wrap; gap: 12px; margin-bottom: 14px; }
+.report-search label { display:grid; gap:5px; font-size:12px; }
+.report-search :is(input,select) { padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--card); }
 .report-cuts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .report-cuts button { padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px; font-size: 13px; }
 .report-cuts button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground,white); }
