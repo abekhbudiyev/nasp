@@ -15,6 +15,7 @@ import { socialBenefitsScope } from '@/features/social-benefits/filter-scope'
 import { governanceMenu } from '@/features/project-governance/config'
 import { modulePath as regionalModulePath, regionalAdministrationPages, regionalAdministrationPath, regionalCenterMenuGroups } from '@/features/regional-centers/config'
 import { palliativeMenu, palliativeMenuGroups } from '@/features/palliative-care/config'
+import { monitoringMenuGroups } from '@/features/monitoring/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
 import { benefitText, useI18n } from '@/shared/i18n'
@@ -100,6 +101,7 @@ const groupedNavigation = computed(() => {
   if (activeModuleKey.value === 'social-benefits') return socialBenefitsMenuGroups
   if (activeModuleKey.value === 'palliative-care') return palliativeMenuGroups
   if (activeModuleKey.value === 'regional-centers') return regionalCenterMenuGroups
+  if (activeModuleKey.value === 'monitoring') return monitoringMenuGroups
   return []
 })
 

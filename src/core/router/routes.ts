@@ -3,6 +3,7 @@ import { eiProductionRoutes } from '@/features/ei/routes'
 import { platformPath, platformTitle, platformViews, viewFilters } from '@/features/social-benefits/config'
 import { governancePages } from '@/features/project-governance/config'
 import { modulePath, moduleTitle, regionalCenterPages } from '@/features/regional-centers/config'
+import { monitoringPages, monitoringTitle } from '@/features/monitoring/config'
 
 const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
 const LoginPage = () => import('@/features/auth/pages/LoginPage.vue')
@@ -1469,17 +1470,20 @@ export const routes: RouteRecordRaw[] = [
           breadcrumb: ['Ilovalar', 'Hujjatlar'],
         },
       },
-      {
-        path: 'apps/monitoring',
-        name: 'monitoring',
+      ...monitoringPages.map((page): RouteRecordRaw => ({
+        path: page.route.slice(1),
+        name: page.id === 'overview' ? 'monitoring' : `monitoring-${page.id}`,
         component: MonitoringPage,
+        props: { view: page.id, title: page.title },
         meta: {
-          title: 'Monitoring',
+          title: page.title,
           requiresAuth: true,
-          moduleTitle: 'Monitoring',
-          breadcrumb: ['Ilovalar', 'Monitoring'],
+          permission: 'monitoring.view',
+          moduleKey: 'monitoring',
+          moduleTitle: monitoringTitle,
+          breadcrumb: ['Ilovalar', monitoringTitle, page.title],
         },
-      },
+      })),
       {
         path: 'apps/reports',
         name: 'reports',

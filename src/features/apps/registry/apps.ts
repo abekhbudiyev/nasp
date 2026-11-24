@@ -20,6 +20,7 @@ import {
 } from 'lucide-vue-next'
 import type { AppModule } from '../types'
 import { modulePath, moduleTitle } from '@/features/regional-centers/config'
+import { monitoringPath, monitoringTitle } from '@/features/monitoring/config'
 
 export const appModules: AppModule[] = [
   {
@@ -169,12 +170,13 @@ export const appModules: AppModule[] = [
   },
   {
     id: 'monitoring',
-    title: 'Monitoring',
-    description: 'Jarayonlarni kuzatish va operativ nazorat uchun tayyor ko‘rinish.',
-    route: '/apps/monitoring',
+    title: monitoringTitle,
+    description: 'Serverlar, API tekshiruvlari, Oracle va faol nosozliklar holati.',
+    route: monitoringPath,
     icon: Waves,
     enabled: true,
     permission: 'monitoring.view',
+    hasInternalNavigation: true,
   },
   {
     id: 'reports',
