@@ -100,11 +100,12 @@ const coverageDailyUnavailable = computed(() => {
 })
 const funding = computed(() => selectedFunding(scopedLines.value,region.value))
 const providedSupportCounts = computed(() => ({
- financial: selectedFunding(scopedLines.value.filter(line => line.d !== 'svc' && (line.t === 'mol' || line.d === 'comp')),region.value).measures,
- services: selectedFunding(scopedLines.value.filter(line => line.d === 'svc'),region.value).measures,
+ financial: selectedFunding(scopedLines.value.filter(line => line.t === 'mol'),region.value).measures,
+ privileges: selectedFunding(scopedLines.value.filter(line => line.t === 'imt'),region.value).measures,
 }))
 const regionCoverage = computed(() => data.regions.map((name,index) => ({
  name,index,...selectedFunding(scopedLines.value,String(index)),
+ services: selectedFunding(scopedLines.value.filter(line => line.d === 'svc'),String(index)).measures,
  people: !agency.value && year.value === 2025 && !coverageSelection.value.from ? data.cubePeople.filter(([district]) => data.regionMap[data.districts[district]![0]] === index).reduce((total,row) => total + (selectedMonths.value.length === 12 ? row[3] : selectedMonths.value.reduce((sum,month) => sum + (row[4][month] ?? 0),0) / Math.max(1,selectedMonths.value.length)),0) : null,
  support: scopedLines.value.map(line => ({ key: line.id, name: latin(line.n), ...selectedFunding([line],String(index)) })).filter(line => (line.measures ?? 0) > 0),
 })))
@@ -112,7 +113,9 @@ const agencyCoverage = computed(() => Object.entries(agencyOptions).map(([key,na
  key,name,...selectedFunding(data.finance.filter(line => line.o === key),region.value),
 })).sort((a,b) => (b.amount ?? -1) - (a.amount ?? -1)))
 const cohortCoverage = computed(() => Object.entries(data.labels.cohorts).map(([key,name]) => ({ key,name,...selectedFunding(scopedLines.value.filter(line => line.c === key),region.value) })))
-const measureCoverage = computed(() => scopedLines.value.map(line => ({ key:line.id,name:latin(line.n),kind:line.d === 'svc' ? 'services' : line.t === 'kaf' ? 'guarantees' : line.t === 'mol' ? 'financial' : 'other',...selectedFunding([line],region.value) })))
+const measureCoverage = computed(() => scopedLines.value.map(line => ({ key:line.id,name:latin(line.n),kind:line.t === 'imt' || line.d === 'svc' ? 'services' : line.t === 'kaf' ? 'guarantees' : line.t === 'mol' ? 'financial' : 'other',...selectedFunding([line],region.value) })))
+function amountLabelForAgency(amount: number | null) { return amount === null ? '—' : money(amount) + ' so‘m' }
+const topFundedAgencies = computed(() => agencyCoverage.value.filter(item => item.amount !== null && item.amount > 0).slice(0,3))
 const filterChips = computed(() => [
  ...(year.value !== 2025 && ['overview','finance','reports'].includes(tab.value) && analysisCut.value !== 'people' ? [String(year.value)] : []),
  ...(period.value !== 'all' && ['overview','finance','reports'].includes(tab.value) ? [selectedMonths.value.map(index => months[index]).join(', ')] : []),
@@ -131,9 +134,12 @@ const breakdownRows=computed(()=>{
 const total=computed(()=>sum(finance.value.map(x=>x.total)))
 const monthly=computed(()=>months.map((_,i)=>sum(finance.value.map(x=>x.values[i]?.s??0))))
 const maxMonthly=computed(()=>Math.max(...monthly.value,1))
-const shares=computed(()=>Object.entries(data.organizations).map(([key,name])=>({key,name,amount:sum(finance.value.filter(r=>r.line.o===key).map(r=>r.total))})).filter(x=>x.amount).sort((a,b)=>b.amount-a.amount))
+const shares = computed(() => agencyCoverage.value.map(item => ({ key:item.key,name:item.name,amount:item.amount })))
+const shareTotal = computed(() => sum(shares.value.map(item => item.amount ?? 0)))
+
 const colors=['#087b65','#578c9a','#82b29e','#b09a71','#64798c']
-const ring=computed(()=>{let at=0;return 'conic-gradient('+shares.value.map((s,i)=>{const start=at;at+=s.amount/Math.max(total.value,1)*100;return colors[i%colors.length]+' '+start+'% '+at+'%'}).join(',')+')'})
+const ring=computed(()=>{let at=0;const slices=shares.value.flatMap((item,index)=>{if(item.amount===null || item.amount<=0)return [];const start=at;at+=item.amount/Math.max(shareTotal.value,1)*100;return [colors[index%colors.length]+' '+start+'% '+at+'%']});return slices.length?'conic-gradient('+slices.join(',')+')':'var(--muted)'})
+
 const duplicateReview = computed(() => requests.value.find(item => item.id === 27))
 const scope=computed(()=>region.value===''?'Respublika':latin(data.regions[+region.value]))
 const dataLabel=computed(()=>tab.value==='finance'&&analysisCut.value==='people'?'2025-yil nafaqa bazasi':year.value===2025&&period.value==='all'?'2025-yil manba ko‘rsatkichlari':year.value!==2025?'Namunaviy yil ko‘rsatkichlari':'Oylik taqsimot — namunaviy')
@@ -315,7 +321,7 @@ watch(cabinetSection, () => nextTick(() => root.value?.querySelector('.cabinet-d
     <div><span class="metric-icon teal"><CheckCircle2 :size="19"/></span><ArrowUpRight :size="15"/></div>
     <p>{{ benefitText('Ko‘rsatilgan qo‘llab-quvvatlash choralari soni — jami') }}</p>
     <strong>{{ funding.measures === null ? '—' : num(funding.measures) }}<small>{{ benefitText(' ta') }}</small></strong>
-    <footer class="provided-support-breakdown"><span>{{ benefitText('Shundan moliyaviy ko‘maklar') }}: <b>{{ providedSupportCounts.financial === null ? '—' : num(providedSupportCounts.financial) }} {{ benefitText('ta') }}</b></span><span>{{ benefitText('Ijtimoiy xizmatlar') }}: <b>{{ providedSupportCounts.services === null ? '—' : num(providedSupportCounts.services) }} {{ benefitText('ta') }}</b></span></footer>
+    <footer class="provided-support-breakdown"><span>{{ benefitText('Shundan moliyaviy ko‘maklar') }}: <b>{{ providedSupportCounts.financial === null ? '—' : num(providedSupportCounts.financial) }} {{ benefitText('ta') }}</b></span><span>{{ benefitText('Imtiyozlar') }}: <b>{{ providedSupportCounts.privileges === null ? '—' : num(providedSupportCounts.privileges) }} {{ benefitText('ta') }}</b></span></footer>
   </button>
   <button class="executive-metric" @click="go('registry')">
     <div><span class="metric-icon purple"><BookOpen :size="19"/></span><ArrowUpRight :size="15"/></div>
@@ -323,9 +329,15 @@ watch(cabinetSection, () => nextTick(() => root.value?.querySelector('.cabinet-d
     <strong><MetricValue :value="data.registryTotal"/><small>{{ benefitText('chora') }}</small></strong>
     <footer><span class="np-tag purple">{{ benefitText(data.agencies.length) }} {{ benefitText('idora') }}</span><span>{{ benefitText('Respublika yig‘masi') }}</span></footer>
   </button>
+  <section class="executive-metric top-funded-agencies" aria-labelledby="top-funded-heading">
+    <div><span class="metric-icon teal"><Landmark :size="19" /></span><span class="top-funded-caption">{{ benefitText('Moliyalashtirish bo‘yicha') }}</span></div>
+    <h3 id="top-funded-heading">{{ benefitText('Top vazirlik va idoralar') }}</h3>
+    <ol><li v-for="(item,index) in topFundedAgencies" :key="item.key"><button type="button" :aria-pressed="agency===item.key" @click="agency=agency===item.key?'':item.key"><span>{{ index+1 }}. {{ benefitText(item.name) }}</span><b>{{ benefitText(amountLabelForAgency(item.amount)) }}</b></button></li></ol>
+    <p v-if="!topFundedAgencies.length">{{ benefitText('Tanlangan davr va hudud bo‘yicha ma’lumot yo‘q.') }}</p>
+  </section>
 </section>
 <OverviewCoverage :cohorts="cohortCoverage" :measures="measureCoverage" :regions="regionCoverage" :organizations="agencyCoverage" :region="region"
-  :agency="agency" :year="year" :selection="coverageSelection" :daily-unavailable="coverageDailyUnavailable" :amount="funding.amount" @period="applyCoveragePeriod" @region="region=$event" @agency="agency=$event"><template #after-map><div class="executive-grid"><section class="np-card monthly-card"><div class="np-card-heading"><div><h3>{{ benefitText("Davlat ko‘magining oylik dinamikasi") }}</h3><p>{{ benefitText(year) }}{{ benefitText("-yil · ") }}{{ benefitText(scope) }}{{ benefitText(" · mlrd so‘m") }}</p></div><div class="mini-total"><b>{{ benefitText(money(total*1e9)) }}</b><small>{{ benefitText("Tanlangan davr") }}</small></div></div><div class="np-month-chart"><button v-for="(value,i) in monthly" :key="i" :class="{selected:period===String(i),dim:!selectedMonths.includes(i)}" :title="benefitText(months[i]+': '+money(value*1e9)+' so‘m')" @click="period=period===String(i)?'all':String(i)"><b>{{ num(value,0) }}</b><i :style="{height:Math.max(2,value/maxMonthly*100)+'%',animationDelay:i*55+'ms'}"/><span>{{ benefitText(months[i]) }}</span></button></div><div class="chart-foot"><span><i></i>{{ benefitText("Ko‘rsatilgan ko‘mak") }}</span><small>{{ benefitText("Oylik taqsimot namunaviy") }}</small></div></section><section class="np-card agency-card"><div class="np-card-heading"><div><h3>{{ benefitText("Idoralar ulushi") }}</h3><p>{{ benefitText("Tanlangan summa taqsimoti") }}</p></div><Landmark :size="17"/></div><div class="agency-donut"><div class="donut" :style="{background:shares.length?ring:'#edf1f7'}"><div><strong>{{ benefitText(shares.length) }}</strong><span>{{ benefitText("idora") }}</span></div></div><div class="donut-legend"><button v-for="(item,i) in shares" :key="item.key" @click="agency=agency===item.key?'':item.key"><i :style="{background:colors[i%colors.length]}"/><span>{{ benefitText(organization(item.key).replace('Ijtimoiy himoya milliy agentligi','IHMA')) }}</span><b>{{ num(item.amount/Math.max(total,1)*100,1) }}%</b></button><p v-if="!shares.length">{{ benefitText("Tanlov bo‘yicha ma’lumot yo‘q.") }}</p></div></div><button class="card-link" @click="go('finance')">{{ benefitText("Choralar bo‘yicha ochish ") }}<ArrowRight :size="14"/></button></section></div><section class="np-card"><h3>{{ benefitText("Choraklar bo‘yicha ko‘mak") }}</h3><small>{{ benefitText(year) }} · {{ benefitText(scope) }}{{ benefitText(" · oylik taqsimot namunaviy") }}</small><div class="quarter-comparison"><button v-for="(q,i) in quarters" :key="i" :aria-pressed="period==='q'+i" @click="period='q'+i"><span>{{ benefitText(['I','II','III','IV'][i]) }}{{ benefitText(" chorak") }}</span><b>{{ benefitText(money(q.current*1e9)) }}{{ benefitText(" so‘m") }}</b><small v-if="q.delta!==null">{{ benefitText(q.delta>0?'+':'') }}{{ num(q.delta,1) }}{{ benefitText("% · o‘tgan yilga nisbatan") }}</small></button></div></section></template></OverviewCoverage>
+  :agency="agency" :year="year" :selection="coverageSelection" :daily-unavailable="coverageDailyUnavailable" :amount="funding.amount" :measure-count="funding.measures" @period="applyCoveragePeriod" @region="region=$event" @agency="agency=$event"><template #after-map><div class="executive-grid"><section class="np-card monthly-card"><div class="np-card-heading"><div><h3>{{ benefitText("Davlat ko‘magining oylik dinamikasi") }}</h3><p>{{ benefitText(year) }}{{ benefitText("-yil · ") }}{{ benefitText(scope) }}{{ benefitText(" · mlrd so‘m") }}</p></div><div class="mini-total"><b>{{ benefitText(money(total*1e9)) }}</b><small>{{ benefitText("Tanlangan davr") }}</small></div></div><div class="np-month-chart"><button v-for="(value,i) in monthly" :key="i" :class="{selected:period===String(i),dim:!selectedMonths.includes(i)}" :title="benefitText(months[i]+': '+money(value*1e9)+' so‘m')" @click="period=period===String(i)?'all':String(i)"><b>{{ num(value,0) }}</b><i :style="{height:Math.max(2,value/maxMonthly*100)+'%',animationDelay:i*55+'ms'}"/><span>{{ benefitText(months[i]) }}</span></button></div><div class="chart-foot"><span><i></i>{{ benefitText("Ko‘rsatilgan ko‘mak") }}</span><small>{{ benefitText("Oylik taqsimot namunaviy") }}</small></div></section><section class="np-card agency-card"><div class="np-card-heading"><div><h3>{{ benefitText("Idoralar ulushi") }}</h3><p>{{ benefitText("Tanlangan summa taqsimoti") }}</p></div><Landmark :size="17"/></div><div class="agency-donut"><div class="donut" :style="{background:shares.length?ring:'#edf1f7'}"><div><strong>{{ benefitText(shares.length) }}</strong><span>{{ benefitText("idora") }}</span></div></div><div class="donut-legend"><button v-for="(item,i) in shares" :key="item.key" :aria-pressed="agency===item.key" :title="item.amount === null ? benefitText('Tanlangan davr va hudud bo‘yicha ma’lumot yo‘q') : benefitText(money(item.amount)+' so‘m')" @click="agency=agency===item.key?'':item.key"><i :style="{background:colors[i%colors.length]}"/><span>{{ benefitText(organization(item.key).replace('Ijtimoiy himoya milliy agentligi','IHMA')) }}</span><b>{{ item.amount === null ? '—' : num(item.amount/Math.max(shareTotal,1)*100,1) + '%' }}</b></button><p v-if="!shares.length">{{ benefitText("Tanlov bo‘yicha ma’lumot yo‘q.") }}</p></div></div><button class="card-link" @click="go('finance')">{{ benefitText("Choralar bo‘yicha ochish ") }}<ArrowRight :size="14"/></button></section></div><section class="np-card"><h3>{{ benefitText("Choraklar bo‘yicha ko‘mak") }}</h3><small>{{ benefitText(year) }} · {{ benefitText(scope) }}{{ benefitText(" · oylik taqsimot namunaviy") }}</small><div class="quarter-comparison"><button v-for="(q,i) in quarters" :key="i" :aria-pressed="period==='q'+i" @click="period='q'+i"><span>{{ benefitText(['I','II','III','IV'][i]) }}{{ benefitText(" chorak") }}</span><b>{{ benefitText(money(q.current*1e9)) }}{{ benefitText(" so‘m") }}</b><small v-if="q.delta!==null">{{ benefitText(q.delta>0?'+':'') }}{{ num(q.delta,1) }}{{ benefitText("% · o‘tgan yilga nisbatan") }}</small></button></div></section></template></OverviewCoverage>
 
 <section class="np-card"><div class="np-card-heading"><h3>{{ benefitText("Davlat ko‘magi tarkibi") }}</h3><div class="np-segment"><button v-for="item in ([['types','Tur'],['directions','Yo‘nalish'],['cohorts','Aholi toifasi']] as const)" :key="item[0]" :aria-pressed="distributionBy===item[0]" :class="{active:distributionBy===item[0]}" @click="distributionBy=item[0]">{{ benefitText(item[1]) }}</button></div></div><div class="np-table-wrap"><table class="np-table"><thead><tr><th>{{ benefitText("Guruh") }}</th><th>{{ benefitText("Choralar") }}</th><th>{{ benefitText("Summa, mlrd so‘m") }}</th><th>{{ benefitText("Ulushi") }}</th></tr></thead><tbody><tr v-for="row in breakdownRows" :key="row.id"><td>{{ benefitText(row.label) }}</td><td>{{ benefitText(row.count) }}</td><td>{{ num(row.amount,2) }}</td><td>{{ total ? num(row.amount/total*100,1) : "—" }}%</td></tr><tr v-if="!breakdownRows.length"><td colspan="4">{{ benefitText("Tanlov bo‘yicha summa ma’lumoti yo‘q.") }}</td></tr></tbody></table></div></section><InsightsExplorer @family="openFamily" :year="year" :agency="agency" :period="period" :selected-months="selectedMonths" @period="period=$event" @region="region=$event"/><section class="np-card"><div class="np-card-heading"><div><h3>{{ benefitText("Eng yuqori 10 ta chora") }}</h3><p>{{ benefitText("Tanlangan davr va hudud bo‘yicha") }}</p></div><button class="np-button" @click="exportDashboard"><Download :size="14"/>{{ benefitText("Hisobot") }}</button></div><Teleport defer to="#support-filter-fields"><label>{{ benefitText("Choralar reytingi") }}<select v-model="rankBy"><option value="total">{{ benefitText("Summa bo‘yicha") }}</option><option value="count">{{ benefitText("Oluvchilar soni bo‘yicha") }}</option></select></label></Teleport><div class="top-measures"><button v-for="(row,i) in topMeasures" :key="row.line.id" @click="open({kind:'finance',item:row})"><span>{{ String(i+1).padStart(2,'0') }}</span><div><b>{{ benefitText(row.line.n) }}</b><small>{{ benefitText(organization(row.line.o)) }}</small></div><i><em :style="{width:row[rankBy]/(topMeasures[0]?.[rankBy]||1)*100+'%'}"/></i><strong>{{ benefitText(rankBy==='total'?money(row.total*1e9):num(row.count)+' nafar') }}</strong><ArrowUpRight :size="15"/></button></div></section><AttentionSignals @audit="openAudit" @all="go('audit')" /></template><DifficultFamilies v-else-if="tab==='difficult-families'" @open="openFamily"/><RegistryPanel v-else-if="tab==='registry'" @open="open({kind:'registry',item:$event})"/><FinancialPanel v-else-if="tab==='finance'" :cut="analysisCut" :year="analysisCut==='people'?2025:year" :region="region" :agency="analysisCut==='people'?'':agency"  :selected-months="selectedMonths" @region="region=$event" @open="open({kind:'finance',item:$event})" @family="openFamily" @district="go('finance','people')"/><FamilyPanel @payments="showCabinetSection('payments')" v-else-if="(tab==='family'||tab==='services') && (role==='citizen'||hasPassport)"
   :key="tab+(staffFamily?.id??cabinetFamily.id)" :family-id="staffFamily?.id??cabinetFamily.id"
@@ -365,4 +377,29 @@ watch(cabinetSection, () => nextTick(() => root.value?.querySelector('.cabinet-d
 <style scoped>
 .provided-support-breakdown { flex-direction: column; align-items: flex-start; gap: 5px; }
 .provided-support-breakdown b { color: var(--foreground); }
+</style>
+
+<style scoped>
+.agency-card .donut-legend { max-height: 300px; overflow-y: auto; padding-right: 6px; }
+.agency-card .donut-legend button[aria-pressed="true"] { background: color-mix(in srgb,var(--primary) 9%,var(--card)); border-radius: 6px; }
+</style>
+
+<style scoped>
+.coverage-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.top-funded-agencies h3 { font-size: 13px; margin: 8px 0; }
+.top-funded-caption { font-size: 10px; color: var(--muted-foreground); }
+.top-funded-agencies ol { list-style: none; padding: 0; margin: 0; }
+.top-funded-agencies li + li { border-top: 1px solid var(--border); }
+.top-funded-agencies li button { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 7px 0; text-align: start; font-size: 11px; }
+.top-funded-agencies li span { min-width: 0; }
+.top-funded-agencies li b { white-space: nowrap; font-size: 11px; color: var(--primary); }
+@media(max-width:1200px) { .coverage-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media(max-width:650px) { .coverage-metrics { grid-template-columns: minmax(0,1fr); } }
+</style>
+
+<style scoped>
+.coverage-metrics .executive-metric { text-align: left; align-items: stretch; }
+.coverage-metrics .executive-metric footer { text-align: left; justify-content: flex-start; align-items: flex-start; font-size: 13px; }
+.coverage-metrics .executive-metric footer span,.coverage-metrics .executive-metric small,.coverage-metrics .top-funded-caption,.coverage-metrics .top-funded-agencies li button,.coverage-metrics .top-funded-agencies li b { font-size: 12px; }
+.coverage-metrics .executive-metric footer span { color: var(--foreground); }
 </style>

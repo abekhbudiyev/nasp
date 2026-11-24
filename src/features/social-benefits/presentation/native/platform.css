@@ -205,7 +205,7 @@
 .module-content{display:contents}
 .native-platform .cabinet-device{
   box-sizing:border-box;width:min(100%,390px);aspect-ratio:9/18.5;margin:0 auto 20px;
-  display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:24px auto minmax(0,1fr) 18px;min-width:0;
+  display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:24px auto auto minmax(0,1fr) 18px;min-width:0;
   border:7px solid #20353d;border-radius:46px;overflow:hidden;background:var(--card);
   box-shadow:0 0 0 1px #84949c,0 0 0 3px #c4d1d3,0 16px 36px #153f4229;
 }
@@ -331,3 +331,10 @@
 
 .native-platform.benefits-overview .np-header { margin-bottom: 18px }
 .native-platform.benefits-overview .coverage-metrics .executive-metric { padding-block: 13px }
+
+/* Keep the cabinet header outside its scrolling content. */
+.native-platform .cabinet-device > .device-speaker { grid-row:1; }
+.native-platform .cabinet-device > .cabinet-brand { grid-row:2; }
+.native-platform .cabinet-device > .np-tabs { grid-row:3; }
+.native-platform .cabinet-device > .np-view { grid-row:4; }
+.native-platform .cabinet-device > .device-home { grid-row:5; }

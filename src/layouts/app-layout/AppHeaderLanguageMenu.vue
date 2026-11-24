@@ -26,6 +26,7 @@ const isOpen = ref(false)
           isOpen ? 'bg-accent text-foreground' : '',
         )"
         aria-label="Til tanlash"
+        title="Til tanlash"
       >
         <Languages class="h-4 w-4" />
         <span class="hidden min-w-7 text-xs font-semibold uppercase sm:inline">

@@ -20,7 +20,7 @@ const router = useRouter()
 const isOpen = ref(false)
 
 const userLabel = computed(() => authStore.currentUser?.fullName ?? 'Operator')
-const userRole = computed(() => authStore.currentUser?.role ?? 'Foydalanuvchi')
+const userRole = computed(() => authStore.currentUser?.role?.toLowerCase() === userLabel.value.toLowerCase() ? 'Tizim administratori' : authStore.currentUser?.role ?? 'Foydalanuvchi')
 
 async function handleLogout() {
   authStore.logout()
@@ -34,6 +34,7 @@ async function handleLogout() {
       <Button
         variant="ghost"
         aria-label="Foydalanuvchi menyusi"
+        title="Foydalanuvchi menyusi"
         :class="cn(
           'h-9 justify-between gap-2 px-1.5 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-2',
           isOpen ? 'bg-accent text-foreground' : '',
@@ -47,7 +48,7 @@ async function handleLogout() {
             <div class="text-sm font-medium leading-4">
               {{ userLabel }}
             </div>
-            <div class="text-[11px] leading-3 text-muted-foreground">
+            <div class="text-xs leading-4 text-muted-foreground">
               {{ userRole }}
             </div>
           </div>

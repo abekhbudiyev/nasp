@@ -19,7 +19,7 @@ const blocks = computed(() => [
       <label v-if="block.key === 'measures'">{{ benefitText('Chora turi') }}
         <select v-model="kind">
           <option value="financial">{{ benefitText('Moliyaviy ko‘maklar') }}</option>
-          <option value="services">{{ benefitText('Ijtimoiy xizmatlar') }}</option>
+          <option value="services">{{ benefitText('Imtiyoz') }}</option>
           <option value="guarantees">{{ benefitText('Ijtimoiy kafolatlar') }}</option>
         </select>
       </label>

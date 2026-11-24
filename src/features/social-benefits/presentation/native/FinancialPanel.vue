@@ -143,6 +143,9 @@ const supportBlocks = computed(() => [
   { key: 'services', title: 'Ijtimoiy xizmatlar', rows: rows.value.filter(row => row.line.d === 'svc') },
   { key: 'guarantees', title: 'Ijtimoiy kafolatlar', rows: rows.value.filter(row => row.line.d !== 'svc' && row.line.t !== 'mol' && row.line.d !== 'comp') },
 ])
+function openSupportBlock(key: string) {
+ document.getElementById('support-block-' + key)?.scrollIntoView({ behavior:'smooth', block:'start' })
+}
 function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutput {
  const ids = new Set(block.rows.map(row => row.line.id))
  return { ...measuresReport.value, title: block.title,
@@ -190,8 +193,12 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
           <button class="np-button" @click="emit('district')">{{ benefitText('Tumanlar kesimi · 2025-yil nafaqa bazasi') }} <ArrowRight :size="14" /></button>
         </div>
       </section>
+      <nav class="support-block-navigation" :aria-label="benefitText('Qo‘llab-quvvatlash turlari')">
+        <a v-for="block in supportBlocks" :key="block.key" :href="'#support-block-' + block.key" @click.prevent="openSupportBlock(block.key)"><strong>{{ benefitText(block.title) }}</strong><span>{{ block.rows.length ? num(block.rows.length) + benefitText(' ta chora') : benefitText('Ma’lumot mavjud emas') }}</span><b v-if="block.rows.length">{{ benefitText(money(sum(block.rows.map(row=>row.total))*1e9) + ' so‘m') }}</b><ArrowRight :size="16" /></a>
+      </nav>
       <FinanceComparison :lines="lines" :year="year" :region="region" :selected-months="selectedMonths" />
-      <section v-for="block in supportBlocks" :key="block.key" class="np-card">
+
+      <section v-for="block in supportBlocks" :id="'support-block-' + block.key" :key="block.key" class="np-card">
         <header class="np-card-heading">
           <div>
             <h3>{{ benefitText(block.title) }}</h3>
@@ -296,4 +303,18 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
 .district-row b { color:var(--primary); white-space:nowrap }
 @media (max-width:850px) { .finance-region-grid,.people-metrics { grid-template-columns:1fr } }
 @media (prefers-reduced-motion:reduce) { .region-ranking button i { transition:none } }
+</style>
+
+<style scoped>
+.support-block-navigation { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.support-block-navigation a { display: grid; gap: 8px; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--foreground); }
+.support-block-navigation a:nth-child(1) { border-top: 3px solid #16866d; }
+.support-block-navigation a:nth-child(2) { border-top: 3px solid #3988bd; }
+.support-block-navigation a:nth-child(3) { border-top: 3px solid #b58b38; }
+.support-block-navigation strong { font-size: 15px; }
+.support-block-navigation span { font-size: 12px; color: var(--muted-foreground); }
+.support-block-navigation b { font-size: 15px; color: var(--primary); }
+.support-block-navigation svg { justify-self: end; color: var(--primary); }
+section[id^="support-block-"] { scroll-margin-top: 20px; }
+@media(max-width:700px) { .support-block-navigation { grid-template-columns: minmax(0,1fr); } }
 </style>

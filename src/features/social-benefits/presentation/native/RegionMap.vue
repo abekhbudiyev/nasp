@@ -16,6 +16,9 @@ const mapViewBox=computed(()=>{
  return [x-pad,y-pad,width+pad*2,height+pad*2].join(' ')
 })
 const hover=ref(-1)
+const scaleLabel=(value:number|null)=>value===null?'—':props.count?num(value):money(value)+' so‘m'
+const scaleMax=computed(()=>props.values.some(value=>value!==null)?Math.max(0,...props.values.map(value=>value??0)):null)
+const min=computed(()=>Math.min(...props.values.filter((value):value is number=>value!==null),0))
 const max=computed(()=>Math.max(1,...props.values.map(value=>value??0)))
 const label=computed(()=>hover.value<0?'':latin(data.regions[hover.value]))
 function displayValue(index:number){
@@ -44,10 +47,14 @@ const index=(key:string)=>geoKeys.indexOf(key)
    </path>
   </svg>
   <div class="map-legend">
-   <span>{{ benefitText('Kam') }}</span><i></i><span>{{ benefitText('Ko‘p') }}</span>
+   <span>{{ benefitText(scaleLabel(scaleMax === null ? null : min)) }}</span><i></i><span>{{ benefitText(scaleLabel(scaleMax)) }}</span>
    <span v-if="values.some(value=>value===null)" class="missing">{{ benefitText('Ma’lumot yo‘q') }}</span>
    <small>{{ benefitText('geoBoundaries · OSM / OCHA') }}</small>
   </div>
  </div>
 </template>
 <style scoped>.region-canvas{display:flex;flex-direction:column;min-height:280px}.map-caption{height:42px;display:flex;align-items:center;gap:12px;font-size:12px;color:#61718b}.map-caption strong{color:var(--primary)}.map-caption button{margin-left:auto;color:var(--primary)}.region-canvas svg{width:100%;height:260px;overflow:hidden}.region-canvas path{stroke:white;stroke-width:1.8;cursor:pointer;transition:fill .35s,filter .2s;outline:none}.region-canvas path:hover,.region-canvas path:focus-visible{fill:#12a88c;filter:drop-shadow(0 3px 4px #1234)}.map-legend{display:flex;align-items:center;gap:9px;color:var(--muted-foreground);font-size:11px}.map-legend i{width:90px;height:5px;border-radius:5px;background:linear-gradient(90deg,var(--card),var(--primary))}.map-legend small{margin-left:auto}</style>
+
+<style scoped>
+.map-legend { font-size: 12px; color: var(--foreground); flex-wrap: wrap; }.map-caption { font-size: 13px; color: var(--foreground); }
+</style>

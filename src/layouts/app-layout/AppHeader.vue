@@ -50,6 +50,7 @@ const contextBreadcrumbs = computed(() => breadcrumbs.value.slice(0, -1))
         size="icon"
         class="shrink-0 lg:hidden"
         aria-label="Yon menyuni ochish"
+        title="Yon menyuni ochish"
         @click="$emit('toggleSidebar')"
       >
         <Menu class="h-5 w-5" />

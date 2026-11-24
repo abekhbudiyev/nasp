@@ -8,7 +8,7 @@ import CoverageBreakdowns from './CoverageBreakdowns.vue'
 import CoveragePeriodPicker, { type CoveragePeriod } from './CoveragePeriodPicker.vue'
 
 type CoverageValues = { name: string; amount: number | null; measures: number | null }
-type Territory = CoverageValues & { index: number; people: number | null; support: (CoverageValues & { key: string })[] }
+type Territory = CoverageValues & { index: number; services: number | null; people: number | null; support: (CoverageValues & { key: string })[] }
 type Organization = CoverageValues & { key: string }
 
 const props = defineProps<{
@@ -22,10 +22,14 @@ const props = defineProps<{
   dailyUnavailable: boolean
   year: number
   amount: number | null
+  measureCount: number | null
 }>()
 const emit = defineEmits<{ region: [string]; agency: [string]; period: [CoveragePeriod] }>()
 
 const district = ref('')
+const territoryOrder = ref('amount')
+const rankedRegions = computed(() => [...props.regions].sort((a,b) => territoryOrder.value === 'name' ? a.name.localeCompare(b.name) : (b.amount ?? -1) - (a.amount ?? -1)))
+const largestAmount = computed(() => Math.max(1,...props.regions.map(item=>item.amount ?? 0)))
 watch(() => props.region, () => { district.value = '' })
 const districts = computed(() => data.districts.map(([region, name], index) => ({ region, name: latin(name), key: String(index) })).filter(item => String(item.region) === props.region))
 const districtName = computed(() => districts.value.find(item => item.key === district.value)?.name)
@@ -36,6 +40,14 @@ const details = computed(() => props.regions.map(item => {
   return [measureLabel(item.measures), exactAmount(item.amount)].join(' · ')
 }))
 
+function territoryBlocks(item: Territory) {
+ const financial = item.support.filter(support => data.finance.find(line => line.id === support.key)?.d !== 'svc')
+ const services = item.support.filter(support => data.finance.find(line => line.id === support.key)?.d === 'svc')
+ return [
+   { key: 'funding', title: 'Moliyalashtirilgan mablag‘', value: amountLabel(item.amount), rows: financial },
+   { key: 'services', title: 'Ko‘rsatilgan xizmat turlari', value: item.services === null ? '—' : num(item.services) + ' ta', rows: services },
+ ]
+}
 function supportRows(key: string, region: number) {
  const line = data.finance.find(line => line.id === key && (!props.agency || line.o === props.agency))
  if (!line) return { agency: '', rows: [] }
@@ -73,10 +85,12 @@ function measureLabel(value: number | null) {
             <CoveragePeriodPicker :value="selection" @change="emit('period', $event)" />
             <p v-if="dailyUnavailable" role="status">{{ benefitText('Tanlangan oraliq uchun kunlik ma’lumot mavjud emas.') }}</p>
           </div>
+          <div class="coverage-summary">
+          <div class="coverage-total"><span>{{ benefitText('Ko‘rsatilgan qo‘llab-quvvatlash choralari') }}</span><strong>{{ district || measureCount === null ? '—' : num(measureCount) }}<small v-if="!district && measureCount !== null"> {{ benefitText('ta') }}</small></strong></div>
           <div class="coverage-total">
-            <span>{{ benefitText('Moliyalashtirilgan mablag‘') }}</span>
-            <strong :title="benefitText(exactAmount(district ? null : amount))">{{ benefitText(amountLabel(district ? null : amount)) }}</strong>
-            <small v-if="territory && !district">{{ benefitText(measureLabel(territory.measures)) }}</small>
+            <span>{{ benefitText('Ma’lumoti mavjud hududlar') }}</span>
+            <strong>{{ regions.filter(item=>item.amount !== null).length }} / {{ regions.length }}</strong>
+          </div>
           </div>
         </header>
         <nav class="territory-navigation" :aria-label="benefitText('Hudud kesimi')">
@@ -89,20 +103,26 @@ function measureLabel(value: number | null) {
         </label>
         <label v-if="district" class="district-filter">{{ benefitText('Mahalla') }}<select disabled><option>{{ benefitText('Mahallalar ro‘yxati mavjud emas') }}</option></select></label>
         <p v-if="district" role="status">{{ benefitText('Bu tuman bo‘yicha mahallalar ro‘yxati, xarita chegaralari va moliyaviy ma’lumotlar manbaga ulanmagan. Xaritada tanlangan viloyat chegarasi ko‘rsatilgan.') }}</p>
-        <RegionMap :focus-selected="true" :values="values" :details="details" :selected="region" @select="emit('region', $event)" />
+        <div class="coverage-map-layout"><div><RegionMap :focus-selected="true" :values="values" :details="details" :selected="region" @select="emit('region', $event)" /></div><aside class="map-ranking"><h3>{{ benefitText('Moliyalashtirish bo‘yicha yetakchi hududlar') }}</h3><button v-for="(item,index) in [...regions].filter(item=>item.amount !== null).sort((a,b)=>(b.amount ?? 0)-(a.amount ?? 0)).slice(0,5)" :key="item.index" @click="emit('region',String(item.index))"><span>{{ index+1 }}. {{ benefitText(item.name) }}</span><b>{{ benefitText(amountLabel(item.amount)) }}</b></button></aside></div>
       <p class="territory-source">{{ benefitText('Aholi soni — 2025-yil nafaqa oluvchilari bazasi bo‘yicha. Choralar soni va mablag‘ — tanlangan moliyaviy manba bo‘yicha; qamrovlar farq qilishi mumkin.') }}</p>
-      <ul class="territory-list">
-        <li v-for="item in regions" :key="item.index">
+      <div class="territory-toolbar"><h3>{{ benefitText('Hududlar bo‘yicha taqsimot') }}</h3><label>{{ benefitText('Saralash') }}<select v-model="territoryOrder"><option value="amount">{{ benefitText('Summa bo‘yicha') }}</option><option value="name">{{ benefitText('Nomi bo‘yicha') }}</option></select></label></div><ul class="territory-list">
+        <li v-for="item in rankedRegions" :key="item.index">
           <button type="button" :class="{ selected: String(item.index) === region }"
             :aria-pressed="String(item.index) === region"
             @click="emit('region', String(item.index))">
             <span class="territory-name">{{ benefitText(item.name) }}</span>
-            <span class="territory-amount" :title="benefitText(exactAmount(item.amount))">{{ benefitText(amountLabel(item.amount)) }}</span>
-            <small>{{ benefitText(measureLabel(item.measures)) }}</small>
+            <span class="territory-amount" :title="benefitText(exactAmount(item.amount))"><small>{{ benefitText('Moliyalashtirilgan mablag‘') }}</small>{{ benefitText(amountLabel(item.amount)) }}</span>
+            <small>{{ benefitText(measureLabel(item.measures)) }}</small><span class="territory-services">{{ benefitText('Ko‘rsatilgan xizmat turlari') }}: <b>{{ item.services === null ? '—' : num(item.services) + benefitText(' ta') }}</b></span>
             <span class="territory-people">{{ benefitText('Nafaqa oluvchilar') }}: <b>{{ item.people === null ? '—' : num(item.people) }}</b>{{ item.people === null ? '' : benefitText(' nafar') }}<small v-if="item.people !== null && selection.period !== 'all'">{{ benefitText(' (o‘rtacha oylik)') }}</small></span>
           </button>
-          <details v-if="item.support.length" class="territory-support"><summary>{{ benefitText('Choralar va mablag‘lar') }}</summary><ul><li v-for="support in item.support" :key="support.key"><details class="support-detail"><summary><span>{{ benefitText(support.name) }}</span><b>{{ benefitText(amountLabel(support.amount)) }}</b></summary><div v-for="detail in [supportRows(support.key, item.index)]" :key="support.name" class="support-data"><p>{{ benefitText(detail.agency) }}</p><div class="support-table"><table><thead><tr><th>{{ benefitText('Oy') }}</th><th>{{ benefitText('Oluvchilar soni') }}</th><th>{{ benefitText('Mablag‘') }}</th></tr></thead><tbody><tr v-for="row in detail.rows" :key="row.key"><td>{{ benefitText(row.month) }}</td><td>{{ row.people === null ? '—' : num(row.people) }}</td><td>{{ benefitText(amountLabel(row.amount)) }}</td></tr><tr v-if="!detail.rows.length"><td colspan="3">{{ benefitText('Tanlangan davr bo‘yicha ma’lumot mavjud emas.') }}</td></tr></tbody></table></div></div></details></li></ul></details>
-          <p v-else class="territory-missing">{{ benefitText('Tanlangan manbada hududiy ma’lumot yo‘q') }}</p>
+          <div class="territory-bar" aria-hidden="true"><i :style="{width:(item.amount ?? 0)/largestAmount*100+'%'}" /></div>
+          <div class="territory-drilldowns">
+            <details v-for="block in territoryBlocks(item)" :key="block.key" class="territory-support territory-drilldown">
+              <summary><span>{{ benefitText(block.title) }}</span><strong>{{ benefitText(block.value) }}</strong></summary>
+              <ul v-if="block.rows.length"><li v-for="support in block.rows" :key="support.key"><details class="support-detail"><summary><span>{{ benefitText(support.name) }}</span><b>{{ benefitText(amountLabel(support.amount)) }}</b></summary><div v-for="detail in [supportRows(support.key, item.index)]" :key="support.name" class="support-data"><p>{{ benefitText(detail.agency) }}</p><div class="support-table"><table><thead><tr><th>{{ benefitText('Oy') }}</th><th>{{ benefitText('Oluvchilar soni') }}</th><th>{{ benefitText('Mablag‘') }}</th></tr></thead><tbody><tr v-for="row in detail.rows" :key="row.key"><td>{{ benefitText(row.month) }}</td><td>{{ row.people === null ? '—' : num(row.people) }}</td><td>{{ benefitText(amountLabel(row.amount)) }}</td></tr><tr v-if="!detail.rows.length"><td colspan="3">{{ benefitText('Tanlangan davr bo‘yicha ma’lumot mavjud emas.') }}</td></tr></tbody></table></div></div></details></li></ul>
+              <p v-else class="territory-missing">{{ benefitText(block.key === 'services' ? 'Tanlangan davr va hudud bo‘yicha ko‘rsatilgan xizmatlar ma’lumoti manbada mavjud emas.' : 'Tanlangan davr va hudud bo‘yicha moliyalashtirish tafsiloti manbada mavjud emas.') }}</p>
+            </details>
+          </div>
         </li>
       </ul>
       </section>
@@ -127,7 +147,8 @@ function measureLabel(value: number | null) {
 .coverage-grid > section, .coverage-regions { padding: clamp(16px, 1.7vw, 26px); }
 .coverage-map :deep(.region-canvas) { min-height: 0; }
 .coverage-map :deep(.map-caption) { min-height: 24px; height: auto; flex-wrap: wrap; }
-.coverage-map :deep(.region-canvas svg) { max-height: clamp(184px, 32vh, 330px); }
+.coverage-map :deep(.region-canvas svg) { height: clamp(300px, 46vh, 500px); max-height: none; }
+@media (max-width: 600px) { .coverage-map :deep(.region-canvas svg) { height: clamp(240px, 36vh, 340px); } }
 .coverage-heading {
   display: flex;
   align-items: flex-start;
@@ -227,4 +248,39 @@ function measureLabel(value: number | null) {
 .coverage-map :deep(path[aria-pressed="true"]:hover), .coverage-map :deep(path[aria-pressed="true"]:focus-visible) { fill: #15803d; }
 .territory-list button.selected { background: #15803d; border-color: #15803d; color: #fff; }
 .territory-list button.selected .territory-amount, .territory-list button.selected small { color: #fff; }
+</style>
+
+<style scoped>
+.coverage-summary { display: flex; flex-wrap: wrap; gap: 10px; }
+.coverage-summary .coverage-total strong small { font-size: 13px; font-weight: 550; }
+</style>
+
+<style scoped>
+.territory-amount { order: initial; margin-left: 0; width: 100%; display: grid; gap: 3px; }
+.territory-amount small { font-size: 10px; font-weight: 500; }
+.territory-services { width: 100%; font-size: 12px; }
+</style>
+
+<style scoped>
+.territory-drilldowns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 8px; }
+.territory-drilldown { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); min-width: 0; }
+.territory-drilldown > summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-weight: 650; }
+.territory-drilldown[open] { grid-column: 1 / -1; }
+@media(max-width:600px) { .territory-drilldowns { grid-template-columns: minmax(0,1fr); } }
+</style>
+
+<style scoped>
+.coverage-map-layout { display: grid; grid-template-columns: minmax(0,2fr) minmax(230px,1fr); gap: 24px; align-items: center; }
+.map-ranking h3 { font-size: 14px; margin-bottom: 12px; }
+.map-ranking button { display: grid; gap: 5px; width: 100%; text-align: start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.map-ranking b { color: var(--primary); }
+.territory-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.territory-toolbar h3 { font-size: 15px; }.territory-toolbar label { display: flex; align-items: center; gap: 8px; font-size: 13px; }.territory-toolbar select { background: var(--card); color: var(--foreground); border: 1px solid var(--border); border-radius: 8px; padding: 7px; }
+.territory-list { grid-template-columns: minmax(0,1fr); gap: 12px; }
+.territory-list > li { border: 1px solid var(--border); border-radius: 12px; padding: 12px; overflow: hidden; }
+.territory-list > li > button { border: 0; display: grid; grid-template-columns: minmax(180px,2fr) minmax(140px,1fr) minmax(100px,1fr); align-items: center; font-size: 13px; padding: 10px; }
+.territory-list .territory-name,.territory-list .territory-amount,.territory-list .territory-people,.territory-list .territory-services { width: auto; font-size: 13px; }
+.territory-list small,.territory-source,.territory-missing { font-size: 12px; color: var(--foreground); line-height: 1.5; }
+.territory-bar { height: 5px; background: var(--muted); margin: 10px 0; border-radius: 5px; overflow: hidden; }.territory-bar i { display:block; height:100%; background:var(--primary); }
+@media(max-width:850px) { .coverage-map-layout { grid-template-columns: minmax(0,1fr); }.territory-list > li > button { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 </style>
