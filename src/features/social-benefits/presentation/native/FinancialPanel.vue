@@ -9,6 +9,7 @@ import ReportActions from './ReportActions.vue'
 import FinanceComparison from './FinanceComparison.vue'
 import { findText, financeSource, reportedMonth, scopeAgency, scopeMonths, scopeRegion, type ReportOutput } from './report-output'
 
+const showMonths = ref(false)
 const props = defineProps<{ cut: string; year: number; region: string; agency: string; selectedMonths: number[] }>()
 const emit = defineEmits<{ region: [string]; open: [FinanceRow]; family: [string, string?]; district: [] }>()
 const query = ref(''), type = ref(''), direction = ref(''), cohort = ref('')
@@ -159,8 +160,7 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
   <div class="np-section-stack">
     <template v-if="cut !== 'people'">
       <Teleport defer to="#support-filter-fields">
-        <label>{{ benefitText('Chora nomi') }}<input v-model="query" type="search"></label>
-        <label>{{ benefitText('Ko‘mak turi') }}
+            <label>{{ benefitText('Ko‘mak turi') }}
           <select v-model="type"><option value="">{{ benefitText('Barchasi') }}</option><option v-for="(name, key) in data.labels.types" :key="key" :value="key">{{ benefitText(name) }}</option></select>
         </label>
         <label>{{ benefitText('Ko‘mak yo‘nalishi') }}
@@ -195,11 +195,12 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
       </section>
       <div class="np-toolbar">
         <label class="measure-search">{{ benefitText('Chora qidiruvi') }}<input v-model="query" type="search" /></label>
+        <button type="button" class="np-button" :aria-pressed="showMonths" @click="showMonths = !showMonths">{{ benefitText('Oylik ustunlar') }}</button>
       </div>
       <nav class="support-block-navigation" :aria-label="benefitText('Qo‘llab-quvvatlash turlari')">
         <a v-for="block in supportBlocks" :key="block.key" :href="'#support-block-' + block.key" @click.prevent="openSupportBlock(block.key)"><strong>{{ benefitText(block.title) }}</strong><span>{{ block.rows.length ? num(block.rows.length) + benefitText(' ta chora') : benefitText('Ma’lumot mavjud emas') }}</span><b v-if="block.rows.length">{{ benefitText(money(sum(block.rows.map(row=>row.total))*1e9) + ' so‘m') }}</b><ArrowRight :size="16" /></a>
       </nav>
-      <FinanceComparison :lines="lines" :year="year" :region="region" :selected-months="selectedMonths" />
+      <details class="np-card platform-disclosure"><summary>{{ benefitText('Davrlarni solishtirish') }}</summary><FinanceComparison :lines="lines" :year="year" :region="region" :selected-months="selectedMonths" /></details>
 
       <section v-for="block in supportBlocks" :id="'support-block-' + block.key" :key="block.key" class="np-card">
         <header class="np-card-heading">
@@ -216,7 +217,7 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
               <th>{{ benefitText('Chora') }}</th><th>{{ benefitText('Idora') }}</th>
               <th>{{ benefitText('Ko‘rsatilgan ko‘mak') }}</th><th>{{ benefitText('Oluvchilar') }}</th>
               <th>{{ benefitText('Vedomost ijrosi') }}</th>
-              <th v-for="month in selectedMonths" :key="month">{{ benefitText(months[month]) }}<small>{{ benefitText(monthlyUnit) }}</small></th>
+              <th v-for="month in (showMonths ? selectedMonths : [])" :key="month">{{ benefitText(months[month]) }}<small>{{ benefitText(monthlyUnit) }}</small></th>
               <th></th>
             </tr></thead>
             <tbody>
@@ -227,10 +228,10 @@ function supportReport(block: { title: string; rows: FinanceRow[] }): ReportOutp
                 <td><b>{{ benefitText(money(row.total * 1e9)) }}</b><small>{{ benefitText('so‘m') }}</small></td>
                 <td>{{ row.line.cnt === null ? '—' : num(row.count) }}<small>{{ benefitText(row.line.k === 'm' ? 'O‘rtacha oylik oluvchi' : 'Oluvchilar') }}</small></td>
                 <td><span v-if="row.plan > 0" class="np-tag" :class="row.total / row.plan < .9 ? 'amber' : 'green'">{{ num(row.total / row.plan * 100, 1) }}%</span><span v-else>—</span></td>
-                <td v-for="month in selectedMonths" :key="month">{{ monthValue(row, month) === null ? '—' : num(monthValue(row, month)!, metric === 'amount' ? 3 : 0) }}</td>
+                <td v-for="month in (showMonths ? selectedMonths : [])" :key="month">{{ monthValue(row, month) === null ? '—' : num(monthValue(row, month)!, metric === 'amount' ? 3 : 0) }}</td>
                 <td><button class="icon-button" :aria-label="benefitText(row.line.n + ' tafsiloti')" @click="emit('open', row)"><ArrowUpRight :size="16" /></button></td>
               </tr>
-              <tr v-if="!block.rows.length"><td :colspan="6 + selectedMonths.length" class="np-empty">{{ benefitText('Tanlangan kesim bo‘yicha ma’lumot yo‘q.') }}</td></tr>
+              <tr v-if="!block.rows.length"><td :colspan="6 + (showMonths ? selectedMonths.length : 0)" class="np-empty">{{ benefitText('Tanlangan kesim bo‘yicha ma’lumot yo‘q.') }}</td></tr>
             </tbody>
           </table>
         </div>

@@ -64,8 +64,15 @@ export const routes: RouteRecordRaw[] = [
       ...platformViews.map(view => ({
         path: (platformPath + view.path).slice(1),
         name: 'social-benefits-' + view.key,
-        component: () => import('@/features/social-benefits/pages/SocialSupportPlatform.vue'),
-        props: { view: view.key },
+        beforeEnter: view.key === 'dashboard' ? (to: { query: import('vue-router').LocationQuery; hash: string }) => {
+          if (to.query.area || to.query.mode || to.query.zone || to.query.periodKind) {
+            return { name: 'social-benefits-family-monitor', query: to.query, hash: to.hash }
+          }
+        } : undefined,
+        component: view.tab === 'family-monitor'
+          ? () => import('@/features/social-benefits/monitoring/FamilyRiskMonitor.vue')
+          : () => import('@/features/social-benefits/pages/SocialSupportPlatform.vue'),
+        props: view.tab === 'family-monitor' ? false : { view: view.key },
         meta: {
           requiresAuth: true,
           permission: 'social-benefits.view' as const,
@@ -85,7 +92,13 @@ export const routes: RouteRecordRaw[] = [
           }),
         })),
       ),
-      { path: 'apps/social-benefits/:legacy(overview|rollout)', redirect: platformPath },
+      { path: 'apps/social-benefits/dashboard', redirect: platformPath },
+      { path: 'apps/social-benefits/rollout', redirect: platformPath + '/overview' },
+      {
+        path: 'apps/social-benefits/difficult-families',
+        name: 'social-benefits-difficult-families',
+        redirect: to => ({ name: 'social-benefits-family-monitor', query: { ...to.query, zone: to.query.zone ?? 'risk' } }),
+      },
       { path: 'apps/social-benefits/:legacy(catalog|matrix|contingents)', redirect: platformPath + '/registry' },
       { path: 'apps/social-benefits/:legacy(risks|eligibility)', redirect: platformPath + '/control' },
       { path: 'apps/social-benefits/usage', redirect: platformPath + '/finance' },

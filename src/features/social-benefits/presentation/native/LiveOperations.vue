@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { ArrowUpRight, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
+import { ArrowUpRight, ChevronLeft, ChevronRight, Search, X } from 'lucide-vue-next'
 import { benefitText } from '@/shared/i18n'
 import BenefitChannel from './BenefitChannel.vue'
 import { data, latin, money, num, organization } from './data'
@@ -158,10 +158,6 @@ function applyAction(action: Action) {
   <section class="operations">
     <Teleport defer to="#support-filter-fields">
       <label>
-        {{ benefitText('So‘rov qidiruvi') }}
-        <input v-model="query" :placeholder="benefitText('So‘rov kodi yoki chora nomi')" type="search">
-      </label>
-      <label>
         {{ benefitText('Hudud') }}
         <select v-model="region" @change="publishScope">
           <option value="">{{ benefitText('Respublika') }}</option>
@@ -221,6 +217,7 @@ function applyAction(action: Action) {
           <strong>{{ benefitText(money(deliveredAmount)) }} {{ benefitText('so‘m') }}</strong>
         </div>
       </div>
+      <div class="np-toolbar"><label class="np-search"><Search :size="16"/><input v-model="query" type="search" :aria-label="benefitText('So‘rov qidiruvi')" :placeholder="benefitText('So‘rov kodi yoki chora nomi')" /></label></div>
       <div class="np-table-wrap">
         <table class="np-table" role="table">
           <thead role="rowgroup">

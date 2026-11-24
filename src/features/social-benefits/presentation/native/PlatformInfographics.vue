@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Activity, ArrowRight, BookOpen, FileSpreadsheet, MapPinned, ShieldCheck, UserRound, Wallet } from 'lucide-vue-next'
 import { benefitText } from '@/shared/i18n'
 import { data, auditTitles, money, months, num, organization, sum, type Family } from './data'
 import { fundingCoverage } from './report-output'
@@ -19,11 +20,16 @@ const overpayment = sum(data.audit.slice(0,2).map(row => row.over ?? 0)) * 1e9
 const riskCases = sum(data.audit.slice(0,4).map(row => row.n))
 const amountText = (amount: number | null) => amount === null ? '—' : money(amount) + ' so‘m'
 const metrics = [
-  { title: 'Ko‘rsatilgan ko‘mak', value: amountText(baseline.amount), caption: num(baseline.measures ?? 0) + ' ta chora', page: 'overview' },
-  { title: 'Qo‘llab-quvvatlash choralari', value: num(data.registryTotal), caption: num(data.agencies.length) + ' ta idora', page: 'registry' },
-  { title: 'Nafaqa oluvchilar', value: num(data.demographics.persons), caption: '2025-yil nafaqa bazasi', page: 'people' },
-  { title: 'Tekshirilgan to‘lov yozuvlari', value: num(data.demographics.rows), caption: num(riskCases) + ' ta signal', page: 'audit' },
-  { title: 'Ortiqcha to‘lov signallari summasi', value: amountText(overpayment), caption: 'Ikki turdagi signal', page: 'audit' },
+  { title: 'Moliyalashtirilgan mablag‘', value: amountText(baseline.amount), caption: num(baseline.measures ?? 0) + ' ta chora', page: 'overview', icon: Wallet, tone: 'green' },
+  { title: 'Reyestrdagi choralar', value: num(data.registryTotal), caption: num(data.agencies.length) + ' ta idora', page: 'registry', icon: BookOpen, tone: 'indigo' },
+  { title: 'Nafaqa oluvchilar', value: num(data.demographics.persons), caption: '2025-yil nafaqa bazasi', page: 'people', icon: UserRound, tone: 'teal' },
+  { title: 'Nazorat signallari', value: num(riskCases), caption: 'Nazoratdagi 4 turdagi holat', page: 'audit', icon: ShieldCheck, tone: 'risk' },
+]
+const shortcuts = [
+  { page: 'family-monitor', title: 'Oilalar farovonligi', icon: MapPinned },
+  { page: 'family', title: 'Oila pasporti', icon: UserRound },
+  { page: 'flow', title: 'Jarayon kuzatuvi', icon: Activity },
+  { page: 'reports', title: 'Hisobotlar', icon: FileSpreadsheet },
 ]
 const regionRows = computed(() => data.regions.map((label,index) => {
   const sourceIndex = data.regionMap.indexOf(index)
@@ -59,10 +65,16 @@ const familyChoices = computed(()=>[...new Map([props.family,...data.families.fi
 <template>
   <div class="reference-panels">
     <template v-if="page === 'dashboard'">
-      <p class="dashboard-source">{{ benefitText('2025-yil manba ko‘rsatkichlari') }}</p>
+      <div class="dashboard-context">
+        <p class="dashboard-source">{{ benefitText('2025-yil manba ko‘rsatkichlari') }}</p>
+        <nav class="dashboard-shortcuts" :aria-label="benefitText('Platforma bo‘limlari')">
+          <button v-for="item in shortcuts" :key="item.page" class="np-button" type="button" @click="emit('navigate', item.page)"><component :is="item.icon" :size="15" />{{ benefitText(item.title) }}</button>
+        </nav>
+      </div>
       <div class="dashboard-metrics">
-        <button v-for="metric in metrics" :key="metric.title" class="np-card dashboard-metric" type="button" @click="emit('navigate',metric.page)">
-          <span>{{ benefitText(metric.title) }}</span><strong>{{ benefitText(metric.value) }}</strong><small>{{ benefitText(metric.caption) }}</small>
+        <button v-for="metric in metrics" :key="metric.title" class="np-card dashboard-metric" :data-tone="metric.tone" type="button" @click="emit('navigate',metric.page)">
+          <span class="dashboard-metric-label"><component :is="metric.icon" :size="17" />{{ benefitText(metric.title) }}<ArrowRight :size="15" /></span>
+          <strong>{{ benefitText(metric.value) }}</strong><small>{{ benefitText(metric.caption) }}</small>
         </button>
       </div>
     </template>
@@ -73,7 +85,6 @@ const familyChoices = computed(()=>[...new Map([props.family,...data.families.fi
           <strong>{{ benefitText(amountText(overpayment)) }}</strong>
           <p>{{ num(riskCases) }} {{ benefitText('ta tekshirish signali qayd etilgan.') }}</p>
         </section>
-        <PlatformRanking :title="'Platforma qanday tekshiradi'" :rows="[{ key:'rows',label:'To‘lov yozuvlari',value:data.demographics.rows },{ key:'people',label:'Nafaqa oluvchilar',value:data.demographics.persons },{ key:'risks',label:'Tekshirish signallari',value:riskCases }]" />
         <section class="np-card reference-selectors">
           <h3>{{ benefitText('Aniqlangan holatlar') }}</h3>
           <button v-for="(item,index) in data.audit" :key="item.k" type="button" :aria-pressed="auditIndex===index" @click="auditIndex=index">{{ benefitText(auditTitles[index]) }} · {{ num(item.n) }}</button>
@@ -86,22 +97,25 @@ const familyChoices = computed(()=>[...new Map([props.family,...data.families.fi
             <button v-for="item in [{key:'amount',name:'Ko‘mak summasi'},{key:'people',name:'Nafaqa oluvchilar'},{key:'risks',name:'Nazorat holatlari'}]" :key="item.key" type="button" :aria-pressed="mapMode===item.key" @click="mapMode=item.key">{{ benefitText(item.name) }}</button>
           </div>
         </header>
-        <div class="reference-columns">
+        <div class="reference-columns reference-map-grid">
           <RegionMap :values="regionRows.map(row=>row.value)" :selected="''" :count="countMap" @select="emit('region',$event,page==='audit'?'audit':mapMode,auditIndex)" />
-          <PlatformRanking :title="page==='audit'?'Eng ko‘p holat qayd etilgan hududlar':'Hududlar reytingi'" :rows="rankedRegions.slice(0,5)" :money-values="!countMap" interactive @select="emit('region',$event,page==='audit'?'audit':mapMode)" />
+          <PlatformRanking :title="page==='audit'?'Ustuvor hududlar':'Hududlar reytingi'" :rows="rankedRegions.slice(0,3)" :money-values="!countMap" interactive @select="emit('region',$event,page==='audit'?'audit':mapMode,auditIndex)" />
         </div>
         <p>{{ benefitText(page==='dashboard' && mapMode==='amount' ? 'Hududiy moliyalashtirish manbada hududlar kesimida qayd etilgan choralarni qamraydi.' : '2025-yil nafaqa bazasi') }}</p>
       </section>
     </template>
     <template v-if="page === 'dashboard'">
-      <div class="reference-columns">
+      <details class="np-card platform-disclosure">
+        <summary>{{ benefitText('Moliyalashtirish va qamrov tafsilotlari') }}</summary>
+        <div class="reference-columns">
         <PlatformRanking title="Idoralar ulushi" :rows="fundedAgencies" money-values share />
         <PlatformRanking title="Tur bo‘yicha" :rows="registryGroups[0]!.rows" />
         <PlatformRanking title="Eng katta 5 ta chora" :rows="fundedMeasures" money-values interactive @select="emit('measure',$event)" />
         <PlatformRanking title="Oyma-oy" :rows="monthlyFunding" money-values />
         <section class="np-card reference-hero"><h3>{{ benefitText('Vedomost ijrosi (IHMA)') }}</h3><strong>{{ plan ? num(paid/plan*100,1)+'%' : '—' }}</strong><p>{{ benefitText(amountText(paid*1e9)) }} / {{ benefitText(amountText(plan*1e9)) }}</p></section>
         <PlatformRanking title="Nafaqa oluvchilar kimlar" :rows="data.benefitTypes.map((label,index)=>({key:String(index),label,value:sum(data.cube.filter(row=>row[1]===index).map(row=>row[4]))}))" />
-      </div>
+        </div>
+      </details>
     </template>
     <template v-if="page === 'registry'">
       <section class="np-card reference-hero"><p>{{ benefitText('Davlat ijtimoiy qo‘llab-quvvatlash choralari') }}</p><strong>{{ num(data.registryTotal) }} {{ benefitText('ta chora') }}</strong><p>{{ num(data.agencies.length) }} {{ benefitText('ta vazirlik va idora') }}</p></section>
@@ -127,7 +141,18 @@ const familyChoices = computed(()=>[...new Map([props.family,...data.families.fi
 .reference-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
 .dashboard-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 12px; }
 .dashboard-metric { display: grid; gap: 8px; text-align: start; }
-.dashboard-metric strong { font-size: 22px; color: var(--primary); }
+.dashboard-metric { --metric-ink: var(--np-green); border-top: 2px solid var(--metric-ink); transition: background .2s ease; }
+.dashboard-metric[data-tone="indigo"] { --metric-ink: light-dark(#3b5080,#a8bcf4); }
+.dashboard-metric[data-tone="teal"] { --metric-ink: light-dark(#1a6670,#8ad4dc); }
+.dashboard-metric[data-tone="risk"] { --metric-ink: var(--np-rose); }
+.dashboard-metric:hover { background: color-mix(in srgb,var(--metric-ink) 8%,var(--card)); }
+.dashboard-metric strong { font-size: clamp(20px,2vw,30px); line-height: 1.12; color: var(--metric-ink); font-variant-numeric: tabular-nums; }
+.dashboard-metric .dashboard-metric-label { display: flex; align-items: center; gap: 7px; font-weight: 650; }
+.dashboard-metric-label svg { color:var(--metric-ink); flex-shrink:0; }
+.dashboard-metric-label svg:last-child { margin-inline-start: auto; }
+.dashboard-context,.dashboard-shortcuts { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.dashboard-context { justify-content:space-between; }
+.reference-map-grid { grid-template-columns: minmax(0,2fr) minmax(240px,1fr); align-items: start; }
 .dashboard-source,.dashboard-metric :is(span,small),.reference-map p,.reference-hero p,.reference-examples span { color: var(--muted-foreground); font-size: 13px; }
 .reference-hero { border-inline-start: 5px solid var(--primary); display: grid; gap: 12px; }
 .reference-hero > strong { color: var(--primary); font-size: clamp(30px,5vw,58px); line-height: 1.1; }

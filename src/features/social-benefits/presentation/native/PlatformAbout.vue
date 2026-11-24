@@ -9,9 +9,9 @@ defineEmits<{execution: []; passport: []}>()
 <template>
   <section class="platform-about">
     <div class="np-card about-summary">
-      <h2>{{ benefitText("Davlat ko‘magi qanday hisobga olinadi?") }}</h2>
-      <p>{{ benefitText("Har bir vazirlik va idora fuqaro bo‘yicha tayinlangan va ko‘rsatilgan ijtimoiy yordam, xizmat hamda imtiyoz ma’lumotlarini yagona platformaga uzatadi. Platforma ushbu ma’lumotlarni hisobga oladi, solishtiradi va tahlil qiladi. Fuqaro o‘zi va oila a’zolariga ko‘rsatilgan ko‘makni pasportda ko‘radi.") }}</p>
-      <span class="np-tag amber">{{ benefitText("Namoyish · idoralar tizimiga jonli ulanish mavjud emas") }}</span>
+      <h2>{{ benefitText("Davlat ko‘magini hisobga olish va kuzatish") }}</h2>
+      <p>{{ benefitText("Platforma idoralar bo‘yicha moliyalashtirish, xizmat va imtiyozlarni tahlil qiladi. Fuqaro o‘ziga va oila a’zolariga ko‘rsatilgan ko‘makni oila pasportida ko‘radi.") }}</p>
+      <span class="np-tag amber">{{ benefitText("Namoyish muhiti") }}</span>
     </div>
 
     <section class="np-card">
@@ -36,10 +36,10 @@ defineEmits<{execution: []; passport: []}>()
       </div>
     </section>
 
-    <section class="np-card">
-      <h3>{{ benefitText("Platformani joriy etish uchun qarorlar") }}</h3>
+    <details class="np-card platform-disclosure">
+      <summary>{{ benefitText("Platformani joriy etish uchun qarorlar") }}</summary>
       <ul class="about-decisions"><li v-for="decision in data.about.decisions" :key="decision">{{ benefitText(decision) }}</li></ul>
-    </section>
+    </details>
   </section>
 </template>
 
