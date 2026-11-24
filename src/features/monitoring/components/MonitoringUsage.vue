@@ -1,12 +1,15 @@
 <script setup lang="ts">
-defineProps<{ label: string; value: number | null; detail?: string; tone?: 'blue' | 'violet' }>()
+import MonitoringValueHelp from './MonitoringValueHelp.vue'
+import type { ValueHelp } from '../value-help'
+
+defineProps<{ label: string; value: number | null; detail?: string; tone?: 'blue' | 'violet'; help: ValueHelp }>()
 </script>
 
 <template>
   <div class="space-y-1.5">
     <div class="flex items-baseline justify-between gap-2 text-sm">
       <span class="font-medium">{{ label }}</span>
-      <span class="font-semibold tabular-nums">{{ value === null ? '—' : `${value}%` }}</span>
+      <span class="whitespace-nowrap font-semibold tabular-nums">{{ value === null ? '—' : `${value}%` }}<MonitoringValueHelp :help="{ ...help, label }" /></span>
     </div>
     <div
       v-if="value !== null"

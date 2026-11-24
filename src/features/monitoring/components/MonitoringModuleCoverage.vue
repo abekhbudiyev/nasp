@@ -3,8 +3,10 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
 import MonitoringStatus from './MonitoringStatus.vue'
+import MonitoringValueHelp from './MonitoringValueHelp.vue'
 import { buildModuleCoverage } from '../module-coverage'
 import type { MonitoringSnapshot } from '../types'
+import { valueHelp } from '../value-help'
 
 const props = defineProps<Pick<MonitoringSnapshot, 'checks' | 'incidents'>>()
 const search = ref('')
@@ -70,7 +72,7 @@ const dateTime = new Intl.DateTimeFormat('uz-UZ', {
       </div>
     </div>
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="text-sm text-muted-foreground" aria-live="polite">{{ coverage.length }} ta moduldan {{ configured }} tasida demo tekshiruv bor.<span v-if="visible.length !== coverage.length"> {{ visible.length }} tasi ko‘rsatilmoqda.</span></p>
+      <p class="text-sm text-muted-foreground" aria-live="polite">{{ coverage.length }} ta moduldan {{ configured }} tasida demo tekshiruv bor.<MonitoringValueHelp :help="valueHelp.moduleCoverage" /><span v-if="visible.length !== coverage.length"> {{ visible.length }} tasi ko‘rsatilmoqda.</span></p>
       <label class="flex items-center gap-2 text-sm font-medium">
         Modulni qidirish
         <input v-model="search" type="search" class="h-9 min-w-0 max-w-40 rounded-md border bg-background px-2.5 text-sm" />
@@ -92,13 +94,14 @@ const dateTime = new Intl.DateTimeFormat('uz-UZ', {
             <th scope="row" class="min-w-48 px-3 py-2.5 font-medium">
               <RouterLink :to="{ name: 'monitoring-checks', query: { modul: row.module.id } }" class="text-primary hover:underline">{{ row.module.title }}</RouterLink>
             </th>
-            <td class="px-3 py-2.5">
+            <td class="whitespace-nowrap px-3 py-2.5">
               <MonitoringStatus v-if="row.status" :status="row.status" />
               <span v-else class="whitespace-nowrap text-xs text-muted-foreground">Kuzatuv sozlanmagan</span>
+              <MonitoringValueHelp :help="valueHelp.moduleStatus" />
             </td>
-            <td class="whitespace-nowrap px-3 py-2.5 tabular-nums">{{ row.lastMeasurement === null ? '—' : dateTime.format(row.lastMeasurement) }}</td>
-            <td class="px-3 py-2.5 text-right tabular-nums">{{ row.checkCount }}</td>
-            <td class="px-3 py-2.5 text-right tabular-nums">{{ row.checkCount ? row.incidentCount : '—' }}</td>
+            <td class="whitespace-nowrap px-3 py-2.5 tabular-nums">{{ row.lastMeasurement === null ? '—' : dateTime.format(row.lastMeasurement) }}<MonitoringValueHelp :help="valueHelp.moduleLast" /></td>
+            <td class="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{{ row.checkCount }}<MonitoringValueHelp :help="valueHelp.moduleChecks" /></td>
+            <td class="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{{ row.checkCount ? row.incidentCount : '—' }}<MonitoringValueHelp :help="valueHelp.moduleIncidents" /></td>
           </tr>
           <tr v-if="!visible.length"><td colspan="5" class="px-3 py-4 text-muted-foreground">Tanlovga mos modul topilmadi.</td></tr>
         </tbody>

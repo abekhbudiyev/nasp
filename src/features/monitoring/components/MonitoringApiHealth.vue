@@ -6,9 +6,11 @@ import SectionBlock from '@/shared/components/SectionBlock.vue'
 import MonitoringAdminTable from './MonitoringAdminTable.vue'
 import MonitoringResponseChart from './MonitoringResponseChart.vue'
 import MonitoringStatus from './MonitoringStatus.vue'
+import MonitoringValueHelp from './MonitoringValueHelp.vue'
 import { transportCheckTables } from '../admin-demo-data'
 import { moduleNames, monitoredModules } from '../module-coverage'
 import type { ApiCheck, ApiDataFlow, ApiDirection, CheckStatus } from '../types'
+import { apiValueHelp, valueHelp } from '../value-help'
 
 const props = defineProps<{ checks: ApiCheck[]; asOf: string }>()
 const route = useRoute()
@@ -62,7 +64,7 @@ function dataAge(at: string | null) {
 </script>
 
 <template>
-  <SectionBlock title="API va integratsiyalar reyestri" class="min-w-0">
+  <SectionBlock title="API va integratsiyalar reyestri" description="Yo‘nalish NASP nuqtai nazaridan ko‘rsatilgan. HTTP 200 — javob muvaffaqiyatli, ma’lumot qachon yangilangani esa alohida ko‘rinadi." class="min-w-0">
     <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
       <button type="button" class="rounded-lg border p-2.5 text-left hover:bg-muted aria-pressed:border-primary aria-pressed:bg-primary/10" :aria-pressed="!directionFilter" @click="updateFilters(moduleFilter, '')">
         <span class="block text-xs font-semibold">Barchasi</span><strong class="mt-1 block text-xl tabular-nums">{{ moduleChecks.length }}</strong>
@@ -97,7 +99,7 @@ function dataAge(at: string | null) {
         <input v-model="search" type="search" placeholder="API, modul yoki hamkor" class="h-9 min-w-0 rounded-md border bg-background px-2 text-sm" />
       </label>
     </div>
-    <p class="text-xs text-muted-foreground" aria-live="polite">{{ visibleChecks.length }} ta kuzatuv ko‘rsatilmoqda.</p>
+    <p class="text-xs text-muted-foreground" aria-live="polite">{{ visibleChecks.length }} ta kuzatuv ko‘rsatilmoqda.<MonitoringValueHelp :help="valueHelp.directionCount" /></p>
     <div v-if="visibleChecks.length" class="overflow-x-auto rounded-lg border" role="region" aria-label="API va biznes tekshiruvlari jadvali" tabindex="0">
       <table class="w-full text-left text-sm [&_th]:bg-muted/50 [&_th]:text-xs [&_th]:font-semibold [&_th]:text-muted-foreground [&_th]:px-3 [&_th]:py-2.5 [&_td]:px-3 [&_td]:py-3 [&_td]:align-top [&_tbody_tr+tr]:border-t">
         <thead><tr><th scope="col">API yoki operatsiya</th><th scope="col">Yo‘nalish va hamkor</th><th scope="col">Holat</th><th scope="col">HTTP / javob vaqti</th><th scope="col">Oxirgi kuzatuv (UZT)</th><th scope="col">Xato va ma’lumot yangiligi</th></tr></thead>
@@ -114,15 +116,15 @@ function dataAge(at: string | null) {
               <span v-if="check.dataFlow" class="mt-1 block text-xs font-medium">{{ dataFlowNames[check.dataFlow] }}</span>
               <span class="mt-1 block text-xs text-muted-foreground">{{ check.kind === 'business' ? 'Biznes tekshiruvi · faqat o‘qish' : observationNames[check.observation] }}</span>
             </td>
-            <td><MonitoringStatus :status="check.status" /></td>
-            <td class="whitespace-nowrap tabular-nums"><span>{{ check.httpStatus ?? '—' }}</span><span class="mt-1 block text-xs text-muted-foreground">{{ check.responseMs === null ? '—' : `${number.format(check.responseMs)} ms` }}</span></td>
-            <td class="whitespace-nowrap text-xs tabular-nums"><time v-if="check.checkedAt" :datetime="check.checkedAt">{{ dateTime.format(new Date(check.checkedAt)) }}</time><span v-else>—</span></td>
+            <td class="whitespace-nowrap"><MonitoringStatus :status="check.status" /><MonitoringValueHelp :help="apiValueHelp(check, 'status')" /></td>
+            <td class="whitespace-nowrap tabular-nums"><span>{{ check.httpStatus ?? '—' }}<MonitoringValueHelp :help="apiValueHelp(check, 'http')" /></span><span class="block text-xs text-muted-foreground">{{ check.responseMs === null ? '—' : `${number.format(check.responseMs)} ms` }}<MonitoringValueHelp :help="apiValueHelp(check, 'response')" /></span></td>
+            <td class="whitespace-nowrap text-xs tabular-nums"><time v-if="check.checkedAt" :datetime="check.checkedAt">{{ dateTime.format(new Date(check.checkedAt)) }}</time><span v-else>—</span><MonitoringValueHelp :help="apiValueHelp(check, 'observed')" /></td>
             <td class="min-w-48 text-xs text-muted-foreground">
-              <span>{{ check.reason ?? '—' }}</span>
+              <span>{{ check.reason ?? '—' }}<MonitoringValueHelp :help="apiValueHelp(check, 'reason')" /></span>
               <p v-if="check.freshness" class="mt-2 tabular-nums">
                 <span class="block font-medium text-foreground">Oxirgi muvaffaqiyatli sinxronlash</span>
                 <time v-if="check.freshness.lastSuccessAt" :datetime="check.freshness.lastSuccessAt">{{ dateTime.format(new Date(check.freshness.lastSuccessAt)) }}</time><span v-else>Ma’lumot yo‘q</span>
-                <span class="block"><template v-if="check.freshness.lastSuccessAt">{{ dataAge(check.freshness.lastSuccessAt) }} daqiqa o‘tgan · </template>Chegara {{ check.freshness.maxAgeMinutes }} daqiqa</span>
+                <span class="block"><template v-if="check.freshness.lastSuccessAt">{{ dataAge(check.freshness.lastSuccessAt) }} daqiqa o‘tgan · </template>Chegara {{ check.freshness.maxAgeMinutes }} daqiqa<MonitoringValueHelp :help="apiValueHelp(check, 'freshness')" /></span>
               </p>
             </td>
           </tr>

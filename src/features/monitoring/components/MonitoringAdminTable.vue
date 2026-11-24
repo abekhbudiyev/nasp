@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import SectionBlock from '@/shared/components/SectionBlock.vue'
+import MonitoringValueHelp from './MonitoringValueHelp.vue'
+import { adminValueHelp } from '../table-value-help'
 import type { AdminTable } from '../admin-demo-data'
 
 defineProps<{ table: AdminTable }>()
+const explainedIdentifiers = ['Mount', 'Qurilma', 'Interfeys', 'Kutayotgan SID / SERIAL#']
 </script>
 
 <template>
@@ -16,8 +19,10 @@ defineProps<{ table: AdminTable }>()
         </thead>
         <tbody>
           <tr v-for="row in table.rows" :key="row[0]" class="border-t">
-            <th scope="row" class="min-w-36 px-3 py-3 align-top font-medium">{{ row[0] }}</th>
-            <td v-for="(value, index) in row.slice(1)" :key="index" class="min-w-24 px-3 py-3 align-top tabular-nums text-muted-foreground">{{ value }}</td>
+            <th scope="row" class="min-w-36 px-3 py-3 align-top font-medium">{{ row[0] }}<MonitoringValueHelp v-if="table.columns[0] && explainedIdentifiers.includes(table.columns[0])" :help="adminValueHelp(table.title, row[0] ?? '', table.columns[0])" /></th>
+            <td v-for="(value, index) in row.slice(1)" :key="index" class="min-w-28 px-3 py-3 align-top tabular-nums text-muted-foreground">
+              {{ value }}<MonitoringValueHelp :help="adminValueHelp(table.title, row[0] ?? '', table.columns[index + 1] ?? '')" />
+            </td>
           </tr>
         </tbody>
       </table>

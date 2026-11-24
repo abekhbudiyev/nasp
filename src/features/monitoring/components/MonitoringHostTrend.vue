@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
+import MonitoringValueHelp from './MonitoringValueHelp.vue'
 import { hostTrend } from '../admin-demo-data'
+import { valueHelp } from '../value-help'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const activeIndex = ref(hostTrend.samples.length - 1)
@@ -23,6 +25,11 @@ const metrics = hostTrend.series.map(metric => {
   }
 })
 const scale = [100, 75, 50, 25, 0]
+const statisticHelp = {
+  min: { label: 'Eng past', meaning: 'Berilgan davrdagi eng kichik o‘lchov.', how: 'Diagrammadagi shu resursning barcha o‘lchovlari ichidan eng kichigi tanlanadi.' },
+  average: { label: 'O‘rtacha', meaning: 'Davr bo‘yicha o‘rtacha o‘lchov.', how: 'Shu resurs qiymatlari yig‘indisi o‘lchovlar soniga bo‘linadi va butun foizga yaxlitlanadi.' },
+  max: { label: 'Eng yuqori', meaning: 'Berilgan davrdagi eng katta o‘lchov.', how: 'Diagrammadagi shu resursning barcha o‘lchovlari ichidan eng kattasi tanlanadi.' },
+} as const
 
 function trendTangents(values: number[]) {
   return values.map((value, index) => {
@@ -100,12 +107,12 @@ onBeforeUnmount(() => {
               <span class="h-0.5 w-3 shrink-0 rounded-full bg-current sm:w-6" aria-hidden="true" />
               <span>{{ metric.label }}</span>
             </dt>
-            <dd class="mt-1.5 text-xl font-semibold leading-none tracking-tight text-foreground tabular-nums sm:text-3xl">{{ activeSample[metric.id] }}<span class="ml-0.5 text-xs text-muted-foreground sm:text-base">%</span></dd>
+            <dd class="mt-1.5 whitespace-nowrap text-xl font-semibold leading-none tracking-tight text-foreground tabular-nums sm:text-3xl">{{ activeSample[metric.id] }}<span class="ml-0.5 text-xs text-muted-foreground sm:text-base">%</span><MonitoringValueHelp :help="valueHelp[metric.id]" /></dd>
           </div>
         </dl>
         <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-2xl bg-muted px-3 py-2 text-xs lg:flex-col lg:items-start lg:justify-center lg:gap-1.5 lg:px-4">
           <span class="text-muted-foreground">Tanlangan o‘lchov</span>
-          <time :datetime="activeSample.at" class="font-semibold text-foreground tabular-nums sm:text-sm">{{ activeSample.date }} · {{ activeSample.time }} UZT</time>
+          <div><time :datetime="activeSample.at" class="font-semibold text-foreground tabular-nums sm:text-sm">{{ activeSample.date }} · {{ activeSample.time }} UZT</time><MonitoringValueHelp :help="{ label: 'Grafikdagi o‘lchov vaqti', meaning: 'Uchala qiymat qaysi paytda olinganini ko‘rsatadi.', how: 'Jonli grafikda shu nuqta Zabbix tarixidan olingan o‘lchov vaqtiga qo‘yiladi. UZT — Toshkent vaqti.' }" /></div>
         </div>
       </figcaption>
       <div class="relative ml-9 h-44 sm:h-64">
@@ -135,7 +142,7 @@ onBeforeUnmount(() => {
         <span v-for="(point, index) in samples" :key="point.at" class="rounded-full py-1" :class="{ 'bg-primary/10 font-semibold text-primary': index === activeIndex }">{{ point.time }}</span>
       </div>
     </figure>
-    <details class="rounded-lg border bg-card px-3 py-2 text-sm">
+    <details class="overflow-x-auto rounded-lg border bg-card px-3 py-2 text-sm">
       <summary class="cursor-pointer font-medium text-primary">Davr statistikasi</summary>
       <table class="mt-2 w-full text-left text-xs tabular-nums sm:text-sm">
         <thead class="text-muted-foreground">
@@ -143,7 +150,8 @@ onBeforeUnmount(() => {
         </thead>
         <tbody>
           <tr v-for="metric in metrics" :key="metric.id" class="border-t">
-            <th scope="row" class="py-1.5 font-medium">{{ metric.label }}</th><td>{{ metric.min }}%</td><td>{{ metric.average }}%</td><td>{{ metric.max }}%</td>
+            <th scope="row" class="py-1.5 font-medium">{{ metric.label }}</th>
+            <td v-for="(help, key) in statisticHelp" :key="key" class="whitespace-nowrap">{{ metric[key] }}%<MonitoringValueHelp :help="help" /></td>
           </tr>
         </tbody>
       </table>

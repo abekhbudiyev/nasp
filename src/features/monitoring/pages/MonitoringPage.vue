@@ -12,10 +12,12 @@ import MonitoringModuleCoverage from '../components/MonitoringModuleCoverage.vue
 import MonitoringStatus from '../components/MonitoringStatus.vue'
 import MonitoringSystemHealth from '../components/MonitoringSystemHealth.vue'
 import MonitoringUsage from '../components/MonitoringUsage.vue'
+import MonitoringValueHelp from '../components/MonitoringValueHelp.vue'
 import { backendCheckTable, oracleTables, serverTables, sourceTables } from '../admin-demo-data'
 import { demoSnapshot, demoTopSql } from '../demo-data'
 import type { MonitoringView } from '../config'
 import { demoServices } from '../system-demo-data'
+import { valueHelp } from '../value-help'
 import type { SqlPeriod, UsageMetric } from '../types'
 
 defineProps<{ view: MonitoringView; title: string }>()
@@ -51,37 +53,37 @@ function formatUsage(metric: UsageMetric | null) {
         </div>
         <div class="rounded-xl border border-white/20 bg-slate-950/30 px-3.5 py-2.5 text-sm text-emerald-50">
           <span class="inline-flex items-center gap-1.5 font-semibold text-amber-200"><FlaskConical class="size-4" aria-hidden="true" /> Demo rejimi</span>
-          <div class="mt-1 text-xs text-emerald-50/85">Namuna <time :datetime="collectedAt">{{ dateTime.format(new Date(collectedAt)) }}</time> (UZT)</div>
+          <div class="mt-1 text-xs text-emerald-50/85">Namuna <time :datetime="collectedAt">{{ dateTime.format(new Date(collectedAt)) }}</time> (UZT)<MonitoringValueHelp :help="valueHelp.sample" inverse /></div>
         </div>
       </div>
     </header>
 
     <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-sky-200/75 bg-sky-50 px-4 py-2.5 text-sm text-sky-900 dark:border-sky-900/80 dark:bg-sky-950/40 dark:text-sky-100">
-      <p>NASP backend va Zabbix ulanishi kutilmoqda.</p>
+      <p>Qiymatlar namuna uchun kiritilgan. NASP backend va Zabbix ulanishi kutilmoqda.</p>
       <RouterLink v-if="view !== 'sources'" :to="{ name: 'monitoring-sources' }" class="inline-flex items-center gap-1 font-semibold hover:underline">Ma’lumot manbalari <ArrowUpRight class="size-3.5" aria-hidden="true" /></RouterLink>
     </div>
 
     <dl v-if="view === 'overview'" class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
       <div class="monitoring-kpi border-t-teal-500">
         <dt><RouterLink :to="{ name: 'monitoring-system' }" class="monitoring-kpi-link"><HeartPulse class="monitoring-kpi-icon bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300" aria-hidden="true" /> Tizim servislari</RouterLink></dt>
-        <dd class="monitoring-kpi-number">{{ healthyServices }} <span class="text-base font-medium text-muted-foreground">/ {{ demoServices.length }}</span></dd>
+        <dd class="monitoring-kpi-number">{{ healthyServices }} <span class="text-base font-medium text-muted-foreground">/ {{ demoServices.length }}</span><MonitoringValueHelp :help="valueHelp.services" /></dd>
       </div>
       <div class="monitoring-kpi border-t-sky-500">
         <dt><RouterLink :to="{ name: 'monitoring-servers' }" class="monitoring-kpi-link"><Server class="monitoring-kpi-icon bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300" aria-hidden="true" /> Serverlar</RouterLink></dt>
-        <dd class="monitoring-kpi-number">{{ servers.length }}</dd>
+        <dd class="monitoring-kpi-number">{{ servers.length }}<MonitoringValueHelp :help="valueHelp.hosts" /></dd>
       </div>
       <div class="monitoring-kpi border-t-emerald-500">
         <dt><RouterLink :to="{ name: 'monitoring-checks' }" class="monitoring-kpi-link"><Activity class="monitoring-kpi-icon bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" aria-hidden="true" /> Muvaffaqiyatli tekshiruvlar</RouterLink></dt>
-        <dd class="monitoring-kpi-number">{{ healthyChecks }} <span class="text-base font-medium text-muted-foreground">/ {{ checks.length }}</span></dd>
+        <dd class="monitoring-kpi-number">{{ healthyChecks }} <span class="text-base font-medium text-muted-foreground">/ {{ checks.length }}</span><MonitoringValueHelp :help="valueHelp.checks" /></dd>
       </div>
       <div class="monitoring-kpi border-t-violet-500">
         <dt><RouterLink :to="{ name: 'monitoring-oracle' }" class="monitoring-kpi-link"><Database class="monitoring-kpi-icon bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300" aria-hidden="true" /> Bloklangan sessiyalar</RouterLink></dt>
-        <dd class="monitoring-kpi-number">{{ oracle?.blockedSessions ?? '—' }}</dd>
+        <dd class="monitoring-kpi-number">{{ oracle?.blockedSessions ?? '—' }}<MonitoringValueHelp :help="valueHelp.blockedSessions" /></dd>
       </div>
       <div class="monitoring-kpi border-t-rose-500">
         <dt><RouterLink :to="{ name: 'monitoring-incidents' }" class="monitoring-kpi-link"><TriangleAlert class="monitoring-kpi-icon bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" aria-hidden="true" /> Faol hodisalar</RouterLink></dt>
         <dd class="monitoring-kpi-number flex flex-wrap items-baseline gap-x-2">
-          {{ incidents.length }} <span v-if="criticalCount" class="text-xs font-semibold text-destructive">{{ criticalCount }} ta kritik</span>
+          {{ incidents.length }} <span v-if="criticalCount" class="text-xs font-semibold text-destructive">{{ criticalCount }} ta kritik</span><MonitoringValueHelp :help="valueHelp.activeIncidents" />
         </dd>
       </div>
     </dl>
@@ -91,24 +93,26 @@ function formatUsage(metric: UsageMetric | null) {
         <div v-for="server in servers" :key="server.id" class="space-y-4">
           <div class="flex items-center justify-between gap-2">
             <h3 class="text-sm font-semibold">{{ server.name }}</h3>
-            <MonitoringStatus :status="server.status" />
+            <div><MonitoringStatus :status="server.status" /><MonitoringValueHelp :help="valueHelp.hostStatus" /></div>
           </div>
           <div class="grid gap-4 sm:grid-cols-3">
-            <MonitoringUsage label="CPU" :value="server.cpuPercent" />
-            <MonitoringUsage label="RAM" tone="blue" :value="server.ram?.usedPercent ?? null" :detail="formatUsage(server.ram)" />
-            <MonitoringUsage :label="`Disk (${server.filesystem})`" tone="violet" :value="server.disk?.usedPercent ?? null" :detail="formatUsage(server.disk)" />
+            <MonitoringUsage label="CPU" :value="server.cpuPercent" :help="valueHelp.cpu" />
+            <MonitoringUsage label="RAM" tone="blue" :value="server.ram?.usedPercent ?? null" :detail="formatUsage(server.ram)" :help="valueHelp.ram" />
+            <MonitoringUsage :label="`Disk (${server.filesystem})`" tone="violet" :value="server.disk?.usedPercent ?? null" :detail="formatUsage(server.disk)" :help="valueHelp.disk" />
           </div>
           <dl class="grid gap-3 border-t pt-3 text-sm sm:grid-cols-2">
             <div>
               <dt class="font-medium">Disk I/O</dt>
               <dd class="mt-1 text-xs tabular-nums text-muted-foreground">
                 {{ server.diskIo ? `O‘qish ${number.format(server.diskIo.readMiBps)} · Yozish ${number.format(server.diskIo.writeMiBps)} MiB/s` : '—' }}
+                <MonitoringValueHelp :help="valueHelp.diskIo" />
               </dd>
             </div>
             <div>
               <dt class="font-medium">Tarmoq</dt>
               <dd class="mt-1 text-xs tabular-nums text-muted-foreground">
                 {{ server.network ? `Kirish ${number.format(server.network.receiveMbps)} · Chiqish ${number.format(server.network.sendMbps)} Mbit/s` : '—' }}
+                <MonitoringValueHelp :help="valueHelp.network" />
               </dd>
             </div>
           </dl>
@@ -119,8 +123,8 @@ function formatUsage(metric: UsageMetric | null) {
         <ul v-if="incidents.length" class="divide-y">
           <li v-for="incident in incidents" :key="incident.id" class="space-y-1 py-3 first:pt-0 last:pb-0">
             <div class="flex flex-wrap items-baseline justify-between gap-1.5">
-              <MonitoringStatus :status="incident.severity" />
-              <time class="text-xs tabular-nums text-muted-foreground" :datetime="incident.startedAt">{{ dateTime.format(new Date(incident.startedAt)) }}</time>
+              <div><MonitoringStatus :status="incident.severity" /><MonitoringValueHelp :help="valueHelp.incidentSeverity" /></div>
+              <div><time class="text-xs tabular-nums text-muted-foreground" :datetime="incident.startedAt">{{ dateTime.format(new Date(incident.startedAt)) }}</time><MonitoringValueHelp :help="valueHelp.incidentStarted" /></div>
             </div>
             <h3 class="text-sm font-semibold">
               <RouterLink :to="{ name: 'monitoring-incidents', query: { hodisa: incident.id } }" class="text-primary hover:underline">{{ incident.title }}</RouterLink>
@@ -151,21 +155,21 @@ function formatUsage(metric: UsageMetric | null) {
         <div v-if="oracle" class="space-y-4">
           <div class="flex items-center justify-between gap-2">
             <h3 class="text-sm font-semibold">{{ oracle.name }}</h3>
-            <MonitoringStatus :status="oracle.status" />
+            <div><MonitoringStatus :status="oracle.status" /><MonitoringValueHelp :help="valueHelp.oracleStatus" /></div>
           </div>
           <dl class="grid grid-cols-2 gap-3">
-            <div class="rounded-lg bg-muted/50 p-3"><dt class="text-xs text-muted-foreground">Faol sessiyalar</dt><dd class="mt-1 text-xl font-semibold tabular-nums">{{ oracle.activeSessions ?? '—' }}</dd></div>
-            <div class="rounded-lg bg-muted/50 p-3"><dt class="text-xs text-muted-foreground">Bloklangan sessiyalar</dt><dd class="mt-1 text-xl font-semibold tabular-nums">{{ oracle.blockedSessions ?? '—' }}</dd></div>
+            <div class="rounded-lg bg-muted/50 p-3"><dt class="text-xs text-muted-foreground">Faol sessiyalar</dt><dd class="mt-1 text-xl font-semibold tabular-nums">{{ oracle.activeSessions ?? '—' }}<MonitoringValueHelp :help="valueHelp.activeSessions" /></dd></div>
+            <div class="rounded-lg bg-muted/50 p-3"><dt class="text-xs text-muted-foreground">Bloklangan sessiyalar</dt><dd class="mt-1 text-xl font-semibold tabular-nums">{{ oracle.blockedSessions ?? '—' }}<MonitoringValueHelp :help="valueHelp.blockedSessions" /></dd></div>
           </dl>
           <div class="space-y-3">
             <h3 class="text-sm font-semibold">Tablespace bandligi</h3>
-            <MonitoringUsage v-for="item in oracle.tablespaces" :key="item.name" :label="item.name" :value="item.space?.usedPercent ?? null" :detail="formatUsage(item.space)" />
+            <MonitoringUsage v-for="item in oracle.tablespaces" :key="item.name" :label="item.name" :value="item.space?.usedPercent ?? null" :detail="formatUsage(item.space)" :help="valueHelp.tablespace" />
           </div>
         </div>
         <p v-else class="text-sm text-muted-foreground">Oracle ko‘rsatkichlari mavjud emas.</p>
       </SectionBlock>
 
-      <SectionBlock title="Eng og‘ir SQL so‘rovlari" class="min-w-0">
+      <SectionBlock title="Eng og‘ir SQL so‘rovlari" description="Tanlangan davrda Oracle bazasida jami eng ko‘p vaqt olgan so‘rovlar." class="min-w-0">
         <div class="flex flex-wrap items-end justify-between gap-2">
           <label class="flex items-center gap-2 text-sm font-medium">
             Davr
@@ -177,7 +181,7 @@ function formatUsage(metric: UsageMetric | null) {
           </label>
           <p class="text-xs tabular-nums text-muted-foreground" aria-live="polite">
             <time :datetime="sql.from">{{ dateTime.format(new Date(sql.from)) }}</time> –
-            <time :datetime="sql.to">{{ dateTime.format(new Date(sql.to)) }}</time> (UZT)
+            <time :datetime="sql.to">{{ dateTime.format(new Date(sql.to)) }}</time> (UZT)<MonitoringValueHelp :help="valueHelp.sqlPeriod" />
           </p>
         </div>
         <div class="overflow-x-auto rounded-lg border" role="region" aria-label="Eng og‘ir SQL so‘rovlari jadvali" tabindex="0">
@@ -192,15 +196,15 @@ function formatUsage(metric: UsageMetric | null) {
             </thead>
             <tbody>
               <tr v-for="row in sql.rows" :key="row.sqlId">
-                <td><span class="font-mono text-xs font-medium">{{ row.sqlId }}</span><span v-if="row.label" class="mt-1 block min-w-36 text-xs text-muted-foreground">{{ row.label }}</span></td>
-                <td class="text-right tabular-nums">{{ number.format(row.executions) }}</td>
+                <td><span class="font-mono text-xs font-medium">{{ row.sqlId }}</span><MonitoringValueHelp :help="valueHelp.sqlId" /><span v-if="row.label" class="mt-1 block min-w-36 text-xs text-muted-foreground">{{ row.label }}</span></td>
+                <td class="text-right tabular-nums">{{ number.format(row.executions) }}<MonitoringValueHelp :help="valueHelp.sqlExecutions" /></td>
                 <td class="min-w-24 text-right font-medium tabular-nums">
-                  {{ number.format(row.elapsedSeconds) }}
+                  {{ number.format(row.elapsedSeconds) }}<MonitoringValueHelp :help="valueHelp.sqlElapsed" />
                   <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-violet-500/10" aria-hidden="true">
                     <div class="h-full rounded-full bg-violet-500" :style="{ width: `${row.elapsedSeconds / longestSql * 100}%` }" />
                   </div>
                 </td>
-                <td class="text-right tabular-nums">{{ number.format(row.cpuSeconds) }}</td>
+                <td class="text-right tabular-nums">{{ number.format(row.cpuSeconds) }}<MonitoringValueHelp :help="valueHelp.sqlCpu" /></td>
               </tr>
               <tr v-if="!sql.rows.length"><td colspan="4" class="text-muted-foreground">Ushbu davr uchun ma’lumot yo‘q.</td></tr>
             </tbody>
