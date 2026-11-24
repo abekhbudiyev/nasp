@@ -1,10 +1,12 @@
+import type { ApiDirection } from './types'
+
 export interface IncidentCase {
   impact: string
   evidence: readonly string[]
   assessment: string
   timeline: readonly { at: string; detail: string }[]
   followUp: string
-  related: readonly { route: string; label: string; moduleId?: string }[]
+  related: readonly { route: string; label: string; moduleId?: string; direction?: ApiDirection }[]
 }
 
 export const incidentCases: Partial<Record<string, IncidentCase>> = {
@@ -30,6 +32,18 @@ export const incidentCases: Partial<Record<string, IncidentCase>> = {
     ],
     followUp: 'Ushbu ro‘yxat so‘rovini boshqa HIXM tekshiruvlari va shu vaqt oralig‘idagi backend metrikalari bilan solishtirish.',
     related: [{ route: 'monitoring-checks', label: 'HIXM API tekshiruvlari', moduleId: 'regional-centers' }],
+  },
+  'hixm-sync-delay': {
+    impact: 'CHH’dan olinadigan HIXM xizmat yozuvlarining yangiligi 15 daqiqalik chegaradan oshgan.',
+    evidence: ['Oxirgi muvaffaqiyatli sinxronlash 09:46 da yakunlangan.', '10:29 dagi tashqi so‘rov HTTP 200 qaytargan.'],
+    assessment: 'HTTP javobi tashqi servisga ulanish borligini ko‘rsatadi. Sinxronlashning yakunlanmaslik sababi hali aniqlanmagan.',
+    timeline: [
+      { at: '2026-11-24T09:46:00+05:00', detail: 'Oxirgi muvaffaqiyatli sinxronlash qayd etildi.' },
+      { at: '2026-11-24T10:02:00+05:00', detail: 'Yangilik chegarasidan oshilgani aniqlandi.' },
+      { at: '2026-11-24T10:29:03+05:00', detail: 'Tashqi API javob berdi. Sinxronlash holati yangilanmadi.' },
+    ],
+    followUp: 'Sinxronlash jurnalidagi oxirgi muvaffaqiyatli bosqich va joriy ish holatini tekshirish.',
+    related: [{ route: 'monitoring-checks', label: 'HIXM chiquvchi API’lari', moduleId: 'regional-centers', direction: 'outbound' }],
   },
   'tablespace-usage': {
     impact: 'NASP_DATA kengayishi uchun ajratilgan bo‘sh joy kamaygan. Demo o‘lchovida yozuv xatosi qayd etilmagan.',

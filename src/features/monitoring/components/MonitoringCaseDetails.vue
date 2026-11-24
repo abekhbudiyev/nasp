@@ -47,7 +47,7 @@ const time = new Intl.DateTimeFormat('uz-UZ', { timeZone: 'Asia/Tashkent', hour:
         </div>
         <ul class="flex flex-wrap gap-x-3 gap-y-1">
           <li v-for="link in incidentCase.related" :key="link.route">
-            <RouterLink :to="{ name: link.route, query: link.moduleId ? { modul: link.moduleId } : {} }" class="font-medium text-primary underline underline-offset-2">{{ link.label }}</RouterLink>
+            <RouterLink :to="{ name: link.route, query: { modul: link.moduleId, yonalish: link.direction } }" class="font-medium text-primary underline underline-offset-2">{{ link.label }}</RouterLink>
           </li>
         </ul>
       </div>

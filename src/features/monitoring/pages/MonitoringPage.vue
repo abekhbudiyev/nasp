@@ -1,53 +1,40 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { Activity, ArrowUpRight, Database, FlaskConical, Server, TriangleAlert } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
+import { Activity, ArrowUpRight, Database, FlaskConical, HeartPulse, Server, TriangleAlert } from 'lucide-vue-next'
 import PageContainer from '@/shared/components/PageContainer.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
 import MonitoringAdminTable from '../components/MonitoringAdminTable.vue'
+import MonitoringApiHealth from '../components/MonitoringApiHealth.vue'
 import MonitoringHostTrend from '../components/MonitoringHostTrend.vue'
 import MonitoringIncidentList from '../components/MonitoringIncidentList.vue'
 import MonitoringModuleCoverage from '../components/MonitoringModuleCoverage.vue'
-import MonitoringResponseChart from '../components/MonitoringResponseChart.vue'
 import MonitoringStatus from '../components/MonitoringStatus.vue'
+import MonitoringSystemHealth from '../components/MonitoringSystemHealth.vue'
 import MonitoringUsage from '../components/MonitoringUsage.vue'
-import { backendCheckTable, oracleTables, serverTables, sourceTables, transportCheckTables } from '../admin-demo-data'
+import { backendCheckTable, oracleTables, serverTables, sourceTables } from '../admin-demo-data'
 import { demoSnapshot, demoTopSql } from '../demo-data'
 import type { MonitoringView } from '../config'
-import { moduleNames, monitoredModules } from '../module-coverage'
+import { demoServices } from '../system-demo-data'
 import type { SqlPeriod, UsageMetric } from '../types'
 
 defineProps<{ view: MonitoringView; title: string }>()
 
 const { collectedAt, servers, checks, oracle, incidents } = demoSnapshot
-const route = useRoute()
-const router = useRouter()
-const moduleFilter = computed(() => {
-  const id = route.query.modul
-  return typeof id === 'string' && moduleNames.has(id) ? id : ''
-})
-const visibleChecks = computed(() => checks.filter(check => !moduleFilter.value || check.moduleId === moduleFilter.value))
 const period = ref<SqlPeriod>('1h')
 const sql = computed(() => demoTopSql[period.value])
 const longestSql = computed(() => Math.max(1, ...sql.value.rows.map(row => row.elapsedSeconds)))
 const healthyChecks = checks.filter(check => check.status === 'healthy').length
+const healthyServices = demoServices.filter(service => service.status === 'healthy').length
 const criticalCount = incidents.filter(incident => incident.severity === 'critical').length
 const dateTime = new Intl.DateTimeFormat('uz-UZ', {
   timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-})
-const checkTime = new Intl.DateTimeFormat('uz-UZ', {
-  timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit', second: '2-digit',
 })
 const number = new Intl.NumberFormat('uz-UZ', { maximumFractionDigits: 1 })
 const tableClass = 'w-full text-left text-sm [&_th]:bg-muted/50 [&_th]:text-xs [&_th]:font-semibold [&_th]:text-muted-foreground [&_th]:whitespace-nowrap [&_th]:px-3 [&_th]:py-2.5 [&_td]:px-3 [&_td]:py-3 [&_td]:align-top [&_tbody_tr+tr]:border-t'
 
 function formatUsage(metric: UsageMetric | null) {
   return metric ? `${number.format(metric.used)} / ${number.format(metric.capacity)} GiB` : undefined
-}
-
-function selectModule(event: Event) {
-  const value = (event.target as HTMLSelectElement).value
-  void router.replace({ name: 'monitoring-checks', query: value ? { modul: value } : {} })
 }
 </script>
 
@@ -74,7 +61,11 @@ function selectModule(event: Event) {
       <RouterLink v-if="view !== 'sources'" :to="{ name: 'monitoring-sources' }" class="inline-flex items-center gap-1 font-semibold hover:underline">Ma’lumot manbalari <ArrowUpRight class="size-3.5" aria-hidden="true" /></RouterLink>
     </div>
 
-    <dl v-if="view === 'overview'" class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <dl v-if="view === 'overview'" class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+      <div class="monitoring-kpi border-t-teal-500">
+        <dt><RouterLink :to="{ name: 'monitoring-system' }" class="monitoring-kpi-link"><HeartPulse class="monitoring-kpi-icon bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300" aria-hidden="true" /> Tizim servislari</RouterLink></dt>
+        <dd class="monitoring-kpi-number">{{ healthyServices }} <span class="text-base font-medium text-muted-foreground">/ {{ demoServices.length }}</span></dd>
+      </div>
       <div class="monitoring-kpi border-t-sky-500">
         <dt><RouterLink :to="{ name: 'monitoring-servers' }" class="monitoring-kpi-link"><Server class="monitoring-kpi-icon bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300" aria-hidden="true" /> Serverlar</RouterLink></dt>
         <dd class="monitoring-kpi-number">{{ servers.length }}</dd>
@@ -143,56 +134,17 @@ function selectModule(event: Event) {
 
     <MonitoringModuleCoverage v-if="view === 'overview'" :checks="checks" :incidents="incidents" />
 
+    <template v-if="view === 'system'">
+      <MonitoringSystemHealth :services="demoServices" />
+      <MonitoringAdminTable :table="backendCheckTable" />
+    </template>
+
     <template v-if="view === 'servers'">
       <MonitoringHostTrend />
       <MonitoringAdminTable v-for="table in serverTables" :key="table.title" :table="table" />
     </template>
 
-    <SectionBlock v-if="view === 'checks'" title="Modullar bo‘yicha tekshiruvlar" class="min-w-0">
-      <label class="flex flex-wrap items-center gap-2 text-sm font-medium">
-        Modul
-        <select :value="moduleFilter" class="h-9 max-w-full rounded-md border bg-background px-2.5 text-sm" @change="selectModule">
-          <option value="">Barcha modullar</option>
-          <option v-for="module in monitoredModules" :key="module.id" :value="module.id">{{ module.title }}</option>
-        </select>
-      </label>
-      <div v-if="visibleChecks.length" class="overflow-x-auto rounded-lg border" role="region" aria-label="API va biznes tekshiruvlari jadvali" tabindex="0">
-        <table :class="tableClass">
-          <thead>
-            <tr>
-              <th scope="col">Tekshiruv</th>
-              <th scope="col">Holat</th>
-              <th scope="col">HTTP kodi</th>
-              <th scope="col">Javob vaqti</th>
-              <th scope="col">Oxirgi tekshiruv (UZT)</th>
-              <th scope="col">Xato yoki ogohlantirish sababi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="check in visibleChecks" :key="check.id">
-              <td class="min-w-52">
-                <span class="font-medium">{{ check.name }}</span>
-                <span class="mt-1 block text-xs text-muted-foreground">{{ moduleNames.get(check.moduleId) }} · {{ check.kind === 'business' ? 'Biznes tekshiruvi · faqat o‘qish' : 'API' }}</span>
-              </td>
-              <td><MonitoringStatus :status="check.status" /></td>
-              <td class="tabular-nums">{{ check.httpStatus ?? '—' }}</td>
-              <td class="whitespace-nowrap tabular-nums">{{ check.responseMs === null ? '—' : `${number.format(check.responseMs)} ms` }}</td>
-              <td class="tabular-nums"><time v-if="check.checkedAt" :datetime="check.checkedAt">{{ checkTime.format(new Date(check.checkedAt)) }}</time><span v-else>—</span></td>
-              <td class="min-w-40 text-muted-foreground">{{ check.reason ?? '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p v-else class="rounded-lg border px-4 py-3 text-sm text-muted-foreground">{{ moduleNames.get(moduleFilter) }} uchun kuzatuv sozlanmagan.</p>
-    </SectionBlock>
-
-    <template v-if="view === 'checks'">
-      <MonitoringResponseChart v-if="visibleChecks.length" :checks="visibleChecks" />
-      <MonitoringAdminTable v-if="!moduleFilter" :table="backendCheckTable" />
-      <template v-if="moduleFilter === 'transport-benefits'">
-        <MonitoringAdminTable v-for="table in transportCheckTables" :key="table.title" :table="table" />
-      </template>
-    </template>
+    <MonitoringApiHealth v-if="view === 'checks'" :checks="checks" :as-of="collectedAt" />
 
     <div v-if="view === 'oracle'" class="grid items-start gap-4 2xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <SectionBlock title="Instansiya holati" class="min-w-0">

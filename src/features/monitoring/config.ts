@@ -1,10 +1,11 @@
-import { Activity, Database, LayoutDashboard, Radio, Server, TriangleAlert } from 'lucide-vue-next'
+import { Activity, Database, HeartPulse, LayoutDashboard, Radio, Server, TriangleAlert } from 'lucide-vue-next'
 
 export const monitoringPath = '/apps/monitoring'
 export const monitoringTitle = 'Monitoring'
 
 export const monitoringPages = [
   { id: 'overview', title: 'Umumiy holat', route: monitoringPath, icon: LayoutDashboard },
+  { id: 'system', title: 'Tizim holati', route: `${monitoringPath}/system`, icon: HeartPulse },
   { id: 'servers', title: 'Serverlar', route: `${monitoringPath}/servers`, icon: Server },
   { id: 'checks', title: 'API va biznes tekshiruvlari', route: `${monitoringPath}/checks`, icon: Activity },
   { id: 'oracle', title: 'Oracle', route: `${monitoringPath}/oracle`, icon: Database },

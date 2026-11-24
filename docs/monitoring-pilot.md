@@ -1,6 +1,6 @@
 # NASP Monitoring piloti
 
-Monitoring NASP ichida o‘z menyusiga ega modul. `/apps/monitoring` umumiy holat sahifasidan Serverlar (`/servers`), API va biznes tekshiruvlari (`/checks`), Oracle (`/oracle`), Hodisalar (`/incidents`) va Ma’lumot manbalari (`/sources`) bo‘limlari ochiladi. Barcha bo‘limlar `monitoring.view` ruxsatidan foydalanadi. Lokal Vue prototipidagi o‘lchovlar demo fayllaridan olinadi. Bu repodagi sessiya demo hisoblarga asoslangan, umumiy API mijozi esa skelet holatida.
+Monitoring NASP ichida o‘z menyusiga ega modul. `/apps/monitoring` umumiy holat sahifasidan Tizim holati (`/system`), Serverlar (`/servers`), API va biznes tekshiruvlari (`/checks`), Oracle (`/oracle`), Hodisalar (`/incidents`) va Ma’lumot manbalari (`/sources`) bo‘limlari ochiladi. Barcha bo‘limlar `monitoring.view` ruxsatidan foydalanadi. Lokal Vue prototipidagi o‘lchovlar demo fayllaridan olinadi. Bu repodagi sessiya demo hisoblarga asoslangan, umumiy API mijozi esa skelet holatida.
 
 Umumiy holat sahifasida NASP reyestridagi barcha yoqilgan modullar ko‘rinadi. Tekshiruvlar va modulga tegishli hodisalar reyestrdagi barqaror `moduleId` bilan bog‘lanadi. Modul satri uning API tekshiruvlariga o‘tadi. Tekshiruv berilmagan modulda «Kuzatuv sozlanmagan», oldingi o‘lchov bor-u yangi o‘lchov kelmagan modulda «Ma’lumot yo‘q» ko‘rsatiladi. Transport birinchi real ulanish uchun tanlangan pilot. Lokal demo Transport, HIXM, Erta aralashuv, IPTK va Yagona ijtimoiy platforma holatlarini namoyish etadi.
 
@@ -31,6 +31,8 @@ Rezervlash, chipta chiqarish va qoplash reyestrini topshirish kabi yozuvchi API�
 
 ## Administrator ko‘rsatkichlarining manbalari
 
+API reyestrida yo‘nalish NASP nuqtai nazaridan belgilanadi. Ichki API chaqiruvlari NASP ichida bo‘ladi, kiruvchi chaqiruvlarni tashqi hamkor boshlaydi, chiquvchi chaqiruvni NASP boshlaydi. Chiquvchi yo‘nalishga ham ma’lumot olish, ham callback yuborish kiradi. Katalog uchun operatsiya nomi, modul, hamkor, kuzatuv usuli va kelishilgan marshrut kerak. HTTP muvaffaqiyati, biznes natijasi, oxirgi muvaffaqiyatli sinxronlash hamda yangilik chegarasi alohida qayd etiladi. Mahsulotga ulashdan oldin ichki marshrutlar, tashqi hamkorlar va sinxronlash kontraktlari amaldagi backend yoki gateway reyestri bilan tekshiriladi. [HIXM integratsiya shartnomasi loyihasi](api/hixm-integration-api.md)
+
 | Ko‘rinish | Real ma’lumot qayerdan keladi |
 | --- | --- |
 | Host yuklamasi tarixi, uptime, CPU load va I/O wait, swap, inode, disk IOPS va kechikish, interfeys xatolari | Zabbix agent itemlari. Mount va interfeyslar host bo‘yicha aniqlanadi. Hostdagi servis holati alohida konfiguratsiyalanadi. |
@@ -44,7 +46,7 @@ Yuklama tarixi, API trafik statistikasi va hodisa jurnali uchun backend interval
 
 [Zabbix Linux shabloni](https://www.zabbix.com/integrations/linux) · [Zabbix web monitoring](https://www.zabbix.com/documentation/current/en/manual/web_monitoring) · [Zabbix event.get](https://www.zabbix.com/documentation/current/en/manual/api/reference/event/get) · [Oracle V$SESSION](https://docs.oracle.com/en/database/oracle/oracle-database/19/refrn/V-SESSION.html)
 
-Hodisalar jurnalida oltita namunaviy tashxis kartasi bor. Qoplash API timeouti, HIXM ro‘yxati sekinlashuvi, tablespace sig‘imi, HTTP 200 ichidagi biznes xatosi, sekinlikdan tiklanish va yig‘uvchi uzilishi uchun ta’sir, dalillar, vaqt chizig‘i va keyingi tekshiruv ko‘rsatiladi. Kechikish bilan bir vaqtda o‘lchangan DB bloklanishini so‘rov bilan bog‘lash uchun mos identifikator yoki trace kerak.
+Hodisalar jurnalida API timeouti, HIXM ro‘yxati sekinlashuvi, tashqi ma’lumotning kechikishi, tablespace sig‘imi, HTTP 200 ichidagi biznes xatosi, sekinlikdan tiklanish va yig‘uvchi uzilishi uchun ta’sir, dalillar, vaqt chizig‘i va keyingi tekshiruv ko‘rsatiladi. Kechikish bilan bir vaqtda o‘lchangan DB bloklanishini so‘rov bilan bog‘lash uchun mos identifikator yoki trace kerak.
 
 ## Oracle va Top SQL
 

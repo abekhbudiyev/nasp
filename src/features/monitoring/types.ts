@@ -1,5 +1,37 @@
 export type CheckStatus = 'healthy' | 'degraded' | 'failed' | 'unknown'
 export type SqlPeriod = '1h' | '24h' | '7d'
+export type ApiDirection = 'internal' | 'inbound' | 'outbound'
+export type ApiObservation = 'synthetic' | 'traffic' | 'sync'
+export type ApiDataFlow = 'pull' | 'receive' | 'send'
+
+export interface ApiCheck {
+  id: string
+  moduleId: string
+  name: string
+  direction: ApiDirection
+  peer: string
+  operation?: string
+  dataFlow?: ApiDataFlow
+  observation: ApiObservation
+  kind: 'api' | 'business'
+  status: CheckStatus
+  responseMs: number | null
+  httpStatus: number | null
+  checkedAt: string | null
+  reason: string | null
+  freshness?: { lastSuccessAt: string | null; maxAgeMinutes: number }
+}
+
+export interface SystemService {
+  id: string
+  name: string
+  check: string
+  status: CheckStatus
+  checkedAt: string | null
+  responseMs: number | null
+  detail: string
+  dependency: string
+}
 
 export interface UsageMetric {
   used: number
@@ -20,17 +52,7 @@ export interface MonitoringSnapshot {
     diskIo: { readMiBps: number; writeMiBps: number } | null
     network: { receiveMbps: number; sendMbps: number } | null
   }[]
-  checks: {
-    id: string
-    moduleId: string
-    name: string
-    kind: 'api' | 'business'
-    status: CheckStatus
-    responseMs: number | null
-    httpStatus: number | null
-    checkedAt: string | null
-    reason: string | null
-  }[]
+  checks: ApiCheck[]
   oracle: {
     name: string
     status: CheckStatus
