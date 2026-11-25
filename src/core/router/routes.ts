@@ -105,6 +105,8 @@ export const routes: RouteRecordRaw[] = [
       { path: 'apps/social-benefits/people', redirect: platformPath + '/citizens' },
       { path: 'apps/social-benefits/flow', redirect: platformPath + '/execution' },
       { path: 'apps/social-benefits/:legacy(coverage|integrations)', redirect: platformPath + '/about' },
+      { path: 'apps/social-benefits/vouchers/kindergarten', redirect: '/apps/social-privileges/vouchers/kindergarten' },
+      { path: 'apps/social-benefits/vouchers/education', redirect: '/apps/social-privileges/vouchers/education' },
       { path: 'apps/social-benefits/:legacy(vouchers|transport)/:rest(.*)*', redirect: platformPath + '/registry' },
       ...governancePages.map((page) => ({
         path: `apps/project-governance${page.path}`,
@@ -1259,9 +1261,42 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits',
+        path: 'apps/social-privileges',
+        name: 'social-privileges-home',
+        component: () => import('@/features/social-privileges/PrivilegesHome.vue'),
+        meta: { title: 'Ijtimoiy imtiyozlar', moduleTitle: 'Ijtimoiy imtiyozlar', moduleKey: 'transport-benefits', requiresAuth: true, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar'] },
+      },
+      {
+        path: 'apps/social-privileges/vouchers/exchange',
+        name: 'social-privileges-voucher-exchange',
+        component: () => import('@/features/social-privileges/vouchers/VoucherExchange.vue'),
+        meta: { title: 'Vaucher almashinuvi', moduleTitle: 'Ijtimoiy imtiyozlar', moduleKey: 'transport-benefits', requiresAuth: true, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar', 'Vaucher almashinuvi'] },
+      },
+      {
+        path: 'apps/social-privileges/vouchers/kindergarten',
+        name: 'social-privileges-kindergarten',
+        component: () => import('@/features/social-privileges/vouchers/VoucherPage.vue'),
+        props: { kind: 'kindergarten' },
+        meta: { title: 'Bog‘cha vaucherlari', moduleTitle: 'Ijtimoiy imtiyozlar', moduleKey: 'transport-benefits', requiresAuth: true, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar', 'Bog‘cha vaucherlari'] },
+      },
+      {
+        path: 'apps/social-privileges/vouchers/education',
+        name: 'social-privileges-education',
+        component: () => import('@/features/social-privileges/vouchers/VoucherPage.vue'),
+        props: { kind: 'education' },
+        meta: { title: 'To‘garak vaucherlari', moduleTitle: 'Ijtimoiy imtiyozlar', moduleKey: 'transport-benefits', requiresAuth: true, breadcrumb: ['Ilovalar', 'Ijtimoiy imtiyozlar', 'To‘garak vaucherlari'] },
+      },
+      {
+        path: 'apps/transport-benefits/:rest(.*)*',
+        redirect: to => {
+          const segments = Array.isArray(to.params.rest) ? to.params.rest : [to.params.rest].filter(Boolean)
+          return { path: '/apps/social-privileges/transport' + (segments.length ? '/' + segments.join('/') : ''), query: to.query, hash: to.hash }
+        },
+      },
+      {
+        path: 'apps/social-privileges/transport',
         name: 'transport-benefits-dashboard',
-        redirect: '/apps/transport-benefits/contingents',
+        redirect: '/apps/social-privileges/transport/contingents',
         meta: {
           title: 'Transport imtiyozlari',
           requiresAuth: true,
@@ -1271,7 +1306,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/contingents',
+        path: 'apps/social-privileges/transport/contingents',
         name: 'transport-benefits-contingents',
         component: TransportBenefitsPage,
         props: { pageKey: 'contingents' },
@@ -1284,7 +1319,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/mvp-plan',
+        path: 'apps/social-privileges/transport/mvp-plan',
         name: 'transport-benefits-mvp-plan',
         component: TransportBenefitsPage,
         props: { pageKey: 'mvp-plan' },
@@ -1297,7 +1332,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/eligibility',
+        path: 'apps/social-privileges/transport/eligibility',
         name: 'transport-benefits-eligibility',
         component: TransportBenefitsPage,
         props: { pageKey: 'eligibility' },
@@ -1310,7 +1345,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/ticket-events',
+        path: 'apps/social-privileges/transport/ticket-events',
         name: 'transport-benefits-ticket-events',
         component: TransportBenefitsPage,
         props: { pageKey: 'ticket-events' },
@@ -1323,7 +1358,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/settlements',
+        path: 'apps/social-privileges/transport/settlements',
         name: 'transport-benefits-settlements',
         component: TransportBenefitsPage,
         props: { pageKey: 'settlements' },
@@ -1336,11 +1371,11 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/references',
-        redirect: '/apps/transport-benefits/references/categories',
+        path: 'apps/social-privileges/transport/references',
+        redirect: '/apps/social-privileges/transport/references/categories',
       },
       {
-        path: 'apps/transport-benefits/references/categories',
+        path: 'apps/social-privileges/transport/references/categories',
         name: 'transport-benefits-reference-categories',
         component: TransportBenefitsPage,
         props: { pageKey: 'reference-categories' },
@@ -1353,7 +1388,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/references/policies',
+        path: 'apps/social-privileges/transport/references/policies',
         name: 'transport-benefits-reference-policies',
         component: TransportBenefitsPage,
         props: { pageKey: 'reference-policies' },
@@ -1366,7 +1401,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/references/transport',
+        path: 'apps/social-privileges/transport/references/transport',
         name: 'transport-benefits-reference-transport',
         component: TransportBenefitsPage,
         props: { pageKey: 'reference-transport' },
@@ -1379,7 +1414,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/references/organizations',
+        path: 'apps/social-privileges/transport/references/organizations',
         name: 'transport-benefits-reference-organizations',
         component: TransportBenefitsPage,
         props: { pageKey: 'reference-organizations' },
@@ -1392,7 +1427,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/references/system-codes',
+        path: 'apps/social-privileges/transport/references/system-codes',
         name: 'transport-benefits-reference-system-codes',
         component: TransportBenefitsPage,
         props: { pageKey: 'reference-system-codes' },
@@ -1405,7 +1440,7 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'apps/transport-benefits/integrations',
+        path: 'apps/social-privileges/transport/integrations',
         name: 'transport-benefits-integrations',
         component: TransportBenefitsPage,
         props: { pageKey: 'integrations' },

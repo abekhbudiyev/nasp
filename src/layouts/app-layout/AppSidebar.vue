@@ -8,7 +8,7 @@ import { iptkMenu } from '@/features/iptk/config'
 import { muruvvatMenu } from '@/features/muruvvat/config'
 import { snavMenu } from '@/features/snav/config'
 import { eiMenu } from '@/features/ei/config'
-import { transportBenefitsMenu } from '@/features/transport-benefits/config'
+import { privilegeMenuGroups } from '@/features/social-privileges/config'
 import { ptpkMenu } from '@/features/ptpk/config'
 import { socialBenefitsMenu, socialBenefitsMenuGroups } from '@/features/social-benefits/config'
 import { socialBenefitsScope } from '@/features/social-benefits/filter-scope'
@@ -90,14 +90,11 @@ const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
     return eiMenu
   }
 
-  if (activeModuleKey.value === 'transport-benefits') {
-    return transportBenefitsMenu
-  }
-
   return []
 })
 
 const groupedNavigation = computed(() => {
+  if (activeModuleKey.value === 'transport-benefits') return privilegeMenuGroups
   if (activeModuleKey.value === 'social-benefits') return socialBenefitsMenuGroups
   if (activeModuleKey.value === 'palliative-care') return palliativeMenuGroups
   if (activeModuleKey.value === 'regional-centers') return regionalCenterMenuGroups
@@ -162,7 +159,6 @@ const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/ei/finance/subsidy-requests': 'nav.subsidyRequests',
   '/apps/ei/finance/payments': 'page.ei.financePayments',
   '/apps/ei/reports/providers-applications': 'page.ei.providersApplicationsReport',
-  '/apps/transport-benefits': 'nav.dashboard',
 }
 
 const sidebarGroupI18nKeys: Record<string, string> = {

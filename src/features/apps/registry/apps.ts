@@ -66,9 +66,9 @@ export const appModules: AppModule[] = [
   },
   {
     id: 'transport-benefits',
-    title: 'Transport imtiyozlari',
-    description: 'Kontingent, moslik, global limit, chipta eventlari va oylik qoplash uchun yagona modul.',
-    route: '/apps/transport-benefits',
+    title: 'Ijtimoiy imtiyozlar',
+    description: 'Transport imtiyozlari, bog‘cha va to‘garak vaucherlari.',
+    route: '/apps/social-privileges',
     icon: BusFront,
     enabled: true,
     permission: 'transport-benefits.view',

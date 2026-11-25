@@ -198,7 +198,7 @@ test('live guard redirects an unauthenticated deep link, allows the own module a
   }
 })
 
-test('social support uses the unified platform, with standalone transport access intact', async () => {
+test('social support and social privileges retain their own access and redirects', async () => {
   const social = data.createDemoUser(data.demoModuleAccounts.find(account => account.moduleId === 'social-benefits').id)
   const transport = data.createDemoUser(data.demoModuleAccounts.find(account => account.moduleId === 'transport-benefits').id)
   const config = load('features/social-benefits/config.ts')
@@ -208,7 +208,7 @@ test('social support uses the unified platform, with standalone transport access
     const target = router.resolve(config.platformPath + view.path)
     assert.equal(target.meta.moduleKey, 'social-benefits')
     assert.equal(target.meta.permission, 'social-benefits.view')
-    assert.equal(target.matched.at(-1).props.default.view, view.key)
+    assert.equal(target.matched.at(-1).props.default?.view, view.tab === 'family-monitor' ? undefined : view.key)
     assert.equal(guard.canAccessDemoRoute(social, target), true)
     assert.equal(guard.canAccessDemoRoute(transport, target), false)
   }
@@ -216,7 +216,6 @@ test('social support uses the unified platform, with standalone transport access
   const instance = createRouter({ history: createMemoryHistory(), routes })
   for (const [from, to] of [
     ['/vouchers', '/registry'],
-    ['/vouchers/education', '/registry'],
     ['/transport/references/categories', '/registry'],
     ['/people', '/finance?view=people'],
     ...Object.entries(config.viewFilters).flatMap(([page, options]) => options.filter(option => option.path).map(option => [option.path, config.platformViews.find(view => view.key === page).path + '?view=' + option.key])),
@@ -226,5 +225,14 @@ test('social support uses the unified platform, with standalone transport access
     await instance.push(config.platformPath + from)
     assert.equal(instance.currentRoute.value.fullPath, config.platformPath + to)
   }
-  assert.equal(guard.canAccessDemoRoute(transport, router.resolve('/apps/transport-benefits/contingents')), true)
+  for (const [from, to] of [
+    ['/apps/transport-benefits/contingents?zone=risk', '/transport/contingents?zone=risk'],
+    ['/apps/social-benefits/vouchers/kindergarten?voucher=KG-1', '/vouchers/kindergarten?voucher=KG-1'],
+    ['/apps/social-benefits/vouchers/education', '/vouchers/education'],
+  ]) {
+    await instance.push(from)
+    assert.equal(instance.currentRoute.value.fullPath, '/apps/social-privileges' + to)
+    assert.equal(guard.canAccessDemoRoute(transport, instance.currentRoute.value), true)
+    assert.equal(guard.canAccessDemoRoute(social, instance.currentRoute.value), false)
+  }
 })

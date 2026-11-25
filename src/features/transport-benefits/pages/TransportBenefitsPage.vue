@@ -2326,11 +2326,11 @@ function selectReferenceCatalog(id: string) {
 }
 
 const pipelineSteps = computed(() => [
-  { title: 'Imtiyoz oluvchilar', value: '24 812', caption: '', icon: UsersRound, route: '/apps/transport-benefits/contingents', tone: 'primary' },
-  { title: 'Moslik', value: '1 426', caption: '', icon: ShieldCheck, route: '/apps/transport-benefits/eligibility', tone: 'primary' },
-  { title: 'Rezerv', value: '319', caption: '', icon: Zap, route: '/apps/transport-benefits/eligibility', tone: 'warning' },
-  { title: 'Chiptalar', value: '1 107', caption: '', icon: TicketCheck, route: '/apps/transport-benefits/ticket-events', tone: 'primary' },
-  { title: 'Buyurtmanomalar va to‘lovlar', value: 'Ko‘rish', caption: 'Oylik hisob-kitob va to‘lov natijalari', icon: CircleDollarSign, route: '/apps/transport-benefits/settlements', tone: 'warning' },
+  { title: 'Imtiyoz oluvchilar', value: '24 812', caption: '', icon: UsersRound, route: '/apps/social-privileges/transport/contingents', tone: 'primary' },
+  { title: 'Moslik', value: '1 426', caption: '', icon: ShieldCheck, route: '/apps/social-privileges/transport/eligibility', tone: 'primary' },
+  { title: 'Rezerv', value: '319', caption: '', icon: Zap, route: '/apps/social-privileges/transport/eligibility', tone: 'warning' },
+  { title: 'Chiptalar', value: '1 107', caption: '', icon: TicketCheck, route: '/apps/social-privileges/transport/ticket-events', tone: 'primary' },
+  { title: 'Buyurtmanomalar va to‘lovlar', value: 'Ko‘rish', caption: 'Oylik hisob-kitob va to‘lov natijalari', icon: CircleDollarSign, route: '/apps/social-privileges/transport/settlements', tone: 'warning' },
 ])
 
 const dashboardMetrics = computed(() => [
@@ -2443,7 +2443,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <p class="mt-0.5 text-xs text-muted-foreground">Imtiyoz oluvchilar va chiptalardan buyurtmanoma hamda to‘lov natijasigacha</p>
               </div>
               <RouterLink
-                :to="'/apps/transport-benefits/integrations'"
+                :to="'/apps/social-privileges/transport/integrations'"
                 class="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 Arxitekturani ko‘rish
@@ -2575,7 +2575,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
               <h2 class="text-sm font-semibold text-foreground">So‘nggi kontingent eventlari</h2>
               <p class="mt-0.5 text-xs text-muted-foreground">Barcha manbalar uchun bitta kanonik contract family · demo dataset</p>
             </div>
-            <RouterLink :to="'/apps/transport-benefits/contingents'" class="text-xs font-medium text-primary hover:underline">Barchasini ko‘rish</RouterLink>
+            <RouterLink :to="'/apps/social-privileges/transport/contingents'" class="text-xs font-medium text-primary hover:underline">Barchasini ko‘rish</RouterLink>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full min-w-[760px] text-left text-sm">
@@ -2657,7 +2657,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <section class="rounded-xl border border-border bg-card shadow-sm">
           <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
             <div><h2 class="text-sm font-semibold">AI agent bajaradigan ketma-ket roadmap</h2><p class="mt-1 text-xs text-muted-foreground">Har phase avvalgisining contract va migration natijasiga bog‘liq; ochiq D-gate uydirma qoida bilan aylanib o‘tilmaydi.</p></div>
-            <RouterLink :to="'/apps/transport-benefits/integrations'" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">Servis arxitekturasi <ArrowRight class="h-3.5 w-3.5" /></RouterLink>
+            <RouterLink :to="'/apps/social-privileges/transport/integrations'" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">Servis arxitekturasi <ArrowRight class="h-3.5 w-3.5" /></RouterLink>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full min-w-[980px] text-left text-sm">
